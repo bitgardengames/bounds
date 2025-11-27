@@ -3,4 +3,5 @@ function love.conf(t)
     t.window.width = 640
     t.window.height = 512
     t.window.vsync = 1
+    t.window.msaa = 8
 end
