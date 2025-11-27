@@ -328,9 +328,4 @@ function love.draw()
     love.graphics.circle('line', cx, cy, player.radius)
     love.graphics.setColor(colors.playerFill)
     love.graphics.circle('fill', cx, cy, player.radius - player.outline / 2)
-
-    love.graphics.setColor(1, 1, 1, 0.7)
-    love.graphics.print("Move: A/D or Arrows", 12, 12)
-    love.graphics.print("Jump: Space/W/Up", 12, 30)
 end
-
