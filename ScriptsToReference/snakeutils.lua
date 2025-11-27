@@ -1,0 +1,654 @@
+local Arena = require("arena")
+
+local floor = math.floor
+local min = math.min
+local max = math.max
+
+local SnakeUtils = {}
+
+SnakeUtils.SEGMENT_SIZE = 24
+SnakeUtils.SEGMENT_SPACING = SnakeUtils.SEGMENT_SIZE
+SnakeUtils.POP_DURATION = 0.3
+
+SnakeUtils.occupied = {}
+
+local function getSegmentPosition(segment)
+	if type(segment) ~= "table" then
+		return nil, nil
+	end
+
+	local x = segment[1]
+	if x then
+		return x, segment[2]
+	end
+
+	return segment.drawX or segment.x, segment.drawY or segment.y
+end
+
+local function getSegmentDirection(segment)
+	if type(segment) ~= "table" then
+		return nil, nil
+	end
+
+	local dirX = segment[3]
+	if dirX then
+		return dirX, segment[4]
+	end
+
+	return segment.dirX, segment.dirY
+end
+
+SnakeUtils.getSegmentPosition = getSegmentPosition
+SnakeUtils.getSegmentDirection = getSegmentDirection
+
+local function wipeTable(t)
+        if not t then
+                return
+        end
+
+        for key in pairs(t) do
+                t[key] = nil
+        end
+end
+
+local function fillColumn(column, rows)
+	for row = 1, rows do
+		column[row] = false
+	end
+
+	for row = #column, rows + 1, -1 do
+		column[row] = nil
+	end
+end
+
+function SnakeUtils.initOccupancy()
+        local occupied = SnakeUtils.occupied
+        if type(occupied) ~= "table" then
+                occupied = {}
+                SnakeUtils.occupied = occupied
+        end
+        local cols = Arena.cols or 0
+        local rows = Arena.rows or 0
+        if cols <= 0 then
+                for col = 1, #occupied do
+                        occupied[col] = nil
+                end
+                return
+        end
+
+	for col = 1, cols do
+                local column = occupied[col]
+                if not column then
+                        column = {}
+                        occupied[col] = column
+                end
+                fillColumn(column, rows)
+        end
+
+        for col = cols + 1, #occupied do
+                occupied[col] = nil
+        end
+end
+
+-- Mark / unmark cells
+function SnakeUtils.setOccupied(col, row, value)
+	if not (col and row) then
+		return
+	end
+
+	local occupied = SnakeUtils.occupied
+	if type(occupied) ~= "table" then
+		return
+	end
+
+	local cols = Arena.cols or 0
+	local rows = Arena.rows or 0
+	if col < 1 or col > cols or row < 1 or row > rows then
+		return
+	end
+
+        local column = occupied[col]
+        if not column then
+                column = {}
+                occupied[col] = column
+                fillColumn(column, rows)
+        end
+
+        local desired = not not value
+        if column[row] ~= desired then
+                column[row] = desired
+        end
+end
+
+function SnakeUtils.isOccupied(col, row)
+	local cols = Arena.cols or 0
+	local rows = Arena.rows or 0
+	if col < 1 or col > cols or row < 1 or row > rows then
+		return false
+	end
+
+	local column = SnakeUtils.occupied[col]
+	if not column then
+		return false
+	end
+
+	return column[row] and true or false
+end
+
+local function cellWithinBounds(col, row)
+	return col >= 1 and col <= Arena.cols and row >= 1 and row <= Arena.rows
+end
+
+local function normalizeCell(col, row)
+	if not col or not row then
+		return nil
+	end
+
+	col = floor(col + 0.5)
+	row = floor(row + 0.5)
+
+	if not cellWithinBounds(col, row) then
+		return nil
+	end
+
+	return col, row
+end
+
+local function markCells(cells, value)
+	if not cells then
+		return
+	end
+
+	local occupied = SnakeUtils.occupied
+	for i = 1, #cells do
+		local cell = cells[i]
+		local col, row = normalizeCell(cell[1], cell[2])
+		if col then
+			local column = occupied[col]
+                        if not column then
+                                if value then
+                                        column = {}
+                                        occupied[col] = column
+                                        fillColumn(column, Arena.rows or 0)
+                                else
+                                        column = nil
+                                end
+                        end
+
+                        if column then
+                                column[row] = not not value
+                        end
+                end
+        end
+end
+
+-- Reserve a collection of cells and return the subset that we actually marked.
+function SnakeUtils.reserveCells(cells)
+	local reserved = {}
+
+	if not cells then
+		return reserved
+	end
+
+	local occupied = SnakeUtils.occupied
+	for i = 1, #cells do
+		local cell = cells[i]
+		local col, row = normalizeCell(cell[1], cell[2])
+		if col then
+			local column = occupied[col]
+                        if column and not column[row] then
+                                column[row] = true
+                                reserved[#reserved + 1] = {col, row}
+                        end
+                end
+        end
+
+	return reserved
+end
+
+function SnakeUtils.releaseCells(cells)
+	markCells(cells, false)
+end
+
+local SAW_TRACK_OFFSETS = {-2, -1, 0, 1, 2}
+local NUM_SAW_TRACK_OFFSETS = #SAW_TRACK_OFFSETS
+
+local cellPool = {}
+local cellPoolCount = 0
+
+local function releaseCell(cell)
+	cell[1] = nil
+	cell[2] = nil
+	cellPoolCount = cellPoolCount + 1
+	cellPool[cellPoolCount] = cell
+end
+
+local function trimCells(buffer, count)
+	for i = count + 1, #buffer do
+		local cell = buffer[i]
+		if cell then
+			releaseCell(cell)
+		end
+		buffer[i] = nil
+	end
+	return buffer
+end
+
+local function acquireCell(col, row)
+	if cellPoolCount > 0 then
+		local cell = cellPool[cellPoolCount]
+		cellPool[cellPoolCount] = nil
+		cellPoolCount = cellPoolCount - 1
+		cell[1] = col
+		cell[2] = row
+		return cell
+	end
+
+	return {col, row}
+end
+
+local function assignCell(buffer, index, col, row)
+	local cell = buffer[index]
+	if cell then
+		cell[1] = col
+		cell[2] = row
+	else
+		buffer[index] = acquireCell(col, row)
+	end
+end
+
+function SnakeUtils.getSawTrackCells(fx, fy, dir, out)
+	local centerCol, centerRow = Arena:getTileFromWorld(fx, fy)
+	local cols = Arena.cols
+	local rows = Arena.rows
+	local offsets = SAW_TRACK_OFFSETS
+	local cells = out or {}
+	local count = 0
+
+	if dir == "horizontal" then
+		if centerRow < 1 or centerRow > rows then
+			return trimCells(cells, 0)
+		end
+
+		for i = 1, NUM_SAW_TRACK_OFFSETS do
+			local col = centerCol + offsets[i]
+			if col < 1 or col > cols then
+				return trimCells(cells, 0)
+			end
+
+			count = count + 1
+			assignCell(cells, count, col, centerRow)
+		end
+	else
+		if centerCol < 1 or centerCol > cols then
+			return trimCells(cells, 0)
+		end
+
+		for i = 1, NUM_SAW_TRACK_OFFSETS do
+			local row = centerRow + offsets[i]
+			if row < 1 or row > rows then
+				return trimCells(cells, 0)
+			end
+
+			count = count + 1
+			assignCell(cells, count, centerCol, row)
+		end
+	end
+
+	return trimCells(cells, count)
+end
+
+local function cellsAreFree(cells)
+	if not cells or #cells == 0 then
+		return false
+	end
+
+	local occupied = SnakeUtils.occupied
+	for i = 1, #cells do
+		local cell = cells[i]
+		local column = occupied[cell[1]]
+		if column and column[cell[2]] then
+			return false
+		end
+	end
+
+	return true
+end
+
+function SnakeUtils.occupySawTrack(fx, fy, dir)
+	local cells = SnakeUtils.getSawTrackCells(fx, fy, dir)
+	markCells(cells, true)
+	return cells
+end
+
+local sawTrackScratch = {}
+
+function SnakeUtils.sawTrackIsFree(fx, fy, dir)
+	local cells = SnakeUtils.getSawTrackCells(fx, fy, dir, sawTrackScratch)
+	return cellsAreFree(cells)
+end
+
+-- Axis-Aligned Bounding Box
+function SnakeUtils.aabb(ax, ay, asize, bx, by, bsize)
+	-- If tables passed, extract drawX/drawY and assume segment-sized squares
+	if type(ax) == "table" then
+		local segmentX, segmentY = getSegmentPosition(ax)
+		if segmentX and segmentY then
+			ax, ay = segmentX, segmentY
+			asize = SnakeUtils.SEGMENT_SIZE
+		end
+	end
+	if type(bx) == "table" then
+		local segmentX, segmentY = getSegmentPosition(bx)
+		if segmentX and segmentY then
+			bx, by = segmentX, segmentY
+			bsize = SnakeUtils.SEGMENT_SIZE
+		end
+	end
+
+	if not (ax and ay and bx and by) then
+		return false
+	end
+
+	asize = asize or SnakeUtils.SEGMENT_SIZE
+	bsize = bsize or SnakeUtils.SEGMENT_SIZE
+
+	local ah = (asize or 0) * 0.5
+	local bh = (bsize or 0) * 0.5
+
+	return (ax - ah) < (bx + bh) and
+	(ax + ah) > (bx - bh) and
+	(ay - ah) < (by + bh) and
+	(ay + ah) > (by - bh)
+end
+
+-- handle input direction
+function SnakeUtils.calculateDirection(current, input)
+local nd = SnakeUtils.directions[input]
+if nd then
+local currX = (current and current[1]) or 0
+local currY = (current and current[2]) or 0
+if not (nd[1] == -currX and nd[2] == -currY) then
+return nd
+end
+end
+return current
+end
+
+SnakeUtils.directions = {
+up    = {0, -1},
+down  = {0, 1},
+left  = {-1, 0},
+right = {1, 0},
+}
+
+-- safer apple spawn (grid aware)
+function SnakeUtils.getSafeSpawn(trail, fruit, rocks, safeZone, opts)
+	opts = opts or {}
+	local maxAttempts = 200
+	local SEGMENT_SIZE = SnakeUtils.SEGMENT_SIZE
+	local cols, rows = Arena.cols, Arena.rows
+
+	trail = trail or {}
+	local fruitX, fruitY = 0, 0
+	if fruit and fruit.getPosition then
+		fruitX, fruitY = fruit:getPosition()
+	end
+	local rockList = (rocks and rocks.getAll and rocks:getAll()) or {}
+	local safeCells = safeZone or {}
+
+	local safeLookup
+	if safeCells and #safeCells > 0 then
+		safeLookup = {}
+		for i = 1, #safeCells do
+			local cell = safeCells[i]
+			local cellCol, cellRow = cell[1], cell[2]
+			if cellCol and cellRow then
+				local column = safeLookup[cellCol]
+				if not column then
+					column = {}
+					safeLookup[cellCol] = column
+				end
+				column[cellRow] = true
+			end
+		end
+	end
+
+	local avoidFront = not not opts.avoidFrontOfSnake
+	local frontCells
+local frontLookup
+
+if avoidFront and trail[1] then
+local head = trail[1]
+local headX, headY = getSegmentPosition(head)
+local dirX, dirY = getSegmentDirection(head)
+
+if (dirX == nil or dirY == nil) and opts.direction then
+dirX = opts.direction[1]
+dirY = opts.direction[2]
+end
+
+		if dirX and dirY and headX and headY then
+			local headCol, headRow = Arena:getTileFromWorld(headX, headY)
+			if headCol and headRow then
+				local buffer = math.max(1, floor(opts.frontBuffer or 1))
+				for i = 1, buffer do
+					local aheadCol = headCol + dirX * i
+					local aheadRow = headRow + dirY * i
+
+					if cellWithinBounds(aheadCol, aheadRow) then
+						if not frontCells then
+							frontCells = {}
+							frontLookup = {}
+						end
+
+						local column = frontLookup[aheadCol]
+						if not column then
+							column = {}
+							frontLookup[aheadCol] = column
+						end
+
+						if not column[aheadRow] then
+							column[aheadRow] = true
+							frontCells[#frontCells + 1] = {aheadCol, aheadRow}
+						end
+					else
+						break
+					end
+				end
+			end
+		end
+	end
+
+	local segmentBuckets
+	if trail and #trail > 0 then
+		segmentBuckets = {}
+		local tileSize = Arena.tileSize or SEGMENT_SIZE
+		local arenaX, arenaY = Arena.x or 0, Arena.y or 0
+
+		local function addSegment(col, row, segment)
+			local column = segmentBuckets[col]
+			if not column then
+				column = {}
+				segmentBuckets[col] = column
+			end
+
+			local list = column[row]
+			if not list then
+				list = {}
+				column[row] = list
+			end
+
+			list[#list + 1] = segment
+		end
+
+		for i = 1, #trail do
+			local segment = trail[i]
+			local segX, segY = getSegmentPosition(segment)
+			if segX and segY then
+				local half = (segment.segmentSize or SEGMENT_SIZE) * 0.5
+				local left = segX - half
+				local right = segX + half
+				local top = segY - half
+				local bottom = segY + half
+
+				local minCol = floor(((left - arenaX) / tileSize)) + 1
+				local maxCol = floor(((right - arenaX) / tileSize)) + 1
+				local minRow = floor(((top - arenaY) / tileSize)) + 1
+				local maxRow = floor(((bottom - arenaY) / tileSize)) + 1
+
+				minCol = max(1, min(cols, minCol))
+				maxCol = max(1, min(cols, maxCol))
+				minRow = max(1, min(rows, minRow))
+				maxRow = max(1, min(rows, maxRow))
+
+				for col = minCol, maxCol do
+					for row = minRow, maxRow do
+						addSegment(col, row, segment)
+					end
+				end
+			end
+		end
+	end
+
+	local rockBuckets
+	if rockList and #rockList > 0 then
+		rockBuckets = {}
+		local tileSize = Arena.tileSize or SEGMENT_SIZE
+		local arenaX, arenaY = Arena.x or 0, Arena.y or 0
+
+		local function addRock(col, row, rock)
+			local column = rockBuckets[col]
+			if not column then
+				column = {}
+				rockBuckets[col] = column
+			end
+
+			local list = column[row]
+			if not list then
+				list = {}
+				column[row] = list
+			end
+
+			list[#list + 1] = rock
+		end
+
+		for i = 1, #rockList do
+			local rock = rockList[i]
+			local rockX, rockY = rock.x, rock.y
+			if rockX and rockY then
+				local half = (rock.w or tileSize) * 0.5
+				local left = rockX - half
+				local right = rockX + half
+				local top = rockY - half
+				local bottom = rockY + half
+
+				local minCol = floor(((left - arenaX) / tileSize)) + 1
+				local maxCol = floor(((right - arenaX) / tileSize)) + 1
+				local minRow = floor(((top - arenaY) / tileSize)) + 1
+				local maxRow = floor(((bottom - arenaY) / tileSize)) + 1
+
+				minCol = max(1, min(cols, minCol))
+				maxCol = max(1, min(cols, maxCol))
+				minRow = max(1, min(rows, minRow))
+				maxRow = max(1, min(rows, maxRow))
+
+				for col = minCol, maxCol do
+					for row = minRow, maxRow do
+						addRock(col, row, rock)
+					end
+				end
+			end
+		end
+	end
+
+	local function cellIsBlocked(col, row, cx, cy)
+		if SnakeUtils.isOccupied(col, row) then
+			return true
+		end
+
+		if not (cx and cy) then
+			return true
+		end
+
+		if segmentBuckets then
+			local column = segmentBuckets[col]
+			if column then
+				local list = column[row]
+				if list then
+					for i = 1, #list do
+						local segment = list[i]
+						local segX, segY = getSegmentPosition(segment)
+						if SnakeUtils.aabb(cx, cy, SEGMENT_SIZE, segX, segY, SEGMENT_SIZE, SEGMENT_SIZE) then
+							return true
+						end
+					end
+				end
+			end
+		end
+
+		if SnakeUtils.aabb(cx, cy, SEGMENT_SIZE, fruitX, fruitY, SEGMENT_SIZE) then
+			return true
+		end
+
+		if rockBuckets then
+			local column = rockBuckets[col]
+			if column then
+				local list = column[row]
+				if list then
+					for i = 1, #list do
+						local rock = list[i]
+						if SnakeUtils.aabb(cx, cy, SEGMENT_SIZE, rock.x, rock.y, rock.w) then
+							return true
+						end
+					end
+				end
+			end
+		end
+
+		if safeLookup then
+			local column = safeLookup[col]
+			if column and column[row] then
+				return true
+			end
+		end
+
+		if frontLookup then
+			local column = frontLookup[col]
+			if column and column[row] then
+				return true
+			end
+		end
+
+		return false
+	end
+
+	for _ = 1, maxAttempts do
+		local col = love.math.random(1, cols)
+		local row = love.math.random(1, rows)
+		local cx, cy = Arena:getCenterOfTile(col, row)
+
+		if not cellIsBlocked(col, row, cx, cy) then
+			return cx, cy, col, row
+		end
+	end
+
+	local totalCells = cols * rows
+	if totalCells > 0 then
+		local startIndex = love.math.random(totalCells) - 1
+		for offset = 0, totalCells - 1 do
+			local index = (startIndex + offset) % totalCells
+			local col = (index % cols) + 1
+			local row = floor(index / cols) + 1
+			local cx, cy = Arena:getCenterOfTile(col, row)
+
+			if not cellIsBlocked(col, row, cx, cy) then
+				return cx, cy, col, row
+			end
+		end
+	end
+
+	return nil, nil, nil, nil
+end
+
+return SnakeUtils
