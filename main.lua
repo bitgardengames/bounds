@@ -1,6 +1,7 @@
 local TILE_SIZE = 32
 local LEVEL_WIDTH = 24
 local LEVEL_HEIGHT = 12
+local GRAVITY = 900
 
 local levelLayout = {
     "........................",
@@ -51,49 +52,120 @@ local function tileAt(tx, ty)
     return row:sub(tx + 1, tx + 1)
 end
 
-local function rectCollides(x, y, w, h)
-    local left = math.floor(x / TILE_SIZE)
-    local right = math.floor((x + w - 1) / TILE_SIZE)
-    local top = math.floor(y / TILE_SIZE)
-    local bottom = math.floor((y + h - 1) / TILE_SIZE)
+local function moveHorizontal(amount)
+    if amount == 0 then
+        return false
+    end
 
-    for ty = top, bottom do
-        for tx = left, right do
-            if tileAt(tx, ty) == '#' then
-                return true, tx, ty
+    local collided = false
+    local topTile = math.floor(player.y / TILE_SIZE)
+    local bottomTile = math.floor((player.y + player.h - 1) / TILE_SIZE)
+
+    if amount > 0 then
+        local rightEdge = player.x + player.w
+        local startTile = math.floor((rightEdge - 1) / TILE_SIZE)
+        local endTile = math.floor((rightEdge + amount - 1) / TILE_SIZE)
+        local targetX = player.x + amount
+
+        for tx = startTile + 1, endTile do
+            for ty = topTile, bottomTile do
+                if tileAt(tx, ty) == '#' then
+                    collided = true
+                    local stopX = tx * TILE_SIZE - player.w
+                    if stopX < targetX then
+                        targetX = stopX
+                    end
+                    break
+                end
             end
         end
+
+        player.x = targetX
+    else
+        local leftEdge = player.x
+        local startTile = math.floor(leftEdge / TILE_SIZE)
+        local endTile = math.floor((leftEdge + amount) / TILE_SIZE)
+        local targetX = player.x + amount
+
+        for tx = startTile - 1, endTile, -1 do
+            for ty = topTile, bottomTile do
+                if tileAt(tx, ty) == '#' then
+                    collided = true
+                    local stopX = (tx + 1) * TILE_SIZE
+                    if stopX > targetX then
+                        targetX = stopX
+                    end
+                    break
+                end
+            end
+        end
+
+        player.x = targetX
     end
-    return false
+
+    if collided then
+        player.vx = 0
+    end
+
+    return collided
 end
 
-local function moveAxis(dx, dy)
-    local collided = false
-    if dx ~= 0 then
-        player.x = player.x + dx
-        local hit, tx = rectCollides(player.x, player.y, player.w, player.h)
-        if hit then
-            collided = true
-            if dx > 0 then
-                player.x = tx * TILE_SIZE - player.w
-            else
-                player.x = (tx + 1) * TILE_SIZE
-            end
-            player.vx = 0
-        end
+local function moveVertical(amount)
+    if amount == 0 then
+        return false
     end
 
-    if dy ~= 0 then
-        player.y = player.y + dy
-        local hit, _, ty = rectCollides(player.x, player.y, player.w, player.h)
-        if hit then
-            collided = true
-            if dy > 0 then
-                player.y = ty * TILE_SIZE - player.h
-                player.onGround = true
-            else
-                player.y = (ty + 1) * TILE_SIZE
+    local collided = false
+    local leftTile = math.floor(player.x / TILE_SIZE)
+    local rightTile = math.floor((player.x + player.w - 1) / TILE_SIZE)
+
+    if amount > 0 then
+        local bottomEdge = player.y + player.h
+        local startTile = math.floor((bottomEdge - 1) / TILE_SIZE)
+        local endTile = math.floor((bottomEdge + amount - 1) / TILE_SIZE)
+        local targetY = player.y + amount
+
+        for ty = startTile + 1, endTile do
+            for tx = leftTile, rightTile do
+                if tileAt(tx, ty) == '#' then
+                    collided = true
+                    local stopY = ty * TILE_SIZE - player.h
+                    if stopY < targetY then
+                        targetY = stopY
+                    end
+                    break
+                end
             end
+        end
+
+        player.y = targetY
+
+        if collided then
+            player.vy = 0
+            player.onGround = true
+        end
+    else
+        local topEdge = player.y
+        local startTile = math.floor(topEdge / TILE_SIZE)
+        local endTile = math.floor((topEdge + amount) / TILE_SIZE)
+        local targetY = player.y + amount
+
+        for ty = startTile - 1, endTile, -1 do
+            for tx = leftTile, rightTile do
+                if tileAt(tx, ty) == '#' then
+                    collided = true
+                    local stopY = (ty + 1) * TILE_SIZE
+                    if stopY > targetY then
+                        targetY = stopY
+                    end
+                    break
+                end
+            end
+        end
+
+        player.y = targetY
+
+        if collided then
             player.vy = 0
         end
     end
@@ -143,7 +215,7 @@ function love.update(dt)
     end
 
     player.vx = move * player.speed
-    player.vy = player.vy + 900 * dt
+    player.vy = player.vy + GRAVITY * dt
 
     if input.jumpQueued and player.onGround then
         player.vy = player.jumpStrength
@@ -153,8 +225,8 @@ function love.update(dt)
 
     player.onGround = false
 
-    moveAxis(player.vx * dt, 0)
-    moveAxis(0, player.vy * dt)
+    moveHorizontal(player.vx * dt)
+    moveVertical(player.vy * dt)
 end
 
 function love.keypressed(key)
