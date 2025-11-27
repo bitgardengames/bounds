@@ -21,7 +21,7 @@ local levelLayout = {
 
 local player = {
     x = TILE_SIZE * 2,
-    y = TILE_SIZE * 7,
+    y = TILE_SIZE * 4,
     w = 24,
     h = 24,
     radius = 12,
@@ -163,11 +163,11 @@ local function moveVertical(amount)
 
     if amount > 0 then
         local bottomEdge = player.y + player.h
-        local startTile = math.floor((bottomEdge - 1) / TILE_SIZE)
-        local endTile = math.floor((bottomEdge + amount - 1) / TILE_SIZE)
+        local startTile = math.floor(bottomEdge / TILE_SIZE)
+        local endTile = math.floor((bottomEdge + amount) / TILE_SIZE)
         local targetY = player.y + amount
 
-        for ty = startTile + 1, endTile do
+        for ty = startTile, endTile do
             for tx = leftTile, rightTile do
                 if tileAt(tx, ty) == '#' then
                     collided = true
@@ -192,7 +192,7 @@ local function moveVertical(amount)
         local endTile = math.floor((topEdge + amount) / TILE_SIZE)
         local targetY = player.y + amount
 
-        for ty = startTile - 1, endTile, -1 do
+        for ty = startTile, endTile, -1 do
             for tx = leftTile, rightTile do
                 if tileAt(tx, ty) == '#' then
                     collided = true
