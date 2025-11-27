@@ -2,6 +2,7 @@ local TILE_SIZE = 32
 local LEVEL_WIDTH = 24
 local LEVEL_HEIGHT = 12
 local GRAVITY = 900
+local MAX_FALL_SPEED = 950
 
 local levelLayout = {
     "........................",
@@ -27,9 +28,17 @@ local player = {
     outline = 3,
     vx = 0,
     vy = 0,
-    speed = 260,
-    jumpStrength = -460,
-    onGround = false
+    maxSpeed = 320,
+    acceleration = 2200,
+    deceleration = 2600,
+    airAcceleration = 1400,
+    airDeceleration = 1200,
+    jumpStrength = -520,
+    onGround = false,
+    coyoteTime = 0.12,
+    coyoteTimer = 0,
+    jumpBufferTime = 0.12,
+    jumpBufferTimer = 0
 }
 
 local colors = {
@@ -44,12 +53,45 @@ local input = {
     jumpQueued = false
 }
 
+local function clamp(value, min, max)
+    if value < min then
+        return min
+    elseif value > max then
+        return max
+    end
+    return value
+end
+
 local function tileAt(tx, ty)
     if tx < 0 or ty < 0 or tx >= LEVEL_WIDTH or ty >= LEVEL_HEIGHT then
         return '#'
     end
     local row = levelLayout[ty + 1]
     return row:sub(tx + 1, tx + 1)
+end
+
+local function tryGroundSnap()
+    if player.vy < 0 or player.onGround then
+        return
+    end
+
+    local epsilon = 2
+    local footY = player.y + player.h
+    local belowTile = math.floor(footY / TILE_SIZE)
+    local leftTile = math.floor((player.x + 1) / TILE_SIZE)
+    local rightTile = math.floor((player.x + player.w - 2) / TILE_SIZE)
+
+    for tx = leftTile, rightTile do
+        if tileAt(tx, belowTile) == '#' then
+            local snapY = belowTile * TILE_SIZE - player.h
+            if footY - snapY <= epsilon then
+                player.y = snapY
+                player.vy = 0
+                player.onGround = true
+                return
+            end
+        end
+    end
 end
 
 local function moveHorizontal(amount)
@@ -214,24 +256,64 @@ function love.update(dt)
         move = move + 1
     end
 
-    player.vx = move * player.speed
-    player.vy = player.vy + GRAVITY * dt
+    if input.jumpQueued then
+        player.jumpBufferTimer = player.jumpBufferTime
+        input.jumpQueued = false
+    else
+        player.jumpBufferTimer = math.max(player.jumpBufferTimer - dt, 0)
+    end
 
-    if input.jumpQueued and player.onGround then
+    if player.onGround then
+        player.coyoteTimer = player.coyoteTime
+    else
+        player.coyoteTimer = math.max(player.coyoteTimer - dt, 0)
+    end
+
+    local targetSpeed = move * player.maxSpeed
+    local accelerating = math.abs(targetSpeed) > 0
+    local accel = accelerating and (player.onGround and player.acceleration or player.airAcceleration)
+        or (player.onGround and player.deceleration or player.airDeceleration)
+
+    if accelerating then
+        local direction = targetSpeed > player.vx and 1 or -1
+        player.vx = player.vx + direction * accel * dt
+        if (direction == 1 and player.vx > targetSpeed) or (direction == -1 and player.vx < targetSpeed) then
+            player.vx = targetSpeed
+        end
+    else
+        if player.vx > 0 then
+            player.vx = math.max(player.vx - accel * dt, 0)
+        elseif player.vx < 0 then
+            player.vx = math.min(player.vx + accel * dt, 0)
+        end
+    end
+
+    local canJump = player.jumpBufferTimer > 0 and (player.onGround or player.coyoteTimer > 0)
+    if canJump then
         player.vy = player.jumpStrength
         player.onGround = false
+        player.jumpBufferTimer = 0
     end
-    input.jumpQueued = false
+
+    player.vy = player.vy + GRAVITY * dt
+    player.vy = clamp(player.vy, -math.huge, MAX_FALL_SPEED)
 
     player.onGround = false
 
     moveHorizontal(player.vx * dt)
     moveVertical(player.vy * dt)
+    tryGroundSnap()
 end
 
 function love.keypressed(key)
     if key == 'space' or key == 'w' or key == 'up' then
         input.jumpQueued = true
+    end
+end
+
+function love.keyreleased(key)
+    if (key == 'space' or key == 'w' or key == 'up') and player.vy < -120 then
+        player.vy = -120
     end
 end
 
