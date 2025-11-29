@@ -56,15 +56,20 @@ local p = {
     vx = 0,
     vy = 0,
 
-    maxSpeed        = 320, -- 320
-    acceleration    = 2200, -- 2200
-    deceleration    = 3200, -- 2900
-    airAcceleration = 1750, -- 1750
-    airDeceleration = 1600, -- 1500
-	
+    maxSpeed        = 320,
+    acceleration    = 2200,
+    deceleration    = 3600,
+    airAcceleration = 1750,
+    airDeceleration = 1900,
+
     jumpStrength = -520,
 
     preJumpSquish = 0,
+
+    -- jump anticipation state
+    gathering      = false,
+    gatherTime     = 0,
+    gatherDuration = 0.02,
 
     onGround = false,
 
@@ -98,7 +103,7 @@ local function tileAt(Level, tx, ty)
 end
 
 --------------------------------------------------------------
--- GROUND SNAP (fixed for 1-based tiles)
+-- GROUND SNAP
 --------------------------------------------------------------
 
 local function tryGroundSnap(Level)
@@ -108,7 +113,7 @@ local function tryGroundSnap(Level)
 
     local epsilon = 2
     local footY   = p.y + p.h
-    local below   = math.floor(footY / TILE) + 1   -- +1 (critical!)
+    local below   = math.floor(footY / TILE) + 1
 
     local lx = math.floor((p.x + 1)       / TILE) + 1
     local rx = math.floor((p.x + p.w - 2) / TILE) + 1
@@ -128,7 +133,7 @@ local function tryGroundSnap(Level)
 end
 
 --------------------------------------------------------------
--- HORIZONTAL COLLISION (1-based fixed)
+-- HORIZONTAL COLLISION
 --------------------------------------------------------------
 
 local function moveHorizontal(Level, amount)
@@ -195,7 +200,7 @@ local function moveHorizontal(Level, amount)
 end
 
 --------------------------------------------------------------
--- VERTICAL COLLISION (1-based fixed)
+-- VERTICAL COLLISION
 --------------------------------------------------------------
 
 local function moveVertical(Level, amount)
@@ -276,7 +281,7 @@ local function moveVertical(Level, amount)
 end
 
 --------------------------------------------------------------
--- UPDATE (UNCHANGED LOGIC, JUST USING CORRECT COLLISION NOW)
+-- HELPERS
 --------------------------------------------------------------
 
 local function clamp(v, mn, mx)
@@ -289,26 +294,35 @@ local function approach(a, b, dt, speed)
     end
 end
 
+--------------------------------------------------------------
+-- UPDATE
+--------------------------------------------------------------
+
 function Player.update(dt, Level)
     local wasOnGround = p.onGround
 
-    ----------------------------------------------------------
     -- contact smoothing
-    ----------------------------------------------------------
-    p.contactBottom = approach(p.contactBottom, p.onGround and 0.35 or 0, dt, 10)
+    local idleSquish = p.onGround and 0.08 or 0
+    p.contactBottom = approach(p.contactBottom, idleSquish, dt, 10)
     p.contactTop    = approach(p.contactTop,    0, dt, 14)
     p.contactLeft   = approach(p.contactLeft,   0, dt, 14)
     p.contactRight  = approach(p.contactRight,  0, dt, 14)
 
     ----------------------------------------------------------
-    -- input
+    -- INPUT  (UPDATED FOR GAMEPAD)
     ----------------------------------------------------------
     local move = 0
-    if Input.isDown("a","left")  then move = move - 1 end
-    if Input.isDown("d","right") then move = move + 1 end
+
+    -- keyboard + gamepad mapped together
+    if Input.isDown("a", "left", "gp_left") then
+        move = move - 1
+    end
+    if Input.isDown("d", "right", "gp_right") then
+        move = move + 1
+    end
 
     ----------------------------------------------------------
-    -- jump buffer + coyote
+    -- JUMP BUFFER + COYOTE
     ----------------------------------------------------------
     if Input.consumeJump() then
         p.jumpBufferTimer = p.jumpBufferTime
@@ -326,7 +340,7 @@ function Player.update(dt, Level)
     p.wallCoyoteTimerRight = math.max(p.wallCoyoteTimerRight - dt, 0)
 
     ----------------------------------------------------------
-    -- horizontal movement
+    -- HORIZONTAL MOVEMENT
     ----------------------------------------------------------
     local targetSpeed = move * p.maxSpeed
     local accelerating = math.abs(targetSpeed) > 0
@@ -347,7 +361,7 @@ function Player.update(dt, Level)
         end
 
         ------------------------------------------------------
-        -- running dust etc
+        -- dust feedback
         ------------------------------------------------------
         local reversing =
             math.abs(p.vx) > 40 and
@@ -369,6 +383,7 @@ function Player.update(dt, Level)
 
         p.lastDir = dir
 
+        -- running dust trail
         if p.onGround then
             local speed = math.abs(p.vx)
             if speed > p.maxSpeed * 0.55 then
@@ -401,7 +416,7 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- wall sliding
+    -- WALL SLIDING
     ----------------------------------------------------------
     local touchingLeft  = p.wallCoyoteTimerLeft  > 0
     local touchingRight = p.wallCoyoteTimerRight > 0
@@ -424,11 +439,12 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- jumping
+    -- JUMPING (ground, wall, anticipation)
     ----------------------------------------------------------
     local doWall = false
     local wallDir = 0
 
+    -- wall jump check
     if p.jumpBufferTimer > 0 then
         if not p.onGround then
             if p.wallCoyoteTimerLeft > 0 then
@@ -442,12 +458,15 @@ function Player.update(dt, Level)
     end
 
     if doWall then
+        -- WALL JUMP
         p.vx = WALL_JUMP_PUSH * wallDir
         p.vy = WALL_JUMP_UP
         p.jumpBufferTimer = 0
 
         p.springVertVel = p.springVertVel + 110
         p.springHorzVel = p.springHorzVel + (-wallDir * 120)
+
+        p.preJumpSquish = -0.6
 
         Particles.puff(
             p.x + p.w/2 + (-wallDir)*10,
@@ -458,45 +477,79 @@ function Player.update(dt, Level)
             {1,1,1,1}
         )
 
+        p.gathering  = false
+        p.gatherTime = 0
+
     else
-        local canJump =
-            p.jumpBufferTimer > 0
-            and (p.onGround or p.coyoteTimer > 0)
+        -- Ground / coyote jump anticipation
+        local canGroundJump =
+            p.jumpBufferTimer > 0 and (p.onGround or p.coyoteTimer > 0)
 
-        if canJump then
-            p.vy = p.jumpStrength
-            p.onGround = false
-            p.jumpBufferTimer = 0
+        if canGroundJump and not p.gathering then
+            p.gathering      = true
+            p.gatherTime     = 0
+            p.preJumpSquish  = 0
+        end
 
-            p.preJumpSquish = 1.0
-            p.springVertVel = p.springVertVel + 110
+        if p.gathering then
+            -- cancel if lost ground/coyote
+            if not p.onGround and p.coyoteTimer <= 0 then
+                p.gathering      = false
+                p.gatherTime     = 0
+                p.preJumpSquish  = 0
+            else
+                -- build squish
+                p.gatherTime = p.gatherTime + dt
+                local t = clamp(p.gatherTime / p.gatherDuration, 0, 1)
+                p.preJumpSquish = t
 
-            Particles.puff(
-                p.x + p.w/2,
-                p.y + p.h,
-                (math.random()-0.5)*60,
-                20 + math.random()*20,
-                6, 0.35,
-                {1,1,1,1}
-            )
+                if p.gatherTime >= p.gatherDuration then
+                    -- JUMP!
+                    local stored = clamp(p.preJumpSquish, 0, 1)
+
+                    p.vy = p.jumpStrength
+                    p.onGround = false
+                    p.jumpBufferTimer = 0
+
+                    p.springVertVel = p.springVertVel + 150 + stored * 150
+
+                    p.preJumpSquish = -stored * 0.8
+
+                    Particles.puff(
+                        p.x + p.w/2,
+                        p.y + p.h,
+                        (math.random()-0.5)*60,
+                        20 + math.random()*20,
+                        6, 0.35,
+                        {1,1,1,1}
+                    )
+
+                    p.gathering  = false
+                    p.gatherTime = 0
+                end
+            end
         end
     end
 
     ----------------------------------------------------------
-    -- jump squish decay
+    -- JUMP SQUISH DECAY
     ----------------------------------------------------------
-    if p.preJumpSquish > 0 then
-        p.preJumpSquish = math.max(p.preJumpSquish - dt * 9.0, 0)
+    if not p.gathering then
+        if p.preJumpSquish > 0 then
+            p.preJumpSquish = math.max(p.preJumpSquish - dt * 12.0, 0)
+        elseif p.preJumpSquish < 0 then
+            p.preJumpSquish = math.min(p.preJumpSquish + dt * 10.0, 0)
+        end
     end
 
     ----------------------------------------------------------
-    -- gravity
+    -- GRAVITY
     ----------------------------------------------------------
     p.vy = p.vy + GRAVITY * dt
     p.vy = clamp(p.vy, -math.huge, MAX_FALL_SPEED)
 
     ----------------------------------------------------------
-    -- collision movement (NOW CORRECT!)
+    -- COLLISION
     ----------------------------------------------------------
     p.onGround = false
     moveHorizontal(Level, p.vx * dt)
@@ -518,7 +571,7 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- springs
+    -- SPRINGS
     ----------------------------------------------------------
     -- vertical
     do
@@ -543,7 +596,7 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- eyes
+    -- EYES
     ----------------------------------------------------------
     local dx, dy = 0, 0
     if math.abs(p.vx) > 20 then dx = (p.vx > 0) and 1 or -1 end
@@ -556,7 +609,7 @@ function Player.update(dt, Level)
 end
 
 --------------------------------------------------------------
--- DRAWING (unchanged)
+-- DRAWING
 --------------------------------------------------------------
 
 local colors = {
@@ -582,11 +635,13 @@ function Player.draw()
     local sv = p.springVert
     local sh = p.springHorz
 
-    cb = cb + clamp(-sv,0,0.60) + p.preJumpSquish * 0.70
+    cb = cb + clamp(-sv,0,0.60)
     ct = ct + (breathe - 1) * 1.2
     ct = ct + clamp( sv,0,0.45)
     cl = cl + clamp( sh,0,0.50)
     cr = cr + clamp(-sh,0,0.50)
+
+    local pre = p.preJumpSquish
 
     local baseEyeOffsetX = r*0.45
     local baseEyeOffsetY = -r*0.25
@@ -608,8 +663,10 @@ function Player.draw()
         local dy = math.sin(angle)
         local dist = r
 
-        if dy > 0 then dist = dist - cb*r*0.34*(dy*dy)
-        else           dist = dist + cb*r*0.10*(dy*dy) end
+        local bottomSquish = cb + pre
+
+        if dy > 0 then dist = dist - bottomSquish*r*0.34*(dy*dy)
+        else           dist = dist + bottomSquish*r*0.10*(dy*dy) end
 
         if dy < 0 then dist = dist - ct*r*0.32*(dy*dy)
         else           dist = dist + ct*r*0.10*(dy*dy) end
@@ -624,7 +681,6 @@ function Player.draw()
         poly[#poly+1] = dy*dist
     end
 
-    -- vertically align foot
     local bottom = -1e9
     for i = 2, #poly, 2 do
         bottom = math.max(bottom, poly[i])
@@ -634,7 +690,6 @@ function Player.draw()
         poly[i] = poly[i] + shift
     end
 
-    -- outline
     local outlinePoly = {}
     local thick = p.outline
 
@@ -655,7 +710,6 @@ function Player.draw()
     love.graphics.setColor(colors.fill)
     love.graphics.polygon("fill", poly)
 
-    -- eyes
     love.graphics.setColor(0,0,0)
     local eyeOffsetX = baseEyeOffsetX
     local eyeOffsetY = baseEyeOffsetY + cb*r*0.10
@@ -663,7 +717,6 @@ function Player.draw()
     love.graphics.circle("fill", -eyeOffsetX+lx, eyeOffsetY+ly, eyeRadius)
     love.graphics.circle("fill",  eyeOffsetX+lx, eyeOffsetY+ly, eyeRadius)
 
-    -- blink squish
     if eyeRadius < 0.5 then
         love.graphics.setLineWidth(2)
         love.graphics.line(
@@ -673,10 +726,10 @@ function Player.draw()
             eyeOffsetY+ly
         )
         love.graphics.line(
-             eyeOffsetX+lx - r*0.20,
-             eyeOffsetY+ly,
-             eyeOffsetX+lx + r*0.20,
-             eyeOffsetY+ly
+            eyeOffsetX+lx - r*0.20,
+            eyeOffsetY+ly,
+            eyeOffsetX+lx + r*0.20,
+            eyeOffsetY+ly
         )
     end
 

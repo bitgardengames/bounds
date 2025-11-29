@@ -77,6 +77,13 @@ function love.keyreleased(key)
     Input.keyreleased(key)
 end
 
+function love.gamepadpressed(joystick, button)
+    Input.gamepadpressed(joystick, button)
+end
+
+function love.gamepadreleased(joystick, button)
+    Input.gamepadreleased(joystick, button)
+end
 
 function love.draw()
     -- background fill from Level.colors
