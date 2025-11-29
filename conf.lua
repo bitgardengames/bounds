@@ -1,5 +1,5 @@
 function love.conf(t)
-    t.window.title = "Bounds Playground"
+    t.window.title = "Bounds"
     t.window.width = 1280
     t.window.height = 704
     t.window.vsync = 1
