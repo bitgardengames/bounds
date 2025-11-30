@@ -4,7 +4,7 @@
 --------------------------------------------------------------
 
 local Saw = { list = {} }
-local Particles = require("particles")
+local Player = require("player")
 
 --------------------------------------------------------------
 -- CONFIG
@@ -134,8 +134,8 @@ function Saw.update(dt, player)
         ------------------------------------------------------
         -- Player collision
         ------------------------------------------------------
-        if hitPlayer(s, player) then
-            print("PLAYER HIT BY SAW")
+        if not player.dead and hitPlayer(s, player) then
+            Player.kill()
         end
 
         ------------------------------------------------------
