@@ -35,12 +35,13 @@ function love.load()
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
-        local TILE = TILE_SIZE
+	local TILE = TILE_SIZE
 
-	Saw.spawn(106*TILE, 25*TILE, { dir="horizontal", mount="bottom" })
-	Saw.spawn(112*TILE, 21*TILE, { dir="horizontal", mount="top" })
-	Saw.spawn(92*TILE,  20*TILE, { dir="vertical",   mount="left" })
-	Saw.spawn(89*TILE,  20*TILE, { dir="vertical",   mount="right" })
+	-- Center ceiling-mounted horizontal saw
+	Saw.spawn(TILE * 20, TILE * 1, {dir="horizontal", mount="top", speed=1})
+
+	-- Vertical saw in the wall-kick shaft (left-mounted)
+	Saw.spawn(TILE * 31,TILE * 13, {dir="vertical", mount="left", speed=1})
 end
 
 function love.update(dt)
@@ -69,7 +70,7 @@ function love.update(dt)
     ----------------------------------------------------------
     -- Camera
     ----------------------------------------------------------
-    Camera.update(pl)
+    --Camera.update(pl)
 
     ----------------------------------------------------------
     -- Late input cleanup

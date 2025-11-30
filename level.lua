@@ -10,11 +10,12 @@ local Level = {}
 --------------------------------------------------------------
 
 Level.colors = {
-    background = {146/255, 182/255, 240/255},
+    --background = {146/255, 182/255, 240/255},
+    background = {0.8, 0.8, 0.8},
     solid      = {84/255,  84/255,  93/255 },
 }
 
-local OUTLINE_WIDTH   = 3
+local OUTLINE_WIDTH   = 4
 local SHADOW_OFFSET_X = 3
 local SHADOW_OFFSET_Y = 3
 local TILE_CORNER_R   = 6      -- rounding radius per tile

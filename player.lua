@@ -35,7 +35,7 @@ local p = {
     h = 36,
 
     radius  = 18,
-    outline = 6,
+    outline = 5,
 
     eyeDirX = 0,
     eyeDirY = 0,
