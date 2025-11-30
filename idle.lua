@@ -41,19 +41,26 @@ function Idle.update(dt, isIdle)
             Idle.timeToNext = Idle.timeToNext - dt
             if Idle.timeToNext <= 0 then
                 local roll = math.random()
-                if roll < 0.24 then
+                if roll < 0.20 then
                     startEffect("glance", { duration = 0.9, dir = -1 })
-                elseif roll < 0.48 then
+                elseif roll < 0.40 then
                     startEffect("glance", { duration = 0.9, dir = 1 })
-                elseif roll < 0.66 then
+                elseif roll < 0.58 then
                     local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("peek", { duration = 1.1, dir = dir })
-                elseif roll < 0.82 then
+                elseif roll < 0.72 then
                     local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("lean", { duration = 1.4, dir = dir })
-                else
+                elseif roll < 0.86 then
                     local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("wiggle", { duration = 1.2, dir = dir, cycles = 2.5 })
+                elseif roll < 0.94 then
+                    startEffect("rock", { duration = 1.5, cycles = 2.4 })
+                elseif roll < 0.985 then
+                    startEffect("bounce", { duration = 1.1 })
+                else
+                    local dir = (math.random() < 0.5) and -1 or 1
+                    startEffect("look_up", { duration = 1.0, dir = dir })
                 end
             end
         end
@@ -69,7 +76,18 @@ end
 
 -- returns scale multiplier (1.0 = neutral)
 function Idle.getScale()
-    return 1 + math.sin(Idle.t * Idle.breatheSpeed * math.pi * 2) * Idle.breatheAmp
+    local base = 1 + math.sin(Idle.t * Idle.breatheSpeed * math.pi * 2) * Idle.breatheAmp
+
+    local effect = Idle.activeEffect
+    if effect and effect.kind == "bounce" then
+        local progress = clamp(Idle.effectTimer / effect.duration, 0, 1)
+        local envelope = math.sin(progress * math.pi)
+        local settle = (1 - progress)
+        local wobble = math.sin(progress * math.pi * 1.6)
+        return base + wobble * envelope * settle * 0.12
+    end
+
+    return base
 end
 
 function Idle.getEyeOffset()
@@ -90,6 +108,16 @@ function Idle.getEyeOffset()
         local envelope = math.sin(progress * math.pi)
         local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.5))
         return oscillation * effect.dir * envelope * 0.55, math.sin(progress * math.pi * 1.3) * envelope * 0.25
+    elseif effect.kind == "rock" then
+        local envelope = math.sin(progress * math.pi)
+        local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.2))
+        return oscillation * envelope * 0.65, math.sin(progress * math.pi * 1.5) * envelope * 0.12
+    elseif effect.kind == "bounce" then
+        local envelope = math.sin(progress * math.pi)
+        return 0, math.sin(progress * math.pi * 1.2) * envelope * -0.15
+    elseif effect.kind == "look_up" then
+        local magnitude = math.sin(progress * math.pi)
+        return magnitude * effect.dir * 0.30, -magnitude * 0.55
     end
 
     return 0, 0
@@ -110,6 +138,17 @@ function Idle.getLeanOffset()
         local envelope = math.sin(progress * math.pi)
         local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.5))
         return oscillation * envelope * effect.dir * 0.10
+    elseif effect.kind == "rock" then
+        local envelope = math.sin(progress * math.pi)
+        local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.2))
+        return oscillation * envelope * 0.09
+    elseif effect.kind == "bounce" then
+        local envelope = math.sin(progress * math.pi)
+        local rebound = math.sin(progress * math.pi * 1.4) * envelope
+        return rebound * 0.03
+    elseif effect.kind == "look_up" then
+        local magnitude = math.sin(progress * math.pi) * 0.05
+        return -magnitude * 0.8
     end
 
     return 0
