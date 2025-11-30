@@ -61,18 +61,18 @@ function Collectible.update(dt, player)
                     )
                 end
 
-                -- sparkling shards for a satisfying pop
-                for k=1,10 do
+                -- diamond shards that match the collectible look
+                for k=1,12 do
                     local angle = math.random() * math.pi * 2
-                    local speed = 90 + math.random()*80
-                    Particles.sparkle(
+                    local speed = 80 + math.random()*90
+                    Particles.shard(
                         cx,
                         cy,
                         math.cos(angle) * speed,
                         math.sin(angle) * speed,
-                        2 + math.random()*1.5,
-                        0.35 + math.random()*0.15,
-                        {1, 0.9, 0.6, 1}
+                        5 + math.random()*3,
+                        0.45 + math.random()*0.25,
+                        {1, 1, 1, 1}
                     )
                 end
             end
@@ -94,6 +94,7 @@ function Collectible.draw()
     for _, c in ipairs(Collectible.list) do
         local scale    = 1 + (c.shine or 0) * 0.18
         local popScale = c.picked and (0.7 + c.pop * 0.4) or 1
+        local wobble   = math.sin((c.t or 0) * 2.6) * 0.09
 
         local baseR = c.r or 12                 -- slightly larger base
         local r     = baseR * scale * popScale
@@ -109,7 +110,7 @@ function Collectible.draw()
 
         love.graphics.push()
         love.graphics.translate(cx, cy)
-        love.graphics.rotate(math.pi / 4)
+        love.graphics.rotate(math.pi / 4 + wobble + (c.picked and (1 - math.max(c.pop, 0)) * 0.4 or 0))
 
         -- OUTLINE (black, slightly larger rounded rectangle)
         love.graphics.setColor(0, 0, 0)
@@ -153,17 +154,6 @@ function Collectible.draw()
                 cy,
                 baseR * (1.2 + ringT * 1.8)
             )
-
-            -- starburst rays
-            love.graphics.setLineWidth(2)
-            for i=1,8 do
-                local angle = (i / 8) * math.pi * 2 + c.burstT * 6
-                local inner = baseR * (0.4 + ringT * 0.2)
-                local outer = baseR * (1.1 + ringT * 1.3)
-                local dxIn, dyIn  = math.cos(angle) * inner, math.sin(angle) * inner
-                local dxOut, dyOut = math.cos(angle) * outer, math.sin(angle) * outer
-                love.graphics.line(cx + dxIn, cy + dyIn, cx + dxOut, cy + dyOut)
-            end
         end
     end
 end

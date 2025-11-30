@@ -63,6 +63,27 @@ function Particles.sparkle(x, y, vx, vy, radius, life, color)
     })
 end
 
+-- SMALL DIAMOND SHARD (soft fade, gentle gravity, spins)
+function Particles.shard(x, y, vx, vy, size, life, color)
+    color = color or {1, 1, 1, 1}
+
+    table.insert(particles, {
+        x = x,
+        y = y,
+        vx = vx or 0,
+        vy = vy or 0,
+        r  = size or 5,
+        life    = life or 0.45,
+        maxLife = life or 0.45,
+        color   = color,
+        gravity = 70,
+        softFade = true,
+        shape = "diamond",
+        rotation = math.random() * math.pi * 2,
+        spin = (math.random() - 0.5) * 6,
+    })
+end
+
 -- WALL SLIDE SOFT DUST (slight downward drift, soft fade)
 function Particles.wallDust(x, y, vx, vy, radius, life, color)
     color = color or {1,1,1,1}
@@ -90,6 +111,11 @@ function Particles.update(dt)
         p.y = p.y + p.vy * dt
         p.vy = p.vy + p.gravity * dt
 
+        -- rotation for special shapes
+        if p.rotation then
+            p.rotation = p.rotation + (p.spin or 0) * dt
+        end
+
         -- fade
         p.life = p.life - dt
         if p.life <= 0 then
@@ -104,7 +130,18 @@ function Particles.draw()
         local alpha = p.softFade and (t * t) or t   -- cubic ease-out fade
         local size = p.softFade and (p.r * (0.4 + 0.6 * t)) or (p.r * t)
         love.graphics.setColor(p.color[1], p.color[2], p.color[3], (p.color[4] or 1) * alpha)
-        love.graphics.circle("fill", p.x, p.y, size)
+
+        if p.shape == "diamond" then
+            love.graphics.push()
+            love.graphics.translate(p.x, p.y)
+            love.graphics.rotate((p.rotation or 0) + math.pi / 4)
+            local side = size * 1.6
+            local radius = side * 0.22
+            love.graphics.rectangle("fill", -side/2, -side/2, side, side, radius, radius)
+            love.graphics.pop()
+        else
+            love.graphics.circle("fill", p.x, p.y, size)
+        end
     end
 end
 
