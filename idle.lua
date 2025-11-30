@@ -1,4 +1,7 @@
+local TAU = math.pi * 2
+
 local Idle = {
+    -- normalized [0,1) accumulator for the breathing loop
     t = 0,
     breatheAmp = 0.03,   -- ±3% scale
     breatheSpeed = 1.0,  -- Hz
@@ -28,8 +31,10 @@ local function startEffect(kind, params)
 end
 
 function Idle.update(dt, isIdle)
+    local breatheRate = Idle.breatheSpeed * (isIdle and 1 or 0.25)
+    Idle.t = (Idle.t + dt * breatheRate) % 1
+
     if isIdle then
-        Idle.t = Idle.t + dt
 
         if Idle.activeEffect then
             Idle.effectTimer = Idle.effectTimer + dt
@@ -66,8 +71,6 @@ function Idle.update(dt, isIdle)
         end
     else
         -- very slow drift while not idle
-        Idle.t = Idle.t + dt * 0.25
-
         Idle.activeEffect = nil
         Idle.effectTimer = 0
         Idle.timeToNext = nextDelay()
@@ -76,7 +79,7 @@ end
 
 -- returns scale multiplier (1.0 = neutral)
 function Idle.getScale()
-    local base = 1 + math.sin(Idle.t * Idle.breatheSpeed * math.pi * 2) * Idle.breatheAmp
+    local base = 1 + math.sin(Idle.t * TAU) * Idle.breatheAmp
 
     local effect = Idle.activeEffect
     if effect and effect.kind == "bounce" then
