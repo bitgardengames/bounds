@@ -13,8 +13,8 @@ local Player = require("player")
 local BASE_RADIUS = 16
 local TEETH       = 9
 local INNER_RATIO = 0.80
-local SPIN_SPEED  = 5
-local MOVE_SPEED  = 110
+local SPIN_SPEED  = 6
+local MOVE_SPEED  = 60
 local OUTLINE     = 3
 
 local TRACK_THICKNESS   = 10

@@ -18,7 +18,7 @@ local MAX_FALL_SPEED = 950
 local WALL_SLIDE_FACTOR = 0.45
 local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
-local PRE_JUMP_SQUISH_SCALE = 0.65
+local PRE_JUMP_SQUISH_SCALE = 0.2
 
 --------------------------------------------------------------
 -- PLAYER DATA
