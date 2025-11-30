@@ -81,6 +81,11 @@ function love.update(dt)
     -- Camera
     ----------------------------------------------------------
     Camera.update(pl)
+
+    ----------------------------------------------------------
+    -- Late input cleanup
+    ----------------------------------------------------------
+    Input.postUpdate()
 end
 
 function love.keypressed(key)
