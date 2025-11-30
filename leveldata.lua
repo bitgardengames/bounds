@@ -2,7 +2,7 @@
 -- 140 × 50 tiles
 
 local LevelData = {
-    tileSize = 32,
+    tileSize = 48,
     width = 140,
     height = 50,
 
