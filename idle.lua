@@ -61,8 +61,6 @@ function Idle.update(dt, isIdle)
                     startEffect("wiggle", { duration = 1.2, dir = dir, cycles = 2.5 })
                 elseif roll < 0.94 then
                     startEffect("rock", { duration = 1.5, cycles = 2.4 })
-                elseif roll < 0.985 then
-                    startEffect("bounce", { duration = 1.1 })
                 else
                     local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("look_up", { duration = 1.0, dir = dir })
@@ -79,18 +77,7 @@ end
 
 -- returns scale multiplier (1.0 = neutral)
 function Idle.getScale()
-    local base = 1 + math.sin(Idle.t * TAU) * Idle.breatheAmp
-
-    local effect = Idle.activeEffect
-    if effect and effect.kind == "bounce" then
-        local progress = clamp(Idle.effectTimer / effect.duration, 0, 1)
-        local envelope = math.sin(progress * math.pi)
-        local settle = (1 - progress)
-        local wobble = math.sin(progress * math.pi * 1.6)
-        return base + wobble * envelope * settle * 0.12
-    end
-
-    return base
+    return 1 + math.sin(Idle.t * TAU) * Idle.breatheAmp
 end
 
 function Idle.getEyeOffset()
@@ -115,9 +102,6 @@ function Idle.getEyeOffset()
         local envelope = math.sin(progress * math.pi)
         local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.2))
         return oscillation * envelope * 0.65, math.sin(progress * math.pi * 1.5) * envelope * 0.12
-    elseif effect.kind == "bounce" then
-        local envelope = math.sin(progress * math.pi)
-        return 0, math.sin(progress * math.pi * 1.2) * envelope * -0.15
     elseif effect.kind == "look_up" then
         local magnitude = math.sin(progress * math.pi)
         return magnitude * effect.dir * 0.30, -magnitude * 0.55
@@ -145,10 +129,6 @@ function Idle.getLeanOffset()
         local envelope = math.sin(progress * math.pi)
         local oscillation = math.sin(progress * math.pi * (effect.cycles or 2.2))
         return oscillation * envelope * 0.09
-    elseif effect.kind == "bounce" then
-        local envelope = math.sin(progress * math.pi)
-        local rebound = math.sin(progress * math.pi * 1.4) * envelope
-        return rebound * 0.03
     elseif effect.kind == "look_up" then
         local magnitude = math.sin(progress * math.pi) * 0.05
         return -magnitude * 0.8
