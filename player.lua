@@ -18,6 +18,7 @@ local MAX_FALL_SPEED = 950
 local WALL_SLIDE_FACTOR = 0.45
 local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
+local PRE_JUMP_SQUISH_SCALE = 0.65
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -512,7 +513,7 @@ function Player.update(dt, Level)
         p.springVertVel = p.springVertVel + 110
         p.springHorzVel = p.springHorzVel + (-wallDir * 120)
 
-        p.preJumpSquish = -0.6
+        p.preJumpSquish = -PRE_JUMP_SQUISH_SCALE
 
         Particles.puff(
             p.x + p.w/2 + (-wallDir)*10,
@@ -546,11 +547,11 @@ function Player.update(dt, Level)
                 -- build squish while button is held
                 p.gatherTime = math.min(p.gatherTime + dt, p.gatherDuration)
                 local t = clamp(p.gatherTime / p.gatherDuration, 0, 1)
-                p.preJumpSquish = t
+                p.preJumpSquish = t * PRE_JUMP_SQUISH_SCALE
 
                 if jumpReleased then
                     -- JUMP!
-                    local stored = clamp(p.preJumpSquish, 0, 1)
+                    local stored = clamp(p.preJumpSquish, 0, PRE_JUMP_SQUISH_SCALE)
 
                     p.vy = p.jumpStrength
                     p.onGround = false
