@@ -27,6 +27,9 @@ local p = {
     x = 64,
     y = 128,
 
+    spawnX = 64,
+    spawnY = 128,
+
     w = 24,
     h = 24,
 
@@ -83,6 +86,10 @@ local p = {
     wallCoyoteTimerRight = 0,
 
     lastDir = 0,
+
+    respawnDelay = 1.0,
+    respawnTimer = 0,
+    dead = false,
 }
 
 --------------------------------------------------------------
@@ -92,6 +99,8 @@ local p = {
 function Player.init()
     p.x = 32 * 2
     p.y = 32 * 4
+    p.spawnX = p.x
+    p.spawnY = p.y
 end
 
 --------------------------------------------------------------
@@ -299,6 +308,40 @@ end
 --------------------------------------------------------------
 
 function Player.update(dt, Level)
+    if p.dead then
+        p.respawnTimer = math.max(p.respawnTimer - dt, 0)
+
+        -- allow squash to recover while waiting to respawn
+        p.contactBottom = approach(p.contactBottom, 0, dt, 8)
+        p.contactTop    = approach(p.contactTop,    0, dt, 8)
+        p.contactLeft   = approach(p.contactLeft,   0, dt, 8)
+        p.contactRight  = approach(p.contactRight,  0, dt, 8)
+
+        if p.respawnTimer <= 0 then
+            p.x = p.spawnX
+            p.y = p.spawnY
+            p.vx, p.vy = 0, 0
+            p.springVert, p.springVertVel = 0, 0
+            p.springHorz, p.springHorzVel = 0, 0
+            p.preJumpSquish = 0
+            p.gathering = false
+            p.gatherTime = 0
+            p.jumpBufferTimer = 0
+            p.coyoteTimer = 0
+            p.wallCoyoteTimerLeft = 0
+            p.wallCoyoteTimerRight = 0
+            p.runDustTimer = 0
+            p.contactBottom = 0
+            p.contactTop = 0
+            p.contactLeft = 0
+            p.contactRight = 0
+            p.onGround = false
+            p.dead = false
+        end
+
+        return p
+    end
+
     local wasOnGround = p.onGround
 
     -- contact smoothing
@@ -621,6 +664,8 @@ function Player.draw()
     local breathe = Idle.getScale()
     local r = p.radius * breathe
 
+    if p.dead then return end
+
     local cx = p.x + p.w/2
     local cy = p.y + p.h - r - 4
 
@@ -742,6 +787,32 @@ end
 
 function Player.get()
     return p
+end
+
+function Player.kill()
+    if p.dead then return end
+
+    p.dead = true
+    p.respawnTimer = p.respawnDelay
+    p.vx, p.vy = 0, 0
+    p.gathering = false
+    p.jumpBufferTimer = 0
+
+    for i = 1, 8 do
+        Particles.puff(
+            p.x + p.w/2 + (math.random()-0.5)*10,
+            p.y + p.h/2 + (math.random()-0.5)*10,
+            (math.random()-0.5)*160,
+            (math.random()-0.5)*120,
+            5, 0.40,
+            {1,1,1,1}
+        )
+    end
+end
+
+function Player.setSpawn(x, y)
+    p.spawnX = x
+    p.spawnY = y
 end
 
 return Player
