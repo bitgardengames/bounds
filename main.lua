@@ -31,13 +31,14 @@ function love.load()
     Collectible.spawn(TILE_SIZE * 25 + 16, TILE_SIZE * 5 + 16)
     Collectible.spawn(TILE_SIZE * 5  + 16, TILE_SIZE *15 + 16)
 
-    ----------------------------------------------------------
-    -- SAW HAZARDS — sample spawns
-    ----------------------------------------------------------
-	--Saw.spawn(500, 260, { dir = "horizontal", length = 160, speed = 0.7 })
-	--Saw.spawn(360, 300, { dir = "vertical", length = 140, speed = 0.6 })
+	----------------------------------------------------------
+	-- SAW HAZARDS — test layout
+	----------------------------------------------------------
+	Saw.spawn(32*15, 30*32, { dir = "horizontal", mount = "bottom" })
+	Saw.spawn(32*51, 24*32, { dir = "horizontal", mount = "top" })
+	Saw.spawn(93*32, 25*32, { dir = "vertical", mount = "left" })
+	Saw.spawn(89*32, 25*32, { dir = "vertical", mount = "right" })
 end
-
 
 function love.update(dt)
     ----------------------------------------------------------
@@ -67,7 +68,6 @@ function love.update(dt)
     ----------------------------------------------------------
     Camera.update(pl)
 end
-
 
 function love.keypressed(key)
     Input.keypressed(key)
