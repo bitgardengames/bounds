@@ -34,10 +34,24 @@ function love.load()
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
-	Saw.spawn(32*15, 30*32, { dir = "horizontal", mount = "bottom" })
+	--[[Saw.spawn(32*15, 30*32, { dir = "horizontal", mount = "bottom" })
 	Saw.spawn(32*51, 24*32, { dir = "horizontal", mount = "top" })
 	Saw.spawn(93*32, 25*32, { dir = "vertical", mount = "left" })
-	Saw.spawn(89*32, 25*32, { dir = "vertical", mount = "right" })
+	Saw.spawn(89*32, 25*32, { dir = "vertical", mount = "right" })]]
+
+	local TILE = 32
+
+	-- left wall saw (blade sticks right)
+	Saw.spawn(106*TILE, 30*TILE, { dir="horizontal", mount="bottom" })
+
+	-- left wall saw (blade sticks right)
+	Saw.spawn(112*TILE, 26*TILE, { dir="horizontal", mount="top" })
+
+	-- left wall saw (blade sticks right)
+	Saw.spawn(92*TILE, 25*TILE, { dir="vertical", mount="left" })
+
+	-- right wall saw (blade sticks left)
+	Saw.spawn(89*TILE, 25*TILE, { dir="vertical", mount="right" })
 end
 
 function love.update(dt)
