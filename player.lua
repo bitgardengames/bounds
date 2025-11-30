@@ -689,7 +689,6 @@ function Player.draw()
     cr = cr + clamp(-sh,0,0.50)
 
     local pre = p.preJumpSquish
-    local preSide = math.min(math.max(pre, 0) * 0.6, 0.3)
 
     local baseEyeOffsetX = r*0.45
     local baseEyeOffsetY = -r*0.25
@@ -711,8 +710,7 @@ function Player.draw()
         local dy = math.sin(angle)
         local dist = r
 
-        local bottomSquish = cb + pre * 0.35
-        local sideSquish   = preSide
+        local bottomSquish = cb + pre
 
         if dy > 0 then dist = dist - bottomSquish*r*0.34*(dy*dy)
         else           dist = dist + bottomSquish*r*0.10*(dy*dy) end
@@ -720,11 +718,11 @@ function Player.draw()
         if dy < 0 then dist = dist - ct*r*0.32*(dy*dy)
         else           dist = dist + ct*r*0.10*(dy*dy) end
 
-        if dx < 0 then dist = dist - (cl - sideSquish)*r*0.36*(dx*dx)
-        else           dist = dist + (cl + sideSquish)*r*0.10*(dx*dx) end
+        if dx < 0 then dist = dist - cl*r*0.36*(dx*dx)
+        else           dist = dist + cl*r*0.10*(dx*dx) end
 
-        if dx > 0 then dist = dist - (cr - sideSquish)*r*0.36*(dx*dx)
-        else           dist = dist + (cr + sideSquish)*r*0.10*(dx*dx) end
+        if dx > 0 then dist = dist - cr*r*0.36*(dx*dx)
+        else           dist = dist + cr*r*0.10*(dx*dx) end
 
         poly[#poly+1] = dx*dist
         poly[#poly+1] = dy*dist
