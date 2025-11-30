@@ -36,10 +36,10 @@ function love.load()
 	----------------------------------------------------------
 	local TILE = 32
 
-	Saw.spawn(106*TILE, 27*TILE, { dir="horizontal", mount="bottom" })
-	Saw.spawn(112*TILE, 23*TILE, { dir="horizontal", mount="top" })
-	Saw.spawn(92*TILE,  22*TILE, { dir="vertical",   mount="left" })
-	Saw.spawn(89*TILE,  22*TILE, { dir="vertical",   mount="right" })
+	Saw.spawn(106*TILE, 25*TILE, { dir="horizontal", mount="bottom" })
+	Saw.spawn(112*TILE, 21*TILE, { dir="horizontal", mount="top" })
+	Saw.spawn(92*TILE,  20*TILE, { dir="vertical",   mount="left" })
+	Saw.spawn(89*TILE,  20*TILE, { dir="vertical",   mount="right" })
 end
 
 function love.update(dt)
