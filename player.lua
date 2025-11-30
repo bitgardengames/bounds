@@ -647,6 +647,10 @@ function Player.update(dt, Level)
     if math.abs(p.vx) > 20 then dx = (p.vx > 0) and 1 or -1 end
     if math.abs(p.vy) > 50 then dy = (p.vy > 0) and 0.5 or -0.3 end
 
+    local idleEyeX, idleEyeY = Idle.getEyeOffset()
+    dx = clamp(dx + idleEyeX, -1, 1)
+    dy = clamp(dy + idleEyeY, -1, 1)
+
     p.eyeDirX = approach(p.eyeDirX, dx, dt, 6)
     p.eyeDirY = approach(p.eyeDirY, dy, dt, 6)
 
@@ -672,7 +676,7 @@ function Player.draw()
     local cy = p.y + p.h - r - 4
 
     local vxNorm = clamp(p.vx / p.maxSpeed, -1, 1)
-    local lean = vxNorm * 0.10
+    local lean = vxNorm * 0.10 + Idle.getLeanOffset()
 
     local cb = p.contactBottom
     local ct = p.contactTop
