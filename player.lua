@@ -25,17 +25,17 @@ local PRE_JUMP_SQUISH_SCALE = 0.2
 --------------------------------------------------------------
 
 local p = {
-    x = 96,
-    y = 192,
+    x = 64,
+    y = 128,
 
-    spawnX = 96,
-    spawnY = 192,
+    spawnX = 64,
+    spawnY = 128,
 
-    w = 36,
-    h = 36,
+    w = 24,
+    h = 24,
 
-    radius  = 18,
-    outline = 6,
+    radius  = 12,
+    outline = 4,
 
     eyeDirX = 0,
     eyeDirY = 0,
@@ -97,16 +97,9 @@ local p = {
 -- INIT
 --------------------------------------------------------------
 
-function Player.init(tileSize)
-    local TILE = tileSize or 48
-
-    p.w = 36
-    p.h = 36
-    p.radius  = 18
-    p.outline = 6
-
-    p.x = TILE * 2
-    p.y = TILE * 4
+function Player.init()
+    p.x = 32 * 2
+    p.y = 32 * 4
     p.spawnX = p.x
     p.spawnY = p.y
 end
@@ -124,7 +117,7 @@ end
 --------------------------------------------------------------
 
 local function tryGroundSnap(Level)
-    local TILE = Level.tileSize or 48
+    local TILE = Level.tileSize or 32
 
     if p.vy < 0 or p.onGround then return end
 
@@ -155,7 +148,7 @@ end
 
 local function moveHorizontal(Level, amount)
     if amount == 0 then return false end
-    local TILE = Level.tileSize or 48
+    local TILE = Level.tileSize or 32
     local collided = false
 
     local topTile    = math.floor(p.y / TILE) + 1
@@ -222,7 +215,7 @@ end
 
 local function moveVertical(Level, amount)
     if amount == 0 then return false end
-    local TILE = Level.tileSize or 48
+    local TILE = Level.tileSize or 32
     local collided = false
 
     local lx = math.floor(p.x / TILE) + 1
