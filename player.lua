@@ -364,6 +364,9 @@ function Player.update(dt, Level)
         move = move + 1
     end
 
+    local jumpDown     = Input.isJumpDown()
+    local jumpReleased = Input.wasJumpReleased()
+
     ----------------------------------------------------------
     -- JUMP BUFFER + COYOTE
     ----------------------------------------------------------
@@ -525,13 +528,12 @@ function Player.update(dt, Level)
 
     else
         -- Ground / coyote jump anticipation
-        local canGroundJump =
-            p.jumpBufferTimer > 0 and (p.onGround or p.coyoteTimer > 0)
+        local canGroundJump = p.onGround or p.coyoteTimer > 0
 
-        if canGroundJump and not p.gathering then
-            p.gathering      = true
-            p.gatherTime     = 0
-            p.preJumpSquish  = 0
+        if canGroundJump and jumpDown and not p.gathering then
+            p.gathering     = true
+            p.gatherTime    = 0
+            p.preJumpSquish = 0
         end
 
         if p.gathering then
@@ -541,12 +543,12 @@ function Player.update(dt, Level)
                 p.gatherTime     = 0
                 p.preJumpSquish  = 0
             else
-                -- build squish
-                p.gatherTime = p.gatherTime + dt
+                -- build squish while button is held
+                p.gatherTime = math.min(p.gatherTime + dt, p.gatherDuration)
                 local t = clamp(p.gatherTime / p.gatherDuration, 0, 1)
                 p.preJumpSquish = t
 
-                if p.gatherTime >= p.gatherDuration then
+                if jumpReleased then
                     -- JUMP!
                     local stored = clamp(p.preJumpSquish, 0, 1)
 
