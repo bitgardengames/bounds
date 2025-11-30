@@ -45,6 +45,24 @@ function Particles.puff(x, y, vx, vy, radius, life, color)
     })
 end
 
+-- BRIGHT SPARKLE (no gravity, quick fade)
+function Particles.sparkle(x, y, vx, vy, radius, life, color)
+    color = color or {1, 0.9, 0.5, 1}
+
+    table.insert(particles, {
+        x = x,
+        y = y,
+        vx = vx or 0,
+        vy = vy or 0,
+        r  = radius or 2.5,
+        life    = life or 0.25,
+        maxLife = life or 0.25,
+        color   = color,
+        gravity = 0,
+        softFade = true,
+    })
+end
+
 -- WALL SLIDE SOFT DUST (slight downward drift, soft fade)
 function Particles.wallDust(x, y, vx, vy, radius, life, color)
     color = color or {1,1,1,1}
@@ -82,9 +100,9 @@ end
 
 function Particles.draw()
     for _, p in ipairs(particles) do
-		local t = p.life / p.maxLife
-		local alpha = p.softFade and (t * t) or t   -- cubic ease-out fade
-		local size = p.softFade and (p.r * (0.4 + 0.6 * t)) or (p.r * t)
+        local t = p.life / p.maxLife
+        local alpha = p.softFade and (t * t) or t   -- cubic ease-out fade
+        local size = p.softFade and (p.r * (0.4 + 0.6 * t)) or (p.r * t)
         love.graphics.setColor(p.color[1], p.color[2], p.color[3], (p.color[4] or 1) * alpha)
         love.graphics.circle("fill", p.x, p.y, size)
     end
