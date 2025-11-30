@@ -31,11 +31,11 @@ local p = {
     spawnX = 64,
     spawnY = 128,
 
-    w = 24,
-    h = 24,
+    w = 36,
+    h = 36,
 
-    radius  = 12,
-    outline = 4,
+    radius  = 18,
+    outline = 6,
 
     eyeDirX = 0,
     eyeDirY = 0,
@@ -97,9 +97,11 @@ local p = {
 -- INIT
 --------------------------------------------------------------
 
-function Player.init()
-    p.x = 32 * 2
-    p.y = 32 * 4
+function Player.init(Level)
+    local TILE = (Level and Level.tileSize) or 48
+
+    p.x = TILE * 2
+    p.y = TILE * 4
     p.spawnX = p.x
     p.spawnY = p.y
 end
@@ -117,7 +119,7 @@ end
 --------------------------------------------------------------
 
 local function tryGroundSnap(Level)
-    local TILE = Level.tileSize or 32
+    local TILE = Level.tileSize or 48
 
     if p.vy < 0 or p.onGround then return end
 
@@ -148,7 +150,7 @@ end
 
 local function moveHorizontal(Level, amount)
     if amount == 0 then return false end
-    local TILE = Level.tileSize or 32
+    local TILE = Level.tileSize or 48
     local collided = false
 
     local topTile    = math.floor(p.y / TILE) + 1
@@ -215,7 +217,7 @@ end
 
 local function moveVertical(Level, amount)
     if amount == 0 then return false end
-    local TILE = Level.tileSize or 32
+    local TILE = Level.tileSize or 48
     local collided = false
 
     local lx = math.floor(p.x / TILE) + 1
@@ -279,7 +281,7 @@ local function moveVertical(Level, amount)
             Particles.puff(
                 p.x + p.w/2 + (math.random()-0.5)*4,
                 p.y - 2,
-                (math.random()*32 - 16)*1.4,
+                (math.random()*TILE - TILE/2)*1.4,
                 35 + math.random()*25,
                 4, 0.28,
                 {1,1,1,0.9}

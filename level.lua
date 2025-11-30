@@ -23,7 +23,7 @@ local TILE_CORNER_R   = 6      -- rounding radius per tile
 -- INTERNAL STATE
 --------------------------------------------------------------
 
-Level.tileSize    = 32
+Level.tileSize    = 48
 Level.width       = 0
 Level.height      = 0
 Level.layers      = {}

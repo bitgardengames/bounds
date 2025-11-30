@@ -13,7 +13,7 @@ local Camera      = require("camera")
 local Input       = require("input")
 local Saw         = require("saws")
 
-local TILE_SIZE = 32
+local TILE_SIZE = LevelData.tileSize or 48
 
 --------------------------------------------------------------
 -- LOVE CALLBACKS
@@ -23,18 +23,19 @@ function love.load()
     Blink.init()
 
     -- initialize player at top-left region of level
-	Level.load(LevelData)
-    Player.init()
+        Level.load(LevelData)
+    TILE_SIZE = Level.tileSize or TILE_SIZE
+    Player.init(Level)
 
     -- Example collectibles
-    Collectible.spawn(TILE_SIZE * 10 + 16, TILE_SIZE * 8 + 16)
-    Collectible.spawn(TILE_SIZE * 25 + 16, TILE_SIZE * 5 + 16)
-    Collectible.spawn(TILE_SIZE * 5  + 16, TILE_SIZE *15 + 16)
+    Collectible.spawn(TILE_SIZE * 10 + TILE_SIZE/3, TILE_SIZE * 8 + TILE_SIZE/3)
+    Collectible.spawn(TILE_SIZE * 25 + TILE_SIZE/3, TILE_SIZE * 5 + TILE_SIZE/3)
+    Collectible.spawn(TILE_SIZE * 5  + TILE_SIZE/3, TILE_SIZE *15 + TILE_SIZE/3)
 
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
-	local TILE = 32
+        local TILE = TILE_SIZE
 
 	Saw.spawn(106*TILE, 25*TILE, { dir="horizontal", mount="bottom" })
 	Saw.spawn(112*TILE, 21*TILE, { dir="horizontal", mount="top" })
