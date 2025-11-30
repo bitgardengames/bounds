@@ -13,7 +13,7 @@ local Camera      = require("camera")
 local Input       = require("input")
 local Saw         = require("saws")
 
-local TILE_SIZE = LevelData.tileSize or 48
+local TILE_SIZE = 32
 
 --------------------------------------------------------------
 -- LOVE CALLBACKS
@@ -24,19 +24,17 @@ function love.load()
 
     -- initialize player at top-left region of level
 	Level.load(LevelData)
-    Player.init(TILE_SIZE)
+    Player.init()
 
     -- Example collectibles
-    local TILE_CENTER = TILE_SIZE * 0.5
-
-    Collectible.spawn(TILE_SIZE * 10 + TILE_CENTER, TILE_SIZE * 8 + TILE_CENTER)
-    Collectible.spawn(TILE_SIZE * 25 + TILE_CENTER, TILE_SIZE * 5 + TILE_CENTER)
-    Collectible.spawn(TILE_SIZE * 5  + TILE_CENTER, TILE_SIZE *15 + TILE_CENTER)
+    Collectible.spawn(TILE_SIZE * 10 + 16, TILE_SIZE * 8 + 16)
+    Collectible.spawn(TILE_SIZE * 25 + 16, TILE_SIZE * 5 + 16)
+    Collectible.spawn(TILE_SIZE * 5  + 16, TILE_SIZE *15 + 16)
 
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
-        local TILE = TILE_SIZE
+	local TILE = 32
 
 	Saw.spawn(106*TILE, 25*TILE, { dir="horizontal", mount="bottom" })
 	Saw.spawn(112*TILE, 21*TILE, { dir="horizontal", mount="top" })
