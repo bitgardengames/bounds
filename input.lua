@@ -6,6 +6,10 @@
 
 local Input = {}
 
+local function isJumpKey(key)
+    return key == "space" or key == "w" or key == "up"
+end
+
 -- key/button states
 Input.down     = {}   -- held
 Input.pressed  = {}   -- down this frame
@@ -41,15 +45,15 @@ end
 function Input.keypressed(key)
     Input.down[key]    = true
     Input.pressed[key] = true
-
-    if key == "space" or key == "w" or key == "up" then
-        Input.jumpQueued = true
-    end
 end
 
 function Input.keyreleased(key)
     Input.down[key]     = nil
     Input.released[key] = true
+
+    if isJumpKey(key) then
+        Input.jumpQueued = true
+    end
 end
 
 --------------------------------------------------------------
@@ -65,10 +69,6 @@ function Input.gamepadpressed(joystick, button)
     Input.down[key]    = true
     Input.pressed[key] = true
 
-    -- Jump buttons
-    if button == "a" or button == "cross" then
-        Input.jumpQueued = true
-    end
 end
 
 function Input.gamepadreleased(joystick, button)
@@ -79,6 +79,11 @@ function Input.gamepadreleased(joystick, button)
 
     Input.down[key]     = nil
     Input.released[key] = true
+
+    -- Jump buttons
+    if button == "a" or button == "cross" then
+        Input.jumpQueued = true
+    end
 end
 
 --------------------------------------------------------------
@@ -155,6 +160,26 @@ end
 
 function Input.wasReleased(key)
     return Input.released[key]
+end
+
+function Input.wasJumpPressed()
+    return Input.wasPressed("space")
+        or Input.wasPressed("w")
+        or Input.wasPressed("up")
+        or Input.wasPressed("gp_btn_a")
+        or Input.wasPressed("gp_btn_cross")
+end
+
+function Input.wasJumpReleased()
+    return Input.wasReleased("space")
+        or Input.wasReleased("w")
+        or Input.wasReleased("up")
+        or Input.wasReleased("gp_btn_a")
+        or Input.wasReleased("gp_btn_cross")
+end
+
+function Input.isJumpDown()
+    return Input.isDown("space", "w", "up", "gp_btn_a", "gp_btn_cross")
 end
 
 --------------------------------------------------------------
