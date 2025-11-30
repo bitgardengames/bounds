@@ -93,10 +93,6 @@ end
 function Input.update()
     ensureGamepad()
 
-    -- reset frame-based states
-    Input.pressed  = {}
-    Input.released = {}
-
     if gamepad then
         ------------------------------------------------------
         -- ANALOG STICK
@@ -140,6 +136,15 @@ function Input.update()
             Input.down["gp_down"] = nil
         end
     end
+end
+
+--------------------------------------------------------------
+-- LATE UPDATE (clear one-frame states after use)
+--------------------------------------------------------------
+
+function Input.postUpdate()
+    Input.pressed  = {}
+    Input.released = {}
 end
 
 --------------------------------------------------------------
