@@ -712,7 +712,7 @@ function Player.draw()
 
         local bottomSquish = cb + pre
 
-        if dy > 0 then dist = dist - bottomSquish*r*0.34*(dy*dy)
+        if dy > 0 then dist = dist - bottomSquish*r*0.34
         else           dist = dist + bottomSquish*r*0.10*(dy*dy) end
 
         if dy < 0 then dist = dist - ct*r*0.32*(dy*dy)
