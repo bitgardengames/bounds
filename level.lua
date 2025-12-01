@@ -10,15 +10,15 @@ local Level = {}
 --------------------------------------------------------------
 
 Level.colors = {
-    --background = {146/255, 182/255, 240/255},
-    background = {0.8, 0.8, 0.8},
-    solid      = {84/255,  84/255,  93/255 },
+    background = {82/255, 101/255, 114/255},
+    solid = {164/255, 171/255, 172/255 },
+	grid = {68/255, 83/255, 97/255}
 }
 
 local OUTLINE_WIDTH   = 4
 local SHADOW_OFFSET_X = 3
 local SHADOW_OFFSET_Y = 3
-local TILE_CORNER_R   = 6      -- rounding radius per tile
+local TILE_CORNER_R   = 6
 
 --------------------------------------------------------------
 -- INTERNAL STATE
@@ -30,7 +30,7 @@ Level.height      = 0
 Level.layers      = {}
 Level.solidLayer  = nil
 Level.solidGrid   = nil
-Level.solidBlobs  = {}    -- { canvas, x, y, w, h, margin }
+Level.solidBlobs  = {} -- { canvas, x, y, w, h, margin }
 
 --------------------------------------------------------------
 -- UTILS
@@ -246,6 +246,24 @@ function Level.draw(camX, camY)
 
     love.graphics.push()
     love.graphics.translate(-camX, -camY)
+
+	----------------------------------------------------------
+	-- GRID (subtle 48×48 lab grid)
+	----------------------------------------------------------
+	local ts = Level.tileSize
+	local gw, gh = Level.width * ts, Level.height * ts
+
+	love.graphics.setColor(Level.colors.grid[1], Level.colors.grid[2], Level.colors.grid[3])
+
+	-- vertical lines
+	for x = 0, gw, ts do
+		love.graphics.rectangle("fill", x, 0, 4, gh)
+	end
+
+	-- horizontal lines
+	for y = 0, gh, ts do
+		love.graphics.rectangle("fill", 0, y, gw, 4)
+	end
 
     local solid = Level.colors.solid
 

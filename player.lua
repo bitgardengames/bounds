@@ -20,6 +20,7 @@ local WALL_SLIDE_FACTOR = 0.45
 local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
+local CUBE_PUSH_MAX = 155
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -77,6 +78,7 @@ local p = {
     gatherDuration = 0.02,
 
     onGround = false,
+	pushingCube = false,
 
     coyoteTime       = 0.12,
     coyoteTimer      = 0,
@@ -392,78 +394,87 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- HORIZONTAL MOVEMENT
     ----------------------------------------------------------
-    local targetSpeed = move * p.maxSpeed
-    local accelerating = math.abs(targetSpeed) > 0
+	local targetSpeed = move * p.maxSpeed
 
-    local accel =
-        accelerating
-        and (p.onGround and p.acceleration or p.airAcceleration)
-        or  (p.onGround and p.deceleration or p.airDeceleration)
+	-- If we're currently pushing a cube, clamp AND override movement
+	if p.pushingCube then
+		local CUBE_PUSH_MAX = 140
 
-    if accelerating then
-        local dir = (targetSpeed > p.vx) and 1 or -1
-        p.vx = p.vx + dir * accel * dt
+		-- Clamp target
+		targetSpeed = math.max(-CUBE_PUSH_MAX, math.min(targetSpeed, CUBE_PUSH_MAX))
 
-        if (dir == 1 and p.vx > targetSpeed)
-        or  (dir == -1 and p.vx < targetSpeed)
-        then
-            p.vx = targetSpeed
-        end
+		local APPROACH_RATE = 8000  -- big number means fast, smooth approach
 
-        ------------------------------------------------------
-        -- dust feedback
-        ------------------------------------------------------
-        local reversing =
-            math.abs(p.vx) > 40 and
-            ((dir == 1 and p.lastDir == -1) or (dir == -1 and p.lastDir == 1))
+		-- Approach formula:
+		local diff = targetSpeed - p.vx
+		p.vx = p.vx + diff * dt * (APPROACH_RATE / 1000)
+	else
+		local accelerating = math.abs(targetSpeed) > 0
+		local accel = accelerating 
+			and (p.onGround and p.acceleration or p.airAcceleration)
+			or  (p.onGround and p.deceleration or p.airDeceleration)
 
-        local burstStart =
-            (math.abs(p.vx) < 5 and math.abs(targetSpeed) > 200)
+		if accelerating then
+			local dir = (targetSpeed > p.vx) and 1 or -1
+			p.vx = p.vx + dir * accel * dt
 
-        if (reversing or burstStart) and p.onGround then
-            Particles.puff(
-                p.x + p.w/2,
-                p.y + p.h,
-                (math.random()-0.5)*30,
-                5,
-                4, 0.25,
-                {1,1,1,0.9}
-            )
-        end
+			if (dir == 1 and p.vx > targetSpeed)
+			or  (dir == -1 and p.vx < targetSpeed)
+			then
+				p.vx = targetSpeed
+			end
 
-        p.lastDir = dir
+			local reversing = math.abs(p.vx) > 40 and 
+							  ((dir == 1 and p.lastDir == -1) or 
+							   (dir == -1 and p.lastDir == 1))
 
-        -- running dust trail
-        if p.onGround then
-            local speed = math.abs(p.vx)
-            if speed > p.maxSpeed * 0.55 then
-                p.runDustTimer = (p.runDustTimer or 0) - dt
-                local interval = 0.12 - (speed / p.maxSpeed) * 0.04
+			local burstStart = (math.abs(p.vx) < 5 and math.abs(targetSpeed) > 200)
 
-                if p.runDustTimer <= 0 then
-                    p.runDustTimer = interval
-                    Particles.puff(
-                        p.x + p.w/2 + (math.random()-0.5)*8,
-                        p.y + p.h + 2,
-                        (math.random()*22 - 11),
-                        -(10 + math.random()*18),
-                        3.5, 0.28,
-                        {1,1,1,0.85}
-                    )
-                end
-            else
-                p.runDustTimer = 0
-            end
-        end
+			if (reversing or burstStart) and p.onGround then
+				Particles.puff(
+					p.x + p.w/2,
+					p.y + p.h,
+					(math.random()-0.5)*30,
+					5,
+					4, 0.25,
+					{1,1,1,0.9}
+				)
+			end
 
-    else
-        -- deceleration
-        if p.vx > 0 then
-            p.vx = math.max(p.vx - accel*dt, 0)
-        elseif p.vx < 0 then
-            p.vx = math.min(p.vx + accel*dt, 0)
-        end
-    end
+			p.lastDir = dir
+
+			-- running dust trail (unchanged)
+			if p.onGround then
+				local speed = math.abs(p.vx)
+				if speed > p.maxSpeed * 0.55 then
+					p.runDustTimer = (p.runDustTimer or 0) - dt
+					local interval = 0.12 - (speed / p.maxSpeed) * 0.04
+
+					if p.runDustTimer <= 0 then
+						p.runDustTimer = interval
+						Particles.puff(
+							p.x + p.w/2 + (math.random()-0.5)*8,
+							p.y + p.h + 2,
+							(math.random()*22 - 11),
+							-(10 + math.random()*18),
+							3.5, 0.28,
+							{1,1,1,0.85}
+						)
+					end
+				else
+					p.runDustTimer = 0
+				end
+			end
+
+		else
+			-- deceleration (unchanged)
+			if p.vx > 0 then
+				p.vx = math.max(p.vx - accel*dt, 0)
+			elseif p.vx < 0 then
+				p.vx = math.min(p.vx + accel*dt, 0)
+			end
+		end
+	end
 
     ----------------------------------------------------------
     -- WALL SLIDING
@@ -659,9 +670,11 @@ function Player.update(dt, Level)
     p.eyeDirY = approach(p.eyeDirY, dy, dt, 6)
 
 	----------------------------------------------------------
-	-- CUBE COLLISION
+	-- CUBE COLLISION (push-friendly)
 	----------------------------------------------------------
 	local cubes = Cube.list
+	p.pushingCube = false
+
 	for _, c in ipairs(cubes) do
 		local px1, py1 = p.x, p.y
 		local px2, py2 = p.x + p.w, p.y + p.h
@@ -670,7 +683,7 @@ function Player.update(dt, Level)
 		local cx2, cy2 = c.x + c.w, c.y + c.h
 
 		if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
-			-- Compute overlap on each axis
+			-- overlaps:
 			local overlapLeft   = px2 - cx1
 			local overlapRight  = cx2 - px1
 			local overlapTop    = py2 - cy1
@@ -678,18 +691,32 @@ function Player.update(dt, Level)
 
 			local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
-			if minOverlap == overlapLeft then
-				p.x = p.x - overlapLeft
-				p.vx = 0
-			elseif minOverlap == overlapRight then
-				p.x = p.x + overlapRight
-				p.vx = 0
-			elseif minOverlap == overlapTop then
+			------------------------------------------------------
+			-- VERTICAL RESOLUTION (normal)
+			------------------------------------------------------
+			if minOverlap == overlapTop then
 				p.y = p.y - overlapTop
 				p.vy = 0
 			elseif minOverlap == overlapBottom then
 				p.y = p.y + overlapBottom
 				p.vy = 0
+
+			------------------------------------------------------
+			-- HORIZONTAL RESOLUTION (PUSH LOCK)
+			------------------------------------------------------
+			else
+				-- Determine push side
+				if overlapLeft == minOverlap then
+					-- Player is LEFT of cube
+					p.x = c.x - p.w
+					p.pushingCube = true
+					p.vx = math.min(p.vx, 0)   -- prevent "ramming"
+				else
+					-- Player is RIGHT of cube
+					p.x = c.x + c.w
+					p.pushingCube = true
+					p.vx = math.max(p.vx, 0)
+				end
 			end
 		end
 	end

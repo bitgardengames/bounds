@@ -1,6 +1,7 @@
 --------------------------------------------------------------
 -- CUBE MODULE — Pushable Weighted Puzzle Cube
--- Supports multiple cubes, gravity, tile collisions, pushing
+-- Supports multiple cubes, gravity, tile collisions, pushing,
+-- and real stable ground friction (no jitter).
 --------------------------------------------------------------
 
 local level = require("level")
@@ -14,9 +15,9 @@ local Cube = { list = {} }
 local CUBE_SIZE = 32
 local GRAVITY = 1800
 local MAX_FALL_SPEED = 900
-local PUSH_ACCEL = 2000
+local PUSH_ACCEL = 900     -- smoother acceleration
+local CUBE_PUSH_MAX = 155  -- caps speed while being pushed
 local FRICTION = 8
-local BOUNCE = 0 -- (keep 0 for now)
 
 local OUTLINE = 4
 local COLOR_FILL = {0.92, 0.92, 0.95}
@@ -35,7 +36,7 @@ function Cube.spawn(x, y)
         vx = 0,
         vy = 0,
         grounded = false,
-        weight = 1, -- can be used by plates
+        weight = 1,
     })
 end
 
@@ -50,24 +51,43 @@ local function tileAtPixel(px, py)
     return level.tileAt(tx, ty) == "#"
 end
 
+--------------------------------------------------------------
+-- COLLISION RESOLUTION
+--------------------------------------------------------------
+
 local function resolveTileCollision(c)
     local x, y, w, h = c.x, c.y, c.w, c.h
+    local TILE = level.tileSize or 48
 
     c.grounded = false
 
     ----------------------------------------------------------
     -- VERTICAL COLLISION
     ----------------------------------------------------------
-    if c.vy > 0 then -- falling
-        if tileAtPixel(x + 2, y + h) or tileAtPixel(x + w - 2, y + h) then
+    if c.vy > 0 then
+        -- falling downward, probe just BELOW the cube
+        local footY = y + h
+        local hitL = tileAtPixel(x + 2,     footY + 1)
+        local hitR = tileAtPixel(x + w - 2, footY + 1)
+
+        if hitL or hitR then
             c.vy = 0
             c.grounded = true
-            c.y = math.floor((y + h) / level.tileSize) * level.tileSize - h
+
+            -- snap cube bottom to the top of the tile
+            local tileY = math.floor(footY / TILE) * TILE
+            c.y = tileY - h
         end
-    elseif c.vy < 0 then -- upward
-        if tileAtPixel(x + 2, y) or tileAtPixel(x + w - 2, y) then
+
+    elseif c.vy < 0 then
+        -- upward movement
+        local headY = y
+        local hitL = tileAtPixel(x + 2,     headY)
+        local hitR = tileAtPixel(x + w - 2, headY)
+
+        if hitL or hitR then
             c.vy = 0
-            c.y = math.floor(y / level.tileSize + 1) * level.tileSize
+            c.y = math.floor(headY / TILE + 1) * TILE
         end
     end
 
@@ -75,49 +95,80 @@ local function resolveTileCollision(c)
     -- HORIZONTAL COLLISION
     ----------------------------------------------------------
     if c.vx > 0 then
-        if tileAtPixel(x + w, y + 2) or tileAtPixel(x + w, y + h - 2) then
+        local rightX = x + w
+        local hitT = tileAtPixel(rightX + 1, y + 2)
+        local hitB = tileAtPixel(rightX + 1, y + h - 2)
+
+        if hitT or hitB then
             c.vx = 0
-            c.x = math.floor((x + w) / level.tileSize) * level.tileSize - w
+            c.x = math.floor(rightX / TILE) * TILE - w
         end
+
     elseif c.vx < 0 then
-        if tileAtPixel(x, y + 2) or tileAtPixel(x, y + h - 2) then
+        local leftX = x
+        local hitT = tileAtPixel(leftX, y + 2)
+        local hitB = tileAtPixel(leftX, y + h - 2)
+
+        if hitT or hitB then
             c.vx = 0
-            c.x = math.floor(x / level.tileSize + 1) * level.tileSize
+            c.x = math.floor(leftX / TILE + 1) * TILE
         end
     end
 end
 
 --------------------------------------------------------------
--- PUSH LOGIC (player shoves cube)
+-- PUSHING
 --------------------------------------------------------------
 
-local function applyPush(c, player)
+local function applyPush(c, player, dt)
     local px, py = player.x, player.y
     local pw, ph = player.w, player.h
 
-    local touching =
-        py + ph > c.y and py < c.y + c.h and
-        ((px + pw <= c.x and px + pw >= c.x - 6) or
-         (px >= c.x + c.w and px <= c.x + c.w + 6))
+	local verticalOverlap = player.onGround and (py + ph > c.y + 4 and py < c.y + c.h - 4)
+	local touching = verticalOverlap and ((px + pw >= c.x - 12 and px + pw <= c.x + 4) or (px >= c.x + c.w - 4 and px <= c.x + c.w + 12))
 
     if not touching then
-        -- cube slows down naturally
-        c.vx = c.vx * 0.92
-        return
+        return false
     end
 
     -- Determine push direction
-    if px + pw < c.x then
-        -- push right
-        c.vx = c.vx + PUSH_ACCEL * love.timer.getDelta()
-    elseif px > c.x + c.w then
-        -- push left
-        c.vx = c.vx - PUSH_ACCEL * love.timer.getDelta()
+    local dir = 0
+    if px + pw < c.x then  -- player left of cube
+        dir = 1
+    elseif px > c.x + c.w then -- player right of cube
+        dir = -1
     end
 
-    -- clamp speed
-    if c.vx > 200 then c.vx = 200 end
-    if c.vx < -200 then c.vx = -200 end
+    if dir ~= 0 then
+        local target = dir * CUBE_PUSH_MAX
+        c.vx = c.vx + (target - c.vx) * dt * 16
+    end
+
+    return true
+end
+
+--------------------------------------------------------------
+-- FRICTION
+--------------------------------------------------------------
+
+local function applyFriction(c, dt, beingPushed)
+    if not c.grounded then return end
+    if beingPushed then return end
+
+    if math.abs(c.vx) < 1 then
+        c.vx = 0
+        return
+    end
+
+    local frictionForce = FRICTION * 1200
+
+    if c.vx > 0 then
+        c.vx = c.vx - frictionForce * dt
+        if c.vx < 0 then c.vx = 0 end
+    else
+        c.vx = c.vx + frictionForce * dt
+        if c.vx > 0 then c.vx = 0 end
+    end
 end
 
 --------------------------------------------------------------
@@ -138,18 +189,19 @@ function Cube.update(dt, player)
         end
 
         ------------------------------------------------------
-        -- PUSH INTERACTION
+        -- PUSH + FRICTION
         ------------------------------------------------------
-        applyPush(c, player)
+        local pushing = applyPush(c, player, dt)
+        applyFriction(c, dt, pushing)
 
         ------------------------------------------------------
-        -- INTEGRATE MOTION
+        -- APPLY MOTION
         ------------------------------------------------------
         c.x = c.x + c.vx * dt
         c.y = c.y + c.vy * dt
 
         ------------------------------------------------------
-        -- COLLISION WITH WORLD
+        -- COLLISIONS
         ------------------------------------------------------
         resolveTileCollision(c)
     end
@@ -183,7 +235,7 @@ function Cube.draw()
             6,6
         )
 
-        -- subtle highlight
+        -- Highlight
         love.graphics.setColor(1,1,1,0.14)
         love.graphics.rectangle(
             "fill",
