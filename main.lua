@@ -13,6 +13,9 @@ local Camera = require("camera")
 local Input = require("input")
 local Saw = require("saws")
 local Door = require("door")
+local Exit = require("exit")
+local Chamber = require("chamber")
+local Plate = require("pressureplate")
 
 local TILE_SIZE = LevelData.tileSize or 48
 
@@ -43,9 +46,13 @@ function love.load()
 
 	-- Vertical saw in the wall-kick shaft (left-mounted)
 	Saw.spawn(TILE * 31,TILE * 13, {dir="vertical", mount="left", speed=1})
-	
-	-- Exit Door
-	Door.spawn(TILE * 18, TILE * 10, TILE * 4, TILE * 3)
+
+	-- Pressure plate
+	Plate.spawn(TILE_SIZE * 12, TILE_SIZE * 21)
+
+	-- Exit door
+	Door.spawn(TILE * 18, TILE * 13, TILE * 4, TILE * 3)
+	Exit.spawn(TILE * 17, TILE * 13)   -- 1 tile in front of door
 end
 
 function love.update(dt)
@@ -63,6 +70,7 @@ function love.update(dt)
     Particles.update(dt)
     Blink.update(dt)
 	Door.update(dt)
+	Plate.update(dt, pl)
 
     ----------------------------------------------------------
     -- Saw hazards update
@@ -76,6 +84,15 @@ function love.update(dt)
     -- Camera
     ----------------------------------------------------------
     --Camera.update(pl)
+
+    ----------------------------------------------------------
+	-- Completion
+	----------------------------------------------------------
+	Chamber.update(dt, pl, Door, Exit)
+	if Chamber.isComplete then
+		print("LEVEL COMPLETE!")
+		-- next level, fade out, etc.
+	end
 
     ----------------------------------------------------------
     -- Late input cleanup
@@ -119,6 +136,7 @@ function love.draw()
     Saw.draw()
     Player.draw()
 	Door.draw()
+	Plate.draw()
     Particles.draw()
     Collectible.draw()
 
