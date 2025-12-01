@@ -11,7 +11,7 @@ local Level = {}
 
 Level.colors = {
     background = {82/255, 101/255, 114/255},
-    solid = {164/255, 171/255, 172/255 },
+    solid = {164/255, 171/255, 172/255},
 	grid = {68/255, 83/255, 97/255}
 }
 
@@ -95,7 +95,7 @@ local function buildSolidBlobs()
             if tiles[ty][tx] and not visited[ty][tx] then
 
                 ------------------------------------------------------
-                -- FLOOD-FILL ONE BLOB
+                -- FLOOD-FILL THIS PLATFORM BLOB
                 ------------------------------------------------------
                 local queue = { {tx, ty} }
                 local qi = 1
@@ -116,9 +116,8 @@ local function buildSolidBlobs()
                     if cy < minY then minY = cy end
                     if cy > maxY then maxY = cy end
 
-                    for _,d in ipairs(dirs) do
-                        local nx = cx + d[1]
-                        local ny = cy + d[2]
+                    for _, d in ipairs(dirs) do
+                        local nx, ny = cx + d[1], cy + d[2]
                         if nx>=1 and nx<=w and ny>=1 and ny<=h then
                             if tiles[ny][nx] and not visited[ny][nx] then
                                 visited[ny][nx] = true
@@ -129,20 +128,13 @@ local function buildSolidBlobs()
                 end
 
                 ------------------------------------------------------
-                -- CREATE CANVAS FOR THIS BLOB
+                -- CREATE CANVAS **WITH NO PADDING**
                 ------------------------------------------------------
-				local outline = OUTLINE_WIDTH
-				local inset   = outline      -- how much outline must fit inside canvas
-				local blobW   = (maxX - minX + 1) * ts
-				local blobH   = (maxY - minY + 1) * ts
+                local blobW = (maxX - minX + 1) * ts
+                local blobH = (maxY - minY + 1) * ts
 
-				-- Canvas is exactly tile area + inset *inside* (no outer expansion)
-				local canvas = love.graphics.newCanvas(
-					blobW + inset*2,
-					blobH + inset*2
-				)
-
-				local margin = inset  -- rename for consistency with draw code
+                -- ✔ EXACT TILE SPACE — no extra margins
+                local canvas = love.graphics.newCanvas(blobW, blobH)
 
                 love.graphics.push()
                 love.graphics.setCanvas(canvas)
@@ -151,13 +143,15 @@ local function buildSolidBlobs()
                 love.graphics.setColor(1,1,1,1)
                 love.graphics.setBlendMode("alpha", "premultiplied")
 
-                -- draw each tile as a rounded rect
+                ------------------------------------------------------
+                -- DRAW TILE FILL AT EXACT (0,0)-BASED POSITIONS
+                ------------------------------------------------------
                 for _, c in ipairs(cells) do
                     local cx, cy = c[1], c[2]
-                    local px = (cx - minX) * ts + margin
-                    local py = (cy - minY) * ts + margin
+                    local px = (cx - minX) * ts
+                    local py = (cy - minY) * ts
 
-                    love.graphics.rectangle("fill",px, py,ts, ts)
+                    love.graphics.rectangle("fill", px, py, ts, ts)
                 end
 
                 love.graphics.setBlendMode("alpha")
@@ -165,16 +159,16 @@ local function buildSolidBlobs()
                 love.graphics.pop()
 
                 ------------------------------------------------------
-                -- STORE BLOB AT REAL TILE COORDINATES
+                -- STORE BLOB
                 ------------------------------------------------------
-				table.insert(blobs, {
-					canvas = canvas,
-					x      = (minX - 1) * ts,   -- world-aligned
-					y      = (minY - 1) * ts,
-					w      = blobW,             -- ✔ only tile area
-					h      = blobH,             -- ✔ only tile area
-					margin = margin,            -- (which = outline)
-				})
+                table.insert(blobs, {
+                    canvas = canvas,
+                    x      = (minX - 1) * ts,   -- perfect world alignment
+                    y      = (minY - 1) * ts,
+                    w      = blobW,
+                    h      = blobH,
+                    margin = 0,                 -- ✔ no padding anymore
+                })
             end
         end
     end
@@ -252,12 +246,13 @@ function Level.draw(camX, camY)
     love.graphics.translate(-camX, -camY)
 
     ----------------------------------------------------------
-    -- GRID (subtle 48×48 lab grid)
+    -- GRID
     ----------------------------------------------------------
     local ts = Level.tileSize
-    local gw, gh = Level.width * ts, Level.height * ts
+    local gw = Level.width  * ts
+    local gh = Level.height * ts
 
-    love.graphics.setColor(Level.colors.grid[1], Level.colors.grid[2], Level.colors.grid[3], 1)
+    love.graphics.setColor(Level.colors.grid)
 
     -- vertical lines
     for x = 0, gw, ts do
@@ -269,78 +264,45 @@ function Level.draw(camX, camY)
         love.graphics.rectangle("fill", 0, y - 2, gw, 4)
     end
 
-    local solid = Level.colors.solid
-    local r = OUTLINE_WIDTH
 
     ----------------------------------------------------------
     -- PLATFORM BLOBS
     ----------------------------------------------------------
+    local solid = Level.colors.solid
+    local r = OUTLINE_WIDTH
+
     for _, blob in ipairs(Level.solidBlobs) do
         local cv = blob.canvas
-        local x  = blob.x
+        local x  = blob.x         -- now EXACT tile alignment
         local y  = blob.y
-        local m  = blob.margin
 
         ------------------------------------------------------
-        -- NEW: ALIGNMENT FIX (shifts all blob drawing)
+        -- SHADOW (draw first)
         ------------------------------------------------------
-        -- This corrects the 4px top-left overshoot.
-        local baseX = x - m
-        local baseY = y - m
+        --love.graphics.setColor(0, 0, 0, 0.30)
+        --love.graphics.draw(cv, x + SHADOW_OFFSET_X, y + SHADOW_OFFSET_Y)
 
         ------------------------------------------------------
-        -- SHADOW
-        ------------------------------------------------------
-        love.graphics.setColor(0,0,0,0.30)
-        love.graphics.draw(
-            cv,
-            baseX + SHADOW_OFFSET_X,
-            baseY + SHADOW_OFFSET_Y
-        )
-
-        ------------------------------------------------------
-        -- OUTLINE
+        -- OUTLINE (8-directional copies)
         ------------------------------------------------------
         love.graphics.setColor(0,0,0,1)
 
         local offs = {
-            {-r,0}, {r,0}, {0,-r}, {0,r},
-            {-r,-r}, {-r,r}, {r,-r}, {r,r},
+            {-r, 0}, {r, 0},
+            {0, -r}, {0, r},
+            {-r,-r}, {-r, r},
+            { r,-r}, { r, r},
         }
 
         for _, o in ipairs(offs) do
-            love.graphics.draw(cv, baseX + o[1], baseY + o[2])
+            love.graphics.draw(cv, x + o[1], y + o[2])
         end
 
         ------------------------------------------------------
-        -- FILL (solid platform color)
+        -- FILL (actual platform)
         ------------------------------------------------------
-        love.graphics.setColor(solid[1], solid[2], solid[3], 1)
-        love.graphics.draw(cv, baseX, baseY)
-
-        ------------------------------------------------------
-        -- PANEL SEAMS (aligned to grid + alignment fix)
-        ------------------------------------------------------
-        --[[do
-            local seamAlpha = 0.12
-            love.graphics.setColor(0, 0, 0, seamAlpha)
-
-            -- blob world-space bounds (corrected)
-            local bx1 = x + r
-            local by1 = y + r
-            local bx2 = x + blob.w - m*2 + r
-            local by2 = y + blob.h - m*2 + r
-
-            -- Vertical seams
-            for sx = bx1 + ts, bx2 - 1, ts do
-                love.graphics.rectangle("fill", sx, by1, 4, by2 - by1)
-            end
-
-            -- Horizontal seams
-            for sy = by1 + ts, by2 - 1, ts do
-                love.graphics.rectangle("fill", bx1, sy, bx2 - bx1, 4)
-            end
-        end]]
+        love.graphics.setColor(solid)
+        love.graphics.draw(cv, x, y)
     end
 
     love.graphics.pop()

@@ -20,7 +20,7 @@ local OUTLINE     = 3
 local TRACK_THICKNESS   = 10
 local TRACK_CAP_RADIUS  = TRACK_THICKNESS * 0.5
 local TRACK_LENGTH      = 160
-local TRAVEL_PADDING    = 18
+local TRAVEL_PADDING    = 26
 
 -- Colors
 local COLOR_BACK      = {0, 0, 0}
@@ -315,7 +315,7 @@ function Saw.draw()
         love.graphics.setColor(0,0,0)
         love.graphics.setLineWidth(OUTLINE)
         love.graphics.polygon("line", rot)
-        love.graphics.circle("fill", 0, 0, s.r * 0.33)
+        love.graphics.circle("fill", 0, 0, s.r * 0.25)
 
         love.graphics.pop()
         love.graphics.setStencilTest()

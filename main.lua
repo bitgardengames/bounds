@@ -17,6 +17,7 @@ local Exit = require("exit")
 local Chamber = require("chamber")
 local Plate = require("pressureplate")
 local Cube = require("cube")
+local Decorations = require("decorations")
 
 local TILE_SIZE = LevelData.tileSize or 48
 
@@ -30,12 +31,20 @@ function love.load()
     -- initialize player at top-left region of level
 	Level.load(LevelData)
     TILE_SIZE = Level.tileSize or TILE_SIZE
+
+	-- Find the decoration layer and spawn objects
+	for _, layer in ipairs(LevelData.layers) do
+		if layer.kind == "decor" then
+			Decorations.spawnLayer(layer, TILE_SIZE)
+		end
+	end
+
     Player.init(Level)
 
     -- Example collectibles
-    Collectible.spawn(TILE_SIZE * 10 + TILE_SIZE/3, TILE_SIZE * 8 + TILE_SIZE/3)
-    Collectible.spawn(TILE_SIZE * 25 + TILE_SIZE/3, TILE_SIZE * 5 + TILE_SIZE/3)
-    Collectible.spawn(TILE_SIZE * 5  + TILE_SIZE/3, TILE_SIZE *15 + TILE_SIZE/3)
+    --Collectible.spawn(TILE_SIZE * 10 + TILE_SIZE/3, TILE_SIZE * 8 + TILE_SIZE/3)
+    --Collectible.spawn(TILE_SIZE * 25 + TILE_SIZE/3, TILE_SIZE * 5 + TILE_SIZE/3)
+    --Collectible.spawn(TILE_SIZE * 5  + TILE_SIZE/3, TILE_SIZE *15 + TILE_SIZE/3)
 
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
@@ -138,6 +147,7 @@ function love.draw()
     ----------------------------------------------------------
 	local camX, camY = 0, 0
     Level.draw(camX, camY)
+	Decorations.draw()
     Saw.draw()
     Player.draw()
 	Door.draw()

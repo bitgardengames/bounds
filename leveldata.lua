@@ -6,6 +6,29 @@ local LevelData = {
     height = 23,
 
     layers = {
+		{
+			name = "Decor",
+			kind = "decor",
+			objects = {
+				{ type="vent",  tx=12, ty=5 },
+				{ type="vent",  tx=27, ty=13 },
+				{ type="vent",  tx=14, ty=18 },
+				--{ type="panel", tx=6,  ty=18 },
+				{ type="fan",   tx=15, ty=8 },
+				--{ type="light", tx=20, ty=3 },
+				
+				-- Tall panels
+				{ type="panel_tall", tx=8,  ty=4},
+				{ type="panel_tall", tx=22, ty=10},
+				{ type="panel_tall", tx=4,  ty=14},
+				{ type="panel_tall", tx=10, ty=16},
+				{ type="panel_tall", tx=18, ty=6 },
+				{ type="panel_tall", tx=26, ty=12},
+				{ type="panel_tall", tx=28, ty=5 },
+				{ type="panel_tall", tx=34, ty=16},
+			}
+		},
+	
         {
             name  = "Solids",
             kind  = "rectlayer",
