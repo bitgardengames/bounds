@@ -11,9 +11,6 @@ function Chamber.reset()
 end
 
 function Chamber.update(dt, Player, Door, ExitTrigger)
-    ----------------------------------------------------------
-    -- REAL PUZZLE CONDITION NOW!
-    ----------------------------------------------------------
     local plateOk = Plate.isDown()
     local laserOk = true
     local switchOk = true

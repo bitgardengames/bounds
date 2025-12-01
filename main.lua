@@ -16,6 +16,7 @@ local Door = require("door")
 local Exit = require("exit")
 local Chamber = require("chamber")
 local Plate = require("pressureplate")
+local Cube = require("cube")
 
 local TILE_SIZE = LevelData.tileSize or 48
 
@@ -50,9 +51,12 @@ function love.load()
 	-- Pressure plate
 	Plate.spawn(TILE_SIZE * 12, TILE_SIZE * 21)
 
+	-- Ze Cube
+	Cube.spawn(48*10, 48*20)
+
 	-- Exit door
-	Door.spawn(TILE * 18, TILE * 13, TILE * 4, TILE * 3)
-	Exit.spawn(TILE * 17, TILE * 13)   -- 1 tile in front of door
+	Door.spawn(TILE * 6, TILE * 18, TILE * 4, TILE * 3)
+	Exit.spawn(TILE * 5, TILE * 18)   -- 1 tile in front of door
 end
 
 function love.update(dt)
@@ -67,10 +71,11 @@ function love.update(dt)
     local pl = Player.update(dt, Level)
 
     Collectible.update(dt, pl)
-    Particles.update(dt)
     Blink.update(dt)
+	Cube.update(dt, pl)
+	Plate.update(dt, pl, Cube.list)
 	Door.update(dt)
-	Plate.update(dt, pl)
+	Particles.update(dt)
 
     ----------------------------------------------------------
     -- Saw hazards update
@@ -136,6 +141,7 @@ function love.draw()
     Saw.draw()
     Player.draw()
 	Door.draw()
+	Cube.draw()
 	Plate.draw()
     Particles.draw()
     Collectible.draw()

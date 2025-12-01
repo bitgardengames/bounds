@@ -1,5 +1,5 @@
 --------------------------------------------------------------
--- PRESSURE PLATE — SIDE VIEW (cute, thin base + button peek)
+-- PRESSURE PLATE — SIDE VIEW (supports cubes + player)
 --------------------------------------------------------------
 
 local Plate = {}
@@ -14,14 +14,14 @@ local EASE       = 12
 local PRESS_DEPTH = 10
 
 -- Visual sizes
-local BASE_H     = 6      -- thinner base height
-local BUTTON_H   = 10     -- thinner button
+local BASE_H     = 6
+local BUTTON_H   = 10
 local BUTTON_W   = 38
 
 -- Vertical offsets
-local BASE_OFFSET = 4     -- previous downward offset
-local BASE_UP     = 3     -- pull base up by 2px now
-local BUTTON_PEEK = 4     -- how much button shows under base at full press
+local BASE_OFFSET = 4
+local BASE_UP     = 3
+local BUTTON_PEEK = 4
 
 --------------------------------------------------------------
 -- INTERNAL STATE
@@ -31,7 +31,7 @@ Plate.x = 0
 Plate.y = 0
 Plate.active  = false
 Plate.pressed = false
-Plate.t       = 0         -- 0 = up, 1 = down
+Plate.t       = 0
 
 --------------------------------------------------------------
 -- SPAWN
@@ -54,36 +54,63 @@ function Plate.isDown()
 end
 
 --------------------------------------------------------------
--- PLAYER DETECTION (side-view foot test)
+-- HELPER: check pressure from one object (player or cube)
 --------------------------------------------------------------
 
-local function playerOnPlate(player)
-    local px = player.x + player.w * 0.5
-    local footY = player.y + player.h
+local function objectPressing(obj, plateX, plateY, baseTop)
+    local ox, oy = obj.x, obj.y
+    local ow, oh = obj.w, obj.h
 
-    -- Compute base + button region
-    local baseTop   = Plate.y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP
+    -- object feet
+    local footX1 = ox
+    local footX2 = ox + ow
+    local footY  = oy + oh
+
+    -- plate horizontal bounds
+    local px1 = plateX
+    local px2 = plateX + TILE
+
+    -- button top area
     local buttonTop = baseTop - BUTTON_H
 
-    -- Horizontal alignment
-    local withinX = (px >= Plate.x and px <= Plate.x + TILE)
+    local touchingX = (footX2 >= px1 and footX1 <= px2)
+    local touchingY = (footY >= buttonTop and footY <= baseTop + BASE_H)
 
-    -- Vertical overlap with button region
-    local standing = (footY >= buttonTop and footY <= baseTop + BASE_H)
-
-    return withinX and standing
+    return touchingX and touchingY
 end
 
 --------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
 
-function Plate.update(dt, player)
+function Plate.update(dt, player, cubes)
     if not Plate.active then return end
 
-    Plate.pressed = playerOnPlate(player)
+    -- calculate shared baseTop
+    local baseTop = Plate.y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP
 
-    -- Smooth 0→1 animation
+    ----------------------------------------------------------
+    -- PLAYER PRESSING?
+    ----------------------------------------------------------
+    local pressed = objectPressing(player, Plate.x, Plate.y, baseTop)
+
+    ----------------------------------------------------------
+    -- ANY CUBE PRESSING?
+    ----------------------------------------------------------
+    if cubes then
+        for _, c in ipairs(cubes) do
+            if objectPressing(c, Plate.x, Plate.y, baseTop) then
+                pressed = true
+                break
+            end
+        end
+    end
+
+    Plate.pressed = pressed
+
+    ----------------------------------------------------------
+    -- SMOOTH ANIMATION
+    ----------------------------------------------------------
     local target = Plate.pressed and 1 or 0
     Plate.t = Plate.t + (target - Plate.t) * dt * EASE
 end
@@ -104,70 +131,59 @@ function Plate.draw()
     local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP
 
     ----------------------------------------------------------
-    -- BUTTON POSITION (slides down + peeks under)
+    -- BUTTON SHRINK (instead of sliding)
     ----------------------------------------------------------
-    local buttonTop =
-        baseTop - BUTTON_H            -- normal button rest height
-        + PRESS_DEPTH * t             -- depression animation
-        + BUTTON_PEEK * t             -- peek under base
+    local compress = PRESS_DEPTH * t
+    local visualH = BUTTON_H - compress
+    if visualH < 2 then visualH = 2 end
 
     local btnX = x + (TILE - BUTTON_W) * 0.5
+    local btnY = baseTop - visualH
 
     ----------------------------------------------------------
-    -- BUTTON (DRAW FIRST so base covers it)
+    -- BUTTON (draw first)
     ----------------------------------------------------------
-	local compress = PRESS_DEPTH * t               -- how much to shrink
-	local visualH = BUTTON_H - compress            -- new height
-	if visualH < 2 then visualH = 2 end            -- safety floor
+    love.graphics.setColor(0,0,0)
+    love.graphics.rectangle(
+        "fill",
+        btnX - OUTLINE,
+        btnY - OUTLINE,
+        BUTTON_W + OUTLINE*2,
+        visualH + OUTLINE*2,
+        6,6
+    )
 
-	local btnX = x + (TILE - BUTTON_W) * 0.5
-	local btnY = baseTop - visualH                 -- keep seated on base
+    love.graphics.setColor(0.94, 0.33, 0.33) -- cute red button
+    love.graphics.rectangle(
+        "fill",
+        btnX,
+        btnY,
+        BUTTON_W,
+        visualH,
+        6,6
+    )
 
-	-- OUTLINE
-	love.graphics.setColor(0,0,0)
-	love.graphics.rectangle(
-		"fill",
-		btnX - OUTLINE,
-		btnY - OUTLINE,
-		BUTTON_W + OUTLINE*2,
-		visualH + OUTLINE*2,
-		6,6
-	)
-
-	-- FILL
-	love.graphics.setColor(0.92, 0.92, 0.95)
-	love.graphics.rectangle(
-		"fill",
-		btnX,
-		btnY,
-		BUTTON_W,
-		visualH,
-		6,6
-	)
-
-	-- HIGHLIGHT
-	love.graphics.setColor(1,1,1,0.18)
-
-	love.graphics.rectangle(
-		"fill",
-		btnX + 5,
-		btnY + 3,
-		BUTTON_W - 10,
-		visualH * 0.35,
-		6,6
-	)
+    love.graphics.setColor(1,0.8,0.8,0.3)
+    love.graphics.rectangle(
+        "fill",
+        btnX + 5,
+        btnY + 3,
+        BUTTON_W - 10,
+        visualH * 0.35,
+        6,6
+    )
 
     ----------------------------------------------------------
-    -- BASE (DRAW SECOND — hides upper part of sinking button)
+    -- BASE (draw second)
     ----------------------------------------------------------
     love.graphics.setColor(0, 0, 0)
     love.graphics.rectangle(
         "fill",
         x - OUTLINE,
         baseTop - OUTLINE,
-        TILE + OUTLINE * 2,
-        BASE_H + OUTLINE * 2,
-        4, 4
+        TILE + OUTLINE*2,
+        BASE_H + OUTLINE*2,
+        4,4
     )
 
     love.graphics.setColor(0.20, 0.20, 0.22)
@@ -177,7 +193,7 @@ function Plate.draw()
         baseTop,
         TILE,
         BASE_H,
-        4, 4
+        4,4
     )
 end
 

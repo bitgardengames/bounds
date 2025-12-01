@@ -3,9 +3,10 @@
 --------------------------------------------------------------
 
 local Particles = require("particles")
-local Blink     = require("blink")
-local Idle      = require("idle")
-local Input     = require("input")
+local Blink = require("blink")
+local Idle = require("idle")
+local Input = require("input")
+local Cube = require("cube")
 
 local Player = {}
 
@@ -656,6 +657,42 @@ function Player.update(dt, Level)
 
     p.eyeDirX = approach(p.eyeDirX, dx, dt, 6)
     p.eyeDirY = approach(p.eyeDirY, dy, dt, 6)
+
+	----------------------------------------------------------
+	-- CUBE COLLISION
+	----------------------------------------------------------
+	local cubes = Cube.list
+	for _, c in ipairs(cubes) do
+		local px1, py1 = p.x, p.y
+		local px2, py2 = p.x + p.w, p.y + p.h
+
+		local cx1, cy1 = c.x, c.y
+		local cx2, cy2 = c.x + c.w, c.y + c.h
+
+		if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
+			-- Compute overlap on each axis
+			local overlapLeft   = px2 - cx1
+			local overlapRight  = cx2 - px1
+			local overlapTop    = py2 - cy1
+			local overlapBottom = cy2 - py1
+
+			local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
+
+			if minOverlap == overlapLeft then
+				p.x = p.x - overlapLeft
+				p.vx = 0
+			elseif minOverlap == overlapRight then
+				p.x = p.x + overlapRight
+				p.vx = 0
+			elseif minOverlap == overlapTop then
+				p.y = p.y - overlapTop
+				p.vy = 0
+			elseif minOverlap == overlapBottom then
+				p.y = p.y + overlapBottom
+				p.vy = 0
+			end
+		end
+	end
 
     return p
 end
