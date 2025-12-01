@@ -10,7 +10,7 @@ local Player = require("player")
 -- CONFIG
 --------------------------------------------------------------
 
-local BASE_RADIUS = 16
+local BASE_RADIUS = 24
 local TEETH       = 9
 local INNER_RATIO = 0.80
 local SPIN_SPEED  = 6

@@ -2,16 +2,17 @@
 -- MAIN GAME MANAGER
 --------------------------------------------------------------
 
-local Level       = require("level")
+local Level = require("level")
 local LevelData = require("leveldata")
-local Player      = require("player")
-local Particles   = require("particles")
+local Player = require("player")
+local Particles = require("particles")
 local Collectible = require("collectible")
-local Blink       = require("blink")
-local Idle        = require("idle")
-local Camera      = require("camera")
-local Input       = require("input")
-local Saw         = require("saws")
+local Blink = require("blink")
+local Idle = require("idle")
+local Camera = require("camera")
+local Input = require("input")
+local Saw = require("saws")
+local Door = require("door")
 
 local TILE_SIZE = LevelData.tileSize or 48
 
@@ -23,7 +24,7 @@ function love.load()
     Blink.init()
 
     -- initialize player at top-left region of level
-        Level.load(LevelData)
+	Level.load(LevelData)
     TILE_SIZE = Level.tileSize or TILE_SIZE
     Player.init(Level)
 
@@ -42,6 +43,9 @@ function love.load()
 
 	-- Vertical saw in the wall-kick shaft (left-mounted)
 	Saw.spawn(TILE * 31,TILE * 13, {dir="vertical", mount="left", speed=1})
+	
+	-- Exit Door
+	Door.spawn(TILE * 18, TILE * 10, TILE * 4, TILE * 3)
 end
 
 function love.update(dt)
@@ -58,6 +62,7 @@ function love.update(dt)
     Collectible.update(dt, pl)
     Particles.update(dt)
     Blink.update(dt)
+	Door.update(dt)
 
     ----------------------------------------------------------
     -- Saw hazards update
@@ -79,6 +84,11 @@ function love.update(dt)
 end
 
 function love.keypressed(key)
+	if key == "printscreen" then
+		local time = os.date("%Y-%m-%d_%H-%M-%S")
+		love.graphics.captureScreenshot("screenshot_" .. time .. ".png")
+	end
+
     Input.keypressed(key)
 end
 
@@ -108,6 +118,7 @@ function love.draw()
     Level.draw(camX, camY)
     Saw.draw()
     Player.draw()
+	Door.draw()
     Particles.draw()
     Collectible.draw()
 
