@@ -18,6 +18,7 @@ local Chamber = require("chamber")
 local Plate = require("pressureplate")
 local Cube = require("cube")
 local Decorations = require("decorations")
+local SecurityCamera = require("securitycamera")
 
 local TILE_SIZE = LevelData.tileSize or 48
 
@@ -50,6 +51,8 @@ function love.load()
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
 	local TILE = TILE_SIZE
+
+	SecurityCamera.spawn(1, 2)
 
 	-- Center ceiling-mounted horizontal saw
 	Saw.spawn(TILE * 20, TILE * 1, {dir="horizontal", mount="top", speed=1})
@@ -84,6 +87,7 @@ function love.update(dt)
 	Cube.update(dt, pl)
 	Plate.update(dt, pl, Cube.list)
 	Door.update(dt)
+	SecurityCamera.update(dt, Player)
 	Particles.update(dt)
 
     ----------------------------------------------------------
@@ -147,6 +151,7 @@ function love.draw()
     ----------------------------------------------------------
 	local camX, camY = 0, 0
     Level.draw(camX, camY)
+	SecurityCamera.draw(Decorations.style)
     Saw.draw()
     Player.draw()
 	Door.draw()

@@ -10,8 +10,6 @@ local LevelData = {
 			name = "Decor",
 			kind = "decor",
 			objects = {
-				{ type="camera", tx=10, ty=4 },
-
 				{ type="vent", tx=12, ty=5},
 				{ type="vent", tx=27, ty=13},
 				{ type="vent", tx=14, ty=18},
@@ -45,7 +43,7 @@ local LevelData = {
                 -- ROOM BORDER
                 ----------------------------------------------------------
                 { x = 1,  y = 1,  w = 40, h = 1 },   -- ceiling
-                { x = 1,  y = 19, w = 40, h = 4 },   -- floor
+                { x = 1,  y = 23, w = 40, h = 1 },   -- floor
                 { x = 1,  y = 1,  w = 1,  h = 23 },  -- left wall
                 { x = 40, y = 1,  w = 1,  h = 23 },  -- right wall
 
