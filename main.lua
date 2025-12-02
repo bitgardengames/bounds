@@ -58,7 +58,7 @@ function love.load()
 	Plate.spawn(TILE_SIZE * 12, TILE_SIZE * 21)
 
 	-- Ze Cube
-	Cube.spawn(48*10, 48*20)
+	Cube.spawn(48*6, 48*16)
 
 	-- Exit door
 	Door.spawn(20, 20, TILE)
@@ -147,8 +147,8 @@ function love.draw()
     Level.draw(camX, camY)
 	SecurityCamera.draw(Decorations.style)
     Saw.draw()
-    Player.draw()
 	Door.draw()
+    Player.draw()
 	Cube.draw()
 	Plate.draw()
     Particles.draw()

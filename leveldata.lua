@@ -26,6 +26,10 @@ local LevelData = {
 				{ type="panel_tall", tx=26, ty=12},
 				{ type="panel_tall", tx=28, ty=5},
 				{ type="panel_tall", tx=34, ty=16},
+				
+				{ type="vent_round", tx=20, ty=6 },
+				{ type="vent_round", tx=7,  ty=12 },
+				{ type="vent_round", tx=30, ty=3 },
 			},
 		},
 

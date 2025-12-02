@@ -250,251 +250,59 @@ Decorations.register("light", {
     end
 })
 
-Decorations.register("conveyor_window", {
-    w = 1,
-    h = 0.5,  -- half-tile tall
+--------------------------------------------------------------
+-- ROUND VENT (static porthole with horizontal slats)
+--------------------------------------------------------------
 
-    init = function(inst)
-        inst.data.offset = 0
-    end,
-
-    update = function(inst, dt)
-        inst.data.offset = (inst.data.offset + dt * 20) % 48
-    end,
-
-    draw = function(x, y, w, h, inst)
-        local S = Decorations.style
-
-        -- frame
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill", x-4, y-4, w+8, h+8, 6, 6)
-
-        love.graphics.setColor(S.grill)
-        love.graphics.rectangle("fill", x, y, w, h, 4, 4)
-
-
-
-        -- moving “belt” behind the slit
-        local ox = inst.data.offset
-        love.graphics.setColor(S.dark)
-
-        for i = -48, w+48, 24 do
-            love.graphics.rectangle("fill", x + i + ox, y+4, 16, h-8, 3, 3)
-        end
-    end
-})
-
-Decorations.register("diag_panel", {
+Decorations.register("vent_round", {
     w = 1,
     h = 1,
 
-    init = function(inst)
-        inst.data.time = math.random() * 10
-    end,
-
-    update = function(inst, dt)
-        inst.data.time = inst.data.time + dt
-    end,
-
-    draw = function(x, y, w, h, inst)
+    draw = function(x, y, w, h)
         local S = Decorations.style
-        local t = inst.data.time
+        local cx = x + w/2
+        local cy = y + h/2
+        local r  = w * 0.42  -- radius of the vent housing
 
-        -- frame
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill", x-4, y-4, w+8, h+8, 8, 8)
+        ------------------------------------------------------
+        -- OUTER OUTLINE
+        ------------------------------------------------------
+        love.graphics.setColor(S.outline)
+        love.graphics.circle("fill", cx, cy, r + 4)
 
+        ------------------------------------------------------
+        -- METAL HOUSING
+        ------------------------------------------------------
+        love.graphics.setColor(S.metal)
+        love.graphics.circle("fill", cx, cy, r)
+
+        ------------------------------------------------------
+        -- INNER FACE
+        ------------------------------------------------------
+        love.graphics.setColor(S.dark)
+        love.graphics.circle("fill", cx, cy, r - 4)
+
+        ------------------------------------------------------
+        -- HORIZONTAL SLATS
+        ------------------------------------------------------
         love.graphics.setColor(S.grill)
-        love.graphics.rectangle("fill", x, y, w, h, 6, 6)
 
-        ------------------------------------------------------
-        -- pulsing dots
-        ------------------------------------------------------
-        for i = 0,2 do
-            local pulse = (math.sin(t * 3 + i*0.8) + 1) * 0.5
-            love.graphics.setColor(0.3 + pulse*0.7, 0.3, 1, 1)
-            love.graphics.circle("fill", x + 10, y + 10 + i*12, 3)
-        end
+        local slatCount = 3
+        local spacing = (r * 1.4) / (slatCount + 1)
 
-        ------------------------------------------------------
-        -- tiny “graph line”
-        ------------------------------------------------------
-        love.graphics.setColor(S.dark)
-        local gx = x + 24
-        local gy = y + h - 10
-
-        love.graphics.line(
-            gx - 10, gy - math.sin(t*2)*6,
-            gx,      gy - math.sin(t*3)*3,
-            gx + 10, gy - math.sin(t*1.4)*8
-        )
-    end
-})
-
-Decorations.register("cable_bundle", {
-    w = 1,
-    h = 1,
-
-    init = function(inst)
-        inst.data.time = math.random() * 10
-    end,
-
-    update = function(inst, dt)
-        inst.data.time = inst.data.time + dt
-    end,
-
-    draw = function(x, y, w, h, inst)
-        local S = Decorations.style
-        local t = inst.data.time
-        local sway = math.sin(t * 1.8) * 2  -- subtle left/right
-
-        -- vertical base plate
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill", x-4, y-4, 12, 24+8, 4, 4)
-
-        love.graphics.setColor(S.dark)
-        love.graphics.rectangle("fill", x, y, 8, 24, 3, 3)
-
-        ------------------------------------------------------
-        -- dangling cables (3)
-        ------------------------------------------------------
-        local baseX = x + 4 + sway
-
-        for i = 0,2 do
-            love.graphics.setColor(S.grill)
+        for i = 1, slatCount do
+            local sy = cy - (spacing * (slatCount/2)) + spacing * i
             love.graphics.rectangle(
                 "fill",
-                baseX + i*4,
-                y + 24,
-                3,          -- cable width
-                h - 24,     -- cable length
-                2,2
+                cx - (r - 8),
+                sy - 2,
+                (r - 8) * 2,
+                4,
+                2, 2
             )
         end
     end
 })
-
-Decorations.register("pipe_liquid", {
-    w = 1,
-    h = 1,
-    init = function(inst)
-        inst.data.t = math.random()*10
-    end,
-
-    update = function(inst, dt)
-        inst.data.t = inst.data.t + dt
-    end,
-
-    draw = function(x, y, w, h, inst)
-        local S = Decorations.style
-        local t = inst.data.t
-
-        ------------------------------------------------------
-        -- Pipe outline
-        ------------------------------------------------------
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill",
-            x - 4, y - 4,
-            w + 8, h + 8,
-            8, 8
-        )
-
-        ------------------------------------------------------
-        -- Pipe body
-        ------------------------------------------------------
-        love.graphics.setColor(S.grill)
-        love.graphics.rectangle("fill", x, y, w, h, 6, 6)
-
-        ------------------------------------------------------
-        -- Liquid Fill (animated scroll)
-        ------------------------------------------------------
-        local flow = (t * 40) % (w + h)  -- scroll amount
-        local liquidColor = {0.3, 0.8, 1.0, 0.8}
-
-        love.graphics.setColor(liquidColor)
-
-        if h <= w * 0.8 then
-            -- Horizontal pipe
-            -- Repeating rounded segments to look like moving flow
-            for i = -w, w do
-                local lx = x + (i * 12 + flow)
-                love.graphics.rectangle("fill",
-                    lx, y + 6,
-                    8, h - 12,
-                    3, 3
-                )
-            end
-        else
-            -- Vertical pipe
-            for i = -h, h do
-                local ly = y + (i * 12 + flow)
-                love.graphics.rectangle("fill",
-                    x + 6, ly,
-                    w - 12, 8,
-                    3, 3
-                )
-            end
-        end
-    end
-})
-
-Decorations.register("pipe_large", {
-    w = 1,
-    h = 1,
-    draw = function(x, y, w, h)
-        local S = Decorations.style
-
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill",
-            x - 4, y - 4,
-            w + 8, h + 8,
-            10, 10
-        )
-
-        love.graphics.setColor(S.dark)
-        love.graphics.rectangle("fill", x, y, w, h, 8, 8)
-
-        -- inner line for aesthetic tech strip
-        love.graphics.setColor(S.grill)
-        love.graphics.rectangle("fill",
-            x + w/2 - 2,
-            y + 4,
-            4, h - 8,
-            3, 3
-        )
-    end
-})
-
-Decorations.register("pipe_pulse", {
-    w = 1, h = 1,
-    init = function(inst) inst.data.t = 0 end,
-    update = function(inst, dt) inst.data.t = inst.data.t + dt end,
-
-    draw = function(x, y, w, h, inst)
-        local S = Decorations.style
-        local t = inst.data.t
-
-        love.graphics.setColor(0,0,0,1)
-        love.graphics.rectangle("fill",
-            x-4, y-4, w+8, h+8,
-            8,8
-        )
-
-        love.graphics.setColor(S.grill)
-        love.graphics.rectangle("fill", x, y, w, h, 6,6)
-
-        -- glowing pulse
-        local pulseX = x + (math.sin(t*2)+1)*0.5*(w-12) + 6
-
-        love.graphics.setColor(0.5, 0.9, 1, 0.9)
-        love.graphics.rectangle("fill",
-            pulseX, y+6,
-            6, h-12,
-            3,3
-        )
-    end
-})
-
 
 --------------------------------------------------------------
 -- END PREFABS
