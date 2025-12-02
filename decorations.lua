@@ -23,7 +23,7 @@ Decorations.list = list   -- expose if needed
 --------------------------------------------------------------
 
 Decorations.style = {
-    black = {0, 0, 0, 1},
+    dark = {0.1, 0.1, 0.1, 1},
     outline = {68/255, 83/255, 97/255, 1},
     panel = {0.90, 0.90, 0.93, 1},
     background = {82/255, 101/255, 114/255, 1},
@@ -58,13 +58,21 @@ function Decorations.spawn(entry, tileSize)
     local wTiles = prefab.w or 1
     local hTiles = prefab.h or 1
 
-    table.insert(list, {
-        type = entry.type,
-        x = entry.tx * tileSize,
-        y = entry.ty * tileSize,
-        w = wTiles * tileSize,
-        h = hTiles * tileSize,
-    })
+	local inst = {
+		type = entry.type,
+		x = entry.tx * tileSize,
+		y = entry.ty * tileSize,
+		w = wTiles * tileSize,
+		h = hTiles * tileSize,
+		data = {} -- <--- per-instance data table
+	}
+
+	-- Allow prefab to initialize instance data once
+	if prefab.init then
+		prefab.init(inst)
+	end
+
+	table.insert(list, inst)
 end
 
 --------------------------------------------------------------
@@ -85,7 +93,7 @@ function Decorations.draw()
     for _, d in ipairs(list) do
         local prefab = registry[d.type]
         if prefab then
-            prefab.draw(d.x, d.y, d.w, d.h)
+            prefab.draw(d.x, d.y, d.w, d.h, d)
         end
     end
 end
@@ -96,6 +104,93 @@ end
 -- All sizes measured in *tiles*, not pixels.
 -- draw(x, y, w, h) receives world-space values in pixels.
 --------------------------------------------------------------
+
+--------------------------------------------------------------
+-- CAMERA
+--------------------------------------------------------------
+
+Decorations.register("camera", {
+    w = 1,
+    h = 1,
+
+    init = function(inst)
+        inst.data.angle = 0  -- tracking rotation
+    end,
+
+    draw = function(x, y, w, h, inst)
+        local S = Decorations.style
+        local cx = x + w/2
+        local cy = y + h/2
+
+        ------------------------------------------------------
+        -- GET PLAYER POSITION (global Player module)
+        ------------------------------------------------------
+        local player = require("player").get()
+        local px = player.x + player.w/2
+        local py = player.y + player.h/2
+
+        ------------------------------------------------------
+        -- COMPUTE ANGLE TOWARD PLAYER
+        ------------------------------------------------------
+        local dx = px - cx
+        local dy = py - cy
+        local angle = math.atan2(dy, dx)
+        inst.data.angle = angle
+
+        ------------------------------------------------------
+        -- OUTER OUTLINE (3px border)
+        ------------------------------------------------------
+        local ox = 4  -- thickness
+        love.graphics.setColor(0, 0, 0, 1)
+        love.graphics.rectangle(
+            "fill",
+            x + 6 - ox,
+            y + 10 - ox,
+            (w - 12) + ox*2,
+            (h - 20) + ox*2,
+            8, 8
+        )
+
+        ------------------------------------------------------
+        -- CAMERA BODY (inner fill)
+        ------------------------------------------------------
+        love.graphics.setColor(S.grill)
+        love.graphics.rectangle(
+            "fill",
+            x + 6,
+            y + 10,
+            w - 12,
+            h - 20,
+            6, 6
+        )
+
+        ------------------------------------------------------
+        -- LENS HOUSING
+        ------------------------------------------------------
+        local lx = cx
+        local ly = cy
+
+        -- lens background
+        love.graphics.setColor(S.dark)
+        love.graphics.circle("fill", lx, ly, w * 0.22)
+
+        ------------------------------------------------------
+        -- INNER “PUPIL” (rotates toward player)
+        ------------------------------------------------------
+        local lookDist = w * 0.10
+        local pupilX = lx + math.cos(angle) * lookDist
+        local pupilY = ly + math.sin(angle) * lookDist
+
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.circle("fill", pupilX, pupilY, w * 0.09)
+
+        ------------------------------------------------------
+        -- WALL ARM (simple connector)
+        ------------------------------------------------------
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", x, cy - 3, 8, 6, 3, 3)
+    end
+})
 
 --------------------------------------------------------------
 -- PANEL (simple inset wall panel)
@@ -163,7 +258,7 @@ Decorations.register("vent", {
         ------------------------------------------------------
         -- GRILL SLATS — spaced nicely for full 48px height
         ------------------------------------------------------
-        love.graphics.setColor(S.black)
+        love.graphics.setColor(S.dark)
 
         -- 6–7 slats looks best visually
         local slatCount = 4
@@ -172,6 +267,61 @@ Decorations.register("vent", {
         for i = 1, slatCount do
             local sy = y + spacing * i - 2
             love.graphics.rectangle("fill", x + 6, sy, w - 12, 4, 2, 2)
+        end
+    end
+})
+
+--------------------------------------------------------------
+-- BOLTED PANEL
+--------------------------------------------------------------
+
+Decorations.register("panel_bolts", {
+    w = 1, h = 1,
+
+    ----------------------------------------------------------
+    -- INIT (runs ONCE per placed decoration)
+    ----------------------------------------------------------
+    init = function(inst)
+        local chance = 0.75
+
+        -- four corners: TL, TR, BL, BR
+        inst.data.bolts = {
+            love.math.random() < chance,
+            love.math.random() < chance,
+            love.math.random() < chance,
+            love.math.random() < chance
+        }
+    end,
+
+    ----------------------------------------------------------
+    -- DRAW (reads stable bolt pattern)
+    ----------------------------------------------------------
+    draw = function(x, y, w, h, inst)
+        local S = Decorations.style
+
+        -- base plate
+        love.graphics.setColor(S.background)
+        love.graphics.rectangle("fill", x + 2, y + 2, w - 4, h - 4)
+
+        love.graphics.setColor(S.dark)
+
+        -- corner bolts
+        local inset = 8
+        local r = 2
+
+        local corners = {
+            { x + inset,     y + inset     }, -- TL
+            { x + w - inset, y + inset     }, -- TR
+            { x + inset,     y + h - inset }, -- BL
+            { x + w - inset, y + h - inset }  -- BR
+        }
+
+        local mask = inst.data.bolts -- <--- stable!
+
+        for i = 1, 4 do
+            if mask[i] then
+                love.graphics.circle("fill", corners[i][1], corners[i][2], r)
+            end
         end
     end
 })
@@ -198,11 +348,11 @@ Decorations.register("fan", {
         love.graphics.circle("fill", cx, cy, r + 4)
 
         -- Housing fill
-        love.graphics.setColor(S.fanFill)
+        love.graphics.setColor(S.dark)
         love.graphics.circle("fill", cx, cy, r)
 
         -- Blades
-        love.graphics.setColor(0,0,0)
+        love.graphics.setColor(S.metal)
         love.graphics.push()
         love.graphics.translate(cx, cy)
         love.graphics.rotate(angle)

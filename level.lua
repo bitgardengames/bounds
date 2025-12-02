@@ -3,6 +3,8 @@
 --  FIXED MARGIN ALIGNMENT VERSION
 --------------------------------------------------------------
 
+local Decorations = require("decorations")
+
 local Level = {}
 
 --------------------------------------------------------------
@@ -264,6 +266,8 @@ function Level.draw(camX, camY)
         love.graphics.rectangle("fill", 0, y - 2, gw, 4)
     end
 
+	-- DECORATIONS (draw behind platforms)
+	Decorations.draw()
 
     ----------------------------------------------------------
     -- PLATFORM BLOBS
