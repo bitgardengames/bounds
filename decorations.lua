@@ -259,10 +259,10 @@ Decorations.register("vent_round", {
     h = 1,
 
     draw = function(x, y, w, h)
-        local S = Decorations.style
+        local S  = Decorations.style
         local cx = x + w/2
         local cy = y + h/2
-        local r  = w * 0.42  -- radius of the vent housing
+        local r  = w * 0.42    -- vent housing radius
 
         ------------------------------------------------------
         -- OUTER OUTLINE
@@ -283,20 +283,24 @@ Decorations.register("vent_round", {
         love.graphics.circle("fill", cx, cy, r - 4)
 
         ------------------------------------------------------
-        -- HORIZONTAL SLATS
+        -- SLATS (perfectly centered, symmetric)
         ------------------------------------------------------
-        love.graphics.setColor(S.grill)
 
         local slatCount = 3
-        local spacing = (r * 1.4) / (slatCount + 1)
+        local gap = r * 0.32 + 2
 
         for i = 1, slatCount do
-            local sy = cy - (spacing * (slatCount/2)) + spacing * i
+            -- offset: {-gap, 0, +gap}
+            local offset = (i - math.ceil(slatCount/2)) * gap
+            local sy = cy + offset
+
+            -- actual slat plate
+            love.graphics.setColor(S.metal)
             love.graphics.rectangle(
                 "fill",
-                cx - (r - 8),
+                cx - (r - 2),
                 sy - 2,
-                (r - 8) * 2,
+                (r - 2) * 2,
                 4,
                 2, 2
             )
