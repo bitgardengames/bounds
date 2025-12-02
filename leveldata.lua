@@ -26,11 +26,7 @@ local LevelData = {
 				{ type="panel_tall", tx=26, ty=12},
 				{ type="panel_tall", tx=28, ty=5},
 				{ type="panel_tall", tx=34, ty=16},
-
-				{ type="panel_bolts", tx=6, ty=7},
-				{ type="panel_bolts", tx=20, ty=14},
-				{ type="panel_bolts", tx=33, ty=9},
-			}
+			},
 		},
 
         {

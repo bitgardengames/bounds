@@ -6,7 +6,6 @@ local Level = require("level")
 local LevelData = require("leveldata")
 local Player = require("player")
 local Particles = require("particles")
-local Collectible = require("collectible")
 local Blink = require("blink")
 local Idle = require("idle")
 local Camera = require("camera")
@@ -42,11 +41,6 @@ function love.load()
 
     Player.init(Level)
 
-    -- Example collectibles
-    --Collectible.spawn(TILE_SIZE * 10 + TILE_SIZE/3, TILE_SIZE * 8 + TILE_SIZE/3)
-    --Collectible.spawn(TILE_SIZE * 25 + TILE_SIZE/3, TILE_SIZE * 5 + TILE_SIZE/3)
-    --Collectible.spawn(TILE_SIZE * 5  + TILE_SIZE/3, TILE_SIZE *15 + TILE_SIZE/3)
-
 	----------------------------------------------------------
 	-- SAW HAZARDS — test layout
 	----------------------------------------------------------
@@ -67,7 +61,7 @@ function love.load()
 	Cube.spawn(48*10, 48*20)
 
 	-- Exit door
-	Door.spawn(TILE * 6, TILE * 18, TILE * 4, TILE * 3)
+	Door.spawn(20, 20, TILE)
 	Exit.spawn(TILE * 5, TILE * 18)   -- 1 tile in front of door
 end
 
@@ -82,13 +76,13 @@ function love.update(dt)
     ----------------------------------------------------------
     local pl = Player.update(dt, Level)
 
-    Collectible.update(dt, pl)
     Blink.update(dt)
 	Cube.update(dt, pl)
 	Plate.update(dt, pl, Cube.list)
 	Door.update(dt)
 	SecurityCamera.update(dt, Player)
 	Particles.update(dt)
+	Decorations.update(dt)
 
     ----------------------------------------------------------
     -- Saw hazards update
@@ -158,7 +152,6 @@ function love.draw()
 	Cube.draw()
 	Plate.draw()
     Particles.draw()
-    Collectible.draw()
 
     Camera.clear()
 end

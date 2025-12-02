@@ -14,7 +14,7 @@ local Level = {}
 Level.colors = {
     background = {82/255, 101/255, 114/255},
     solid = {164/255, 171/255, 172/255},
-	grid = {68/255, 83/255, 97/255, 0}
+	grid = {68/255, 83/255, 97/255, 0.2}
 }
 
 local OUTLINE_WIDTH   = 4

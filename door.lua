@@ -1,137 +1,171 @@
---------------------------------------------------------------
--- DOOR (Single instance) — 48×48 Sliding Mechanical Door
---------------------------------------------------------------
+-- door.lua
+------------------------------------------------------------
+-- Bounds Door (premium sliding version)
+-- • Doors meet perfectly at center
+-- • Eased animation (cubic)
+-- • Optional settle bounce
+-- • Clean math, no offsets spaghetti
+------------------------------------------------------------
 
-local Door = {}
+local Door = {
+    x = 0, y = 0,
+    w = 48,
+    h = 90,
+    open = false,
+    t = 0,
+    speed = 4.0,
+}
 
---------------------------------------------------------------
--- CONFIG
---------------------------------------------------------------
+------------------------------------------------------------
+-- EASING
+------------------------------------------------------------
+local function easeInOutCubic(x)
+    return x < 0.5 and 4*x*x*x or 1 - (-2*x + 2)^3 / 2
+end
 
-local TILE = 48
-local OUTLINE = 4
+-- small settle bounce near end of closing
+local function easeWithSettle(t)
+    -- Normal open: 0→1, closed: 1→0
+    local base = easeInOutCubic(t)
 
-local PANEL_COLOR   = {0.92, 0.92, 0.92, 1}
-local OUTLINE_COLOR = {0, 0, 0,   1}
-local DEPTH_COLOR   = {0, 0, 0,   1}
+    if not Door.open then
+        -- settling bounce on close
+        local overshoot = math.sin(t * math.pi) * 0.03 -- tiny wobble
+        base = base + overshoot
+    end
 
-local OPEN_RANGE = 10   -- distance panels slide outward (px)
-local EASE       = 1.6
+    return math.max(0, math.min(base, 1))
+end
 
---------------------------------------------------------------
--- INTERNAL STATE
---------------------------------------------------------------
-
-Door.x = 0
-Door.y = 0
-Door.w = TILE
-Door.h = TILE
-
-Door.openState = false  -- target state (open vs closed)
-Door.t = 0              -- animation (0 = closed, 1 = fully open)
-
-Door.active = false     -- whether a door exists in the level
-
---------------------------------------------------------------
+------------------------------------------------------------
 -- SPAWN
---------------------------------------------------------------
-
-function Door.spawn(x, y)
-    Door.x = x
-    Door.y = y
-    Door.w = TILE
-    Door.h = TILE
-
-    Door.openState = false
+------------------------------------------------------------
+function Door.spawn(tx, ty, tile)
+    Door.x = tx * tile
+    Door.y = ty * tile
+    Door.w = tile
+    Door.h = tile * 2 - 6  -- 90px
     Door.t = 0
-    Door.active = true
+    Door.open = false
 end
 
---------------------------------------------------------------
--- CONTROL
---------------------------------------------------------------
-
-function Door.open()
-    Door.openState = true
+------------------------------------------------------------
+-- STATE
+------------------------------------------------------------
+function Door.setOpen(state)
+    Door.open = state
 end
 
-function Door.close()
-    Door.openState = false
-end
-
---------------------------------------------------------------
+------------------------------------------------------------
 -- UPDATE
---------------------------------------------------------------
-
+------------------------------------------------------------
 function Door.update(dt)
-    if not Door.active then return end
-
-    local target = Door.openState and 1 or 0
-    local diff = target - Door.t
-
-    if math.abs(diff) > 0.0001 then
-        Door.t = Door.t + diff * dt * (3.2 + math.abs(diff) * EASE)
-    else
-        Door.t = target
-    end
+    local target = Door.open and 1 or 0
+    Door.t = Door.t + (target - Door.t) * Door.speed * dt
 end
 
---------------------------------------------------------------
+------------------------------------------------------------
 -- DRAW
---------------------------------------------------------------
-
+------------------------------------------------------------
 function Door.draw()
-    if not Door.active then return end
-
     local x, y, w, h = Door.x, Door.y, Door.w, Door.h
-    local panelW = w * 0.5      -- 24px
-    local t = Door.t
+    local rawT = math.max(0, math.min(Door.t, 1))
+    local t = easeWithSettle(rawT)
 
-    ------------------------------------------------------
-    -- DEPTH BACKGROUND (revealed only when opening)
-    ------------------------------------------------------
-    if t > 0 then
-        love.graphics.setColor(DEPTH_COLOR)
-        love.graphics.rectangle("fill", x, y, w, h)
-    end
+    --------------------------------------------------------
+    -- CONSTANTS
+    --------------------------------------------------------
+    local OUTLINE = 4
+    local FRAME   = 4
+    local centerW = 4        -- center post width
+    local frameColor = {68/255, 83/255, 97/255, 1}
+    local panelColor = {0.80, 0.84, 0.86, 1}
 
-    ------------------------------------------------------
-    -- PANEL POSITIONS
-    ------------------------------------------------------
-    local offset = OPEN_RANGE * t
+    --------------------------------------------------------
+    -- OUTER OUTLINE BOX
+    --------------------------------------------------------
+    love.graphics.setColor(0,0,0,1)
+    love.graphics.rectangle(
+        "fill",
+        x - OUTLINE, 
+        y - OUTLINE,
+        w + OUTLINE*2,
+        h + OUTLINE*2
+    )
 
-    local leftX  = x + (panelW - panelW) - offset
-    local rightX = x + panelW + offset
+    --------------------------------------------------------
+    -- INNER CAVITY (background)
+    --------------------------------------------------------
+    love.graphics.setColor(0,0,0,1)
+    love.graphics.rectangle("fill", x, y, w, h)
 
-    ------------------------------------------------------
-    -- PANEL DRAW FUNCTION
-    ------------------------------------------------------
-    local function drawPanel(px)
-        -- outline
-        love.graphics.setColor(OUTLINE_COLOR)
-        love.graphics.rectangle(
-            "fill",
-            px - OUTLINE,
-            y - OUTLINE,
-            panelW + OUTLINE*2,
-            h + OUTLINE*2,
-            6, 6
-        )
+    --------------------------------------------------------
+    -- DOOR FRAME (left, right, top)
+    --------------------------------------------------------
+    love.graphics.setColor(frameColor)
 
-        -- fill
-        love.graphics.setColor(PANEL_COLOR)
-        love.graphics.rectangle(
-            "fill",
-            px,
-            y,
-            panelW,
-            h,
-            4, 4
-        )
-    end
+    -- top
+    love.graphics.rectangle("fill", x, y, w, FRAME)
 
-    drawPanel(leftX)
-    drawPanel(rightX)
+    -- left
+    love.graphics.rectangle("fill", x, y, FRAME, h)
+
+    -- right
+    love.graphics.rectangle("fill", x + w - FRAME, y, FRAME, h)
+
+    --------------------------------------------------------
+    -- CENTER COLUMN (static)
+    --------------------------------------------------------
+    local cx = x + w/2 - centerW/2
+    love.graphics.setColor(0,0,0,1)
+    love.graphics.rectangle("fill", cx, y + FRAME, centerW, h - FRAME)
+
+    --------------------------------------------------------
+    -- PANELS (slide behind center post)
+    --------------------------------------------------------
+    local innerW = w - FRAME*2
+    local maxSlide = (innerW - centerW) * 0.5
+
+    -- amount doors retract
+    local slide = maxSlide * t
+
+    --------------------------------------------------------
+    -- LEFT PANEL
+    --------------------------------------------------------
+    love.graphics.setColor(0,0,0,1) -- outline
+    love.graphics.rectangle("fill",
+        x + FRAME - 2,
+        y + FRAME - 2,
+        maxSlide - slide + 4,
+        h - FRAME + 4
+    )
+
+    love.graphics.setColor(panelColor)
+    love.graphics.rectangle("fill",
+        x + FRAME,
+        y + FRAME,
+        maxSlide - slide,
+        h - FRAME
+    )
+
+    --------------------------------------------------------
+    -- RIGHT PANEL
+    --------------------------------------------------------
+    love.graphics.setColor(0,0,0,1)
+    love.graphics.rectangle("fill",
+        cx + centerW - 2 + slide,
+        y + FRAME - 2,
+        maxSlide - slide + 4,
+        h - FRAME + 4
+    )
+
+    love.graphics.setColor(panelColor)
+    love.graphics.rectangle("fill",
+        cx + centerW + slide,
+        y + FRAME,
+        maxSlide - slide,
+        h - FRAME
+    )
 end
 
 return Door

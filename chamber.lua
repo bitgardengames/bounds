@@ -16,10 +16,10 @@ function Chamber.update(dt, Player, Door, ExitTrigger)
     local switchOk = true
 
     if plateOk and laserOk and switchOk then
-        Door.open()
+        Door.setOpen(true)
         Chamber.exitEnabled = true
     else
-        Door.close()
+        Door.setOpen(false)
         Chamber.exitEnabled = false
     end
 

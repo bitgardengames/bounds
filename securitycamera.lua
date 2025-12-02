@@ -1,7 +1,7 @@
 -- securitycamera.lua
 ------------------------------------------------------------
 -- Single-instance decorative security camera
--- Smooth tracking, LED pulse, full draw logic
+-- Smooth tracking, UNIFORM LED pulse, full draw logic
 ------------------------------------------------------------
 
 local Player = require("player")  -- direct access to player
@@ -12,7 +12,7 @@ local SecurityCamera = {
     x = 0,
     y = 0,
     angle = 0,
-    ledTimer = 0
+    time = 0
 }
 
 ------------------------------------------------------------
@@ -22,7 +22,7 @@ function SecurityCamera.spawn(tx, ty)
     SecurityCamera.x = tx * SecurityCamera.tileSize
     SecurityCamera.y = ty * SecurityCamera.tileSize
     SecurityCamera.angle = 0
-    SecurityCamera.ledTimer = math.random() * 2
+    SecurityCamera.time = 0
     SecurityCamera.active = true
 end
 
@@ -42,6 +42,8 @@ function SecurityCamera.update(dt)
     local player = Player.get()
     if not player then return end
 
+    SecurityCamera.time = SecurityCamera.time + dt
+
     local px = player.x + player.w / 2
     local py = player.y + player.h / 2
 
@@ -54,8 +56,6 @@ function SecurityCamera.update(dt)
 
     SecurityCamera.angle =
         SecurityCamera.angle + (targetAngle - SecurityCamera.angle) * 0.18
-
-    SecurityCamera.ledTimer = SecurityCamera.ledTimer + dt
 end
 
 ------------------------------------------------------------
@@ -70,16 +70,23 @@ function SecurityCamera.draw(style)
     local w = SecurityCamera.tileSize
     local h = SecurityCamera.tileSize
     local angle = SecurityCamera.angle
+    local t = SecurityCamera.time
+
+    ----------------------------------------------------------------
+    -- UNIFORM BLINK
+    ----------------------------------------------------------------
+    local blinkCycle = 1.6
+    local blink = (math.sin((t / blinkCycle) * math.pi * 2) + 1) * 0.5
+    local ledAlpha = 0.25 + blink * 0.55
 
     ------------------------------------------------------
-    -- LEFT MOUNT PLATE (adjusted as requested)
+    -- MOUNT PLATE
     ------------------------------------------------------
-    local plateW = 4       -- thinner (was 6)
-    local plateH = 32      -- taller (was 24)
-    local plateX = x  -- moved 12px further left
+    local plateW = 4
+    local plateH = 32
+    local plateX = x
     local plateY = y + h/2 - plateH/2
 
-    -- outline
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
         plateX - 4, plateY - 4,
@@ -87,8 +94,7 @@ function SecurityCamera.draw(style)
         4, 4
     )
 
-    -- fill
-    love.graphics.setColor(0.20, 0.20, 0.22, 1)
+    love.graphics.setColor(S.dark)
     love.graphics.rectangle("fill",
         plateX, plateY,
         plateW, plateH,
@@ -96,21 +102,19 @@ function SecurityCamera.draw(style)
     )
 
     ------------------------------------------------------
-    -- ARM (still 6px tall, connects to camera body)
+    -- ARM
     ------------------------------------------------------
     local armX = x + 8
     local armY = y + h/2 - 3
-    local armW = 20
+    local armW = 16
     local armH = 6
 
-    -- outline
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
         armX - 4, armY - 4,
         armW + 8, armH + 8
     )
 
-    -- fill
     love.graphics.setColor(S.grill)
     love.graphics.rectangle("fill",
         armX, armY,
@@ -118,15 +122,14 @@ function SecurityCamera.draw(style)
     )
 
     ------------------------------------------------------
-    -- CAMERA BODY
+    -- CAMERA BODY  (WIDTH +2)
     ------------------------------------------------------
     local ox = 4
     local bodyX = armX + armW
     local bodyY = y + 8
-    local bodyW = 38
+    local bodyW = 42   -- WAS 40 → now 42
     local bodyH = 28
 
-    -- outline
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
         bodyX - ox, bodyY - ox,
@@ -134,7 +137,6 @@ function SecurityCamera.draw(style)
         10, 10
     )
 
-    -- fill
     love.graphics.setColor(S.grill)
     love.graphics.rectangle("fill",
         bodyX, bodyY,
@@ -143,31 +145,38 @@ function SecurityCamera.draw(style)
     )
 
     ------------------------------------------------------
-    -- LED (top-left)
+    -- LED BACKING (shifted left 2px, down 2px)
     ------------------------------------------------------
-    local pulse = (math.sin(SecurityCamera.ledTimer * 4) + 1)*0.5
-    local ledAlpha = 0.32 + pulse * 0.45
+    local ledX = bodyX + 8      -- WAS +6 → now 2px left
+    local ledY = bodyY + 8      -- WAS +6 → now 2px down
+    local ledR = 2.2
 
-    love.graphics.setColor(1,0.25,0.25, ledAlpha)
-    love.graphics.circle("fill",
-        bodyX + 6,
-        bodyY + 6,
-        2.2
-    )
+    -- Outline
+    love.graphics.setColor(S.dark)
+    love.graphics.circle("fill", ledX, ledY, ledR + 4)
+
+    -- Dark fill
+    love.graphics.setColor(S.dark)
+    love.graphics.circle("fill", ledX, ledY, ledR + 1)
 
     ------------------------------------------------------
-    -- LENS (right side)
+    -- LED (uniform glow)
     ------------------------------------------------------
-    local lx = bodyX + bodyW * 0.62
+    love.graphics.setColor(1, 0.25, 0.25, ledAlpha)
+    love.graphics.circle("fill", ledX, ledY, ledR)
+
+    ------------------------------------------------------
+    -- LENS (auto-adjusts to new body width)
+    ------------------------------------------------------
+    local lx = bodyX + bodyW * 0.62 + 2
     local ly = bodyY + bodyH/2
 
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", lx, ly, 12)
 
-    -- pupil
     local pupilDist = 4
-    local pupilX = lx + math.cos(angle)*pupilDist
-    local pupilY = ly + math.sin(angle)*pupilDist
+    local pupilX = lx + math.cos(angle) * pupilDist
+    local pupilY = ly + math.sin(angle) * pupilDist
 
     love.graphics.setColor(1,1,1)
     love.graphics.circle("fill", pupilX, pupilY, 5)
