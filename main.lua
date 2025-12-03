@@ -23,6 +23,55 @@ local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
 local chamberCount = #LevelData.chambers
 local gameComplete = false
+local isTransitioning = false
+
+local Transition = {
+    active = false,
+    phase = "idle",
+    timer = 0,
+    duration = 0.6,
+    alpha = 0,
+    nextChamber = nil,
+}
+
+local function startTransition(nextChamber)
+    Transition.active = true
+    Transition.phase = "fadeOut"
+    Transition.timer = 0
+    Transition.alpha = 0
+    Transition.nextChamber = nextChamber
+end
+
+local function updateTransition(dt)
+    if not Transition.active then return end
+
+    Transition.timer = math.min(Transition.timer + dt, Transition.duration)
+
+    if Transition.phase == "fadeOut" then
+        Transition.alpha = Transition.timer / Transition.duration
+
+        if Transition.timer >= Transition.duration then
+            if Transition.nextChamber then
+                currentChamber = Transition.nextChamber
+                loadChamber(currentChamber)
+                Transition.phase = "fadeIn"
+                Transition.timer = 0
+            else
+                Transition.active = false
+            end
+        end
+    elseif Transition.phase == "fadeIn" then
+        Transition.alpha = 1 - (Transition.timer / Transition.duration)
+
+        if Transition.timer >= Transition.duration then
+            Transition.active = false
+            Transition.phase = "idle"
+            Transition.alpha = 0
+            Transition.nextChamber = nil
+            isTransitioning = false
+        end
+    end
+end
 
 local function clearActors()
     Decorations.clear()
@@ -166,10 +215,10 @@ function love.update(dt)
     ----------------------------------------------------------
     Chamber.update(dt, pl, Door, Exit)
     if Chamber.isComplete and not gameComplete then
-        if currentChamber < chamberCount then
-            currentChamber = currentChamber + 1
-            loadChamber(currentChamber)
-        else
+        if currentChamber < chamberCount and not isTransitioning then
+            isTransitioning = true
+            startTransition(currentChamber + 1)
+        elseif currentChamber >= chamberCount then
             gameComplete = true
             print("LEVEL COMPLETE!")
         end
@@ -179,6 +228,8 @@ function love.update(dt)
     -- Late input cleanup
     ----------------------------------------------------------
     Input.postUpdate()
+
+    updateTransition(dt)
 end
 
 function love.keypressed(key)
@@ -223,4 +274,9 @@ function love.draw()
     Particles.draw()
 
     Camera.clear()
+
+    if Transition.active and Transition.alpha > 0 then
+        love.graphics.setColor(0, 0, 0, Transition.alpha)
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+    end
 end
