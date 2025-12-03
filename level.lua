@@ -35,6 +35,14 @@ Level.layers      = {}
 Level.solidLayer  = nil
 Level.solidGrid   = nil
 Level.solidBlobs  = {} -- { canvas, x, y, w, h, margin }
+Level.gridCanvas  = nil
+
+local OUTLINE_OFFSETS = {
+    {-OUTLINE_WIDTH, 0}, {OUTLINE_WIDTH, 0},
+    {0, -OUTLINE_WIDTH}, {0, OUTLINE_WIDTH},
+    {-OUTLINE_WIDTH, -OUTLINE_WIDTH}, {-OUTLINE_WIDTH, OUTLINE_WIDTH},
+    { OUTLINE_WIDTH, -OUTLINE_WIDTH}, { OUTLINE_WIDTH, OUTLINE_WIDTH},
+}
 
 --------------------------------------------------------------
 -- UTILS
@@ -74,6 +82,32 @@ local function buildTilesFromRects(layer, width, height)
         end
     end
     return tiles
+end
+
+local function buildGridCanvas(width, height, tileSize)
+    local gw = width * tileSize
+    local gh = height * tileSize
+
+    local canvas = love.graphics.newCanvas(gw, gh)
+
+    love.graphics.push()
+    love.graphics.setCanvas(canvas)
+    love.graphics.clear(0, 0, 0, 0)
+
+    love.graphics.setColor(Level.colors.grid)
+
+    for x = 0, gw, tileSize do
+        love.graphics.rectangle("fill", x - 2, 0, 4, gh)
+    end
+
+    for y = 0, gh, tileSize do
+        love.graphics.rectangle("fill", 0, y - 2, gw, 4)
+    end
+
+    love.graphics.setCanvas()
+    love.graphics.pop()
+
+    return canvas
 end
 
 --------------------------------------------------------------
@@ -215,6 +249,7 @@ function Level.load(data)
     Level.solidLayer = nil
     Level.solidGrid  = nil
     Level.solidBlobs = {}
+    Level.gridCanvas = nil
 
     for _, src in ipairs(data.layers or {}) do
         local layer = {
@@ -236,6 +271,7 @@ function Level.load(data)
     assert(Level.solidGrid, "No solid layer configured in leveldata")
 
     buildSolidBlobs()
+    Level.gridCanvas = buildGridCanvas(Level.width, Level.height, Level.tileSize)
 end
 
 --------------------------------------------------------------
@@ -256,16 +292,19 @@ function Level.draw(camX, camY)
     local gw = Level.width  * ts
     local gh = Level.height * ts
 
-    love.graphics.setColor(Level.colors.grid)
+    if Level.gridCanvas then
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(Level.gridCanvas, 0, 0)
+    else
+        love.graphics.setColor(Level.colors.grid)
 
-    -- vertical lines
-    for x = 0, gw, ts do
-        love.graphics.rectangle("fill", x - 2, 0, 4, gh)
-    end
+        for x = 0, gw, ts do
+            love.graphics.rectangle("fill", x - 2, 0, 4, gh)
+        end
 
-    -- horizontal lines
-    for y = 0, gh, ts do
-        love.graphics.rectangle("fill", 0, y - 2, gw, 4)
+        for y = 0, gh, ts do
+            love.graphics.rectangle("fill", 0, y - 2, gw, 4)
+        end
     end
 
 	-- DECORATIONS (draw behind platforms)
@@ -293,14 +332,7 @@ function Level.draw(camX, camY)
         ------------------------------------------------------
         love.graphics.setColor(0,0,0,1)
 
-        local offs = {
-            {-r, 0}, {r, 0},
-            {0, -r}, {0, r},
-            {-r,-r}, {-r, r},
-            { r,-r}, { r, r},
-        }
-
-        for _, o in ipairs(offs) do
+        for _, o in ipairs(OUTLINE_OFFSETS) do
             love.graphics.draw(cv, x + o[1], y + o[2])
         end
 
