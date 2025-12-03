@@ -293,7 +293,7 @@ function Level.draw(camX, camY)
     local gh = Level.height * ts
 
     if Level.gridCanvas then
-        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.setColor(Level.colors.grid)
         love.graphics.draw(Level.gridCanvas, 0, 0)
     else
         love.graphics.setColor(Level.colors.grid)
