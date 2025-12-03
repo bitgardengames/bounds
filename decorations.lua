@@ -199,7 +199,7 @@ Decorations.register("fan", {
         local r = w * 0.42
 
         local t = love.timer.getTime()
-        local angle = t * 3.0
+        local angle = t * 1.8
 
         -- Housing outline
         love.graphics.setColor(S.outline)
@@ -221,6 +221,124 @@ Decorations.register("fan", {
         end
 
         love.graphics.pop()
+    end
+})
+
+--------------------------------------------------------------
+-- LARGE FAN (2×2 tiles, rounded housing)
+--------------------------------------------------------------
+
+Decorations.register("fan_large", {
+    w = 2,
+    h = 2,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+        local cx = x + w/2
+        local cy = y + h/2
+
+        ------------------------------------------------------
+        -- Smaller housing footprint (inset from 2×2 tile space)
+        ------------------------------------------------------
+        local inset = 8     -- shrink housing by 8px on all sides
+        local hx = x + inset
+        local hy = y + inset
+        local hw = w - inset * 2
+        local hh = h - inset * 2
+
+        local t     = love.timer.getTime()
+        local angle = t * 1.8  -- soothing background rotation
+
+        ------------------------------------------------------
+        -- OUTER HOUSING (rounded square)
+        ------------------------------------------------------
+        local housingRadius = 10
+
+        -- outline
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill",
+            hx - 4, hy - 4,
+            hw + 8, hh + 8,
+            housingRadius + 6, housingRadius + 6
+        )
+
+        -- fill
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill",
+            hx, hy,
+            hw, hh,
+            housingRadius, housingRadius
+        )
+
+        ------------------------------------------------------
+        -- CORNER BOLTS
+        ------------------------------------------------------
+        love.graphics.setColor(S.dark)
+        local boltR = 3
+
+        local bx1 = hx + 10
+        local bx2 = hx + hw - 10
+        local by1 = hy + 10
+        local by2 = hy + hh - 10
+
+        love.graphics.circle("fill", bx1, by1, boltR)
+        love.graphics.circle("fill", bx2, by1, boltR)
+        love.graphics.circle("fill", bx1, by2, boltR)
+        love.graphics.circle("fill", bx2, by2, boltR)
+
+        ------------------------------------------------------
+        -- FAN CAVITY: OUTER RING + INNER FILL
+        ------------------------------------------------------
+        -- Outer radius: where the outline ring lives
+        local cavityOuterR = hw * 0.42
+
+        -- 4px ring on the inside edge
+        love.graphics.setColor(S.outline)
+        love.graphics.setLineWidth(4)
+        love.graphics.circle("line", cx, cy, cavityOuterR)
+
+        -- Inner dark fill, shrunk so ring remains visible
+        local cavityInnerR = cavityOuterR - 2
+
+        love.graphics.setColor(S.dark)
+        love.graphics.circle("fill", cx, cy, cavityInnerR)
+
+        ------------------------------------------------------
+        -- BLADES (fit within inner cavity)
+        ------------------------------------------------------
+        love.graphics.push()
+        love.graphics.translate(cx, cy)
+        love.graphics.rotate(angle)
+
+        local bladeW  = 8
+        local bladeL  = cavityInnerR - 4
+
+        love.graphics.setColor(S.metal)
+        for i = 1, 4 do
+            love.graphics.rotate(math.pi * 0.5)
+            love.graphics.rectangle(
+                "fill",
+                -bladeW/2,
+                -bladeL,
+                bladeW,
+                bladeL,
+                4, 4
+            )
+        end
+
+        love.graphics.pop()
+
+		------------------------------------------------------
+		-- CENTER HUB (8px, S.dark)
+		------------------------------------------------------
+		love.graphics.setColor(S.dark)
+		love.graphics.circle("fill", cx, cy, 8)
+
+		------------------------------------------------------
+		-- CENTER CAP (4px, S.metal)
+		------------------------------------------------------
+		love.graphics.setColor(S.metal)
+		love.graphics.circle("fill", cx, cy, 4)
     end
 })
 

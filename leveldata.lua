@@ -30,6 +30,8 @@ local LevelData = {
 				{ type="vent_round", tx=20, ty=6 },
 				{ type="vent_round", tx=7,  ty=12 },
 				{ type="vent_round", tx=30, ty=18 },
+				
+				{ type="fan_large", tx=23, ty=15 }
 			},
 		},
 
