@@ -568,8 +568,13 @@ Decorations.register("pipe_junctionbox", {
     w = 1,
     h = 1,
 
-    draw = function(x, y, w, h)
+    init = function(inst)
+        inst.data.active = false
+    end,
+
+    draw = function(x, y, w, h, inst)
         local S = Decorations.style
+        local active = inst and inst.data and inst.data.active
 
         local O = 4         -- outline thickness (same as pipes)
         local boxH = h/2    -- 24px tall if tile is 48px
@@ -622,7 +627,11 @@ Decorations.register("pipe_junctionbox", {
         )
 
         -- LIGHT FILL (inactive default)
-        love.graphics.setColor(1.0, 0.35, 0.35, 0.95)
+        if active then
+            love.graphics.setColor(0.45, 1.0, 0.45, 0.95)
+        else
+            love.graphics.setColor(1.0, 0.35, 0.35, 0.95)
+        end
         love.graphics.rectangle(
             "fill",
             lightX,
@@ -633,7 +642,11 @@ Decorations.register("pipe_junctionbox", {
         )
 
         --[[ SOFT GLOW
-        love.graphics.setColor(1.0, 0.35, 0.35, 0.22)
+        if active then
+            love.graphics.setColor(0.45, 1.0, 0.45, 0.22)
+        else
+            love.graphics.setColor(1.0, 0.35, 0.35, 0.22)
+        end
         love.graphics.rectangle(
             "fill",
             lightX - 4,
@@ -729,6 +742,14 @@ function Decorations.update(dt)
         local prefab = registry[inst.type]
         if prefab and prefab.update then
             prefab.update(inst, dt)
+        end
+    end
+end
+
+function Decorations.setJunctionBoxesActive(active)
+    for _, inst in ipairs(list) do
+        if inst.type == "pipe_junctionbox" then
+            inst.data.active = not not active
         end
     end
 end
