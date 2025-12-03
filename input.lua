@@ -6,8 +6,25 @@
 
 local Input = {}
 
+local unpack = table.unpack or unpack
+
+local jumpKeys = { space = true, w = true, up = true }
+local jumpButtons = { a = true, cross = true }
+local jumpInputs = { "space", "w", "up", "gp_btn_a", "gp_btn_cross" }
+
 local function isJumpKey(key)
-    return key == "space" or key == "w" or key == "up"
+    return jumpKeys[key] ~= nil
+end
+
+local function isJumpButton(button)
+    return jumpButtons[button] ~= nil
+end
+
+local function anyActive(stateTable, keys)
+    for _, key in ipairs(keys) do
+        if stateTable[key] then return true end
+    end
+    return false
 end
 
 -- key/button states
@@ -36,6 +53,14 @@ end
 local function stickAxis(value)
     if math.abs(value) < deadzone then return 0 end
     return value
+end
+
+local function setHeld(key, active)
+    if active then
+        Input.down[key] = true
+    else
+        Input.down[key] = nil
+    end
 end
 
 --------------------------------------------------------------
@@ -81,9 +106,7 @@ function Input.gamepadreleased(joystick, button)
     Input.released[key] = true
 
     -- Jump buttons
-    if button == "a" or button == "cross" then
-        Input.jumpQueued = true
-    end
+    if isJumpButton(button) then Input.jumpQueued = true end
 end
 
 --------------------------------------------------------------
@@ -98,43 +121,17 @@ function Input.update()
         -- ANALOG STICK
         ------------------------------------------------------
         local lx = stickAxis(gamepad:getAxis(1))
+        local leftDown = lx < 0 or gamepad:isGamepadDown("dpleft")
+        local rightDown = lx > 0 or gamepad:isGamepadDown("dpright")
 
-        if lx < -deadzone then
-            Input.down["gp_left"] = true
-        else
-            Input.down["gp_left"] = nil
-        end
-
-        if lx > deadzone then
-            Input.down["gp_right"] = true
-        else
-            Input.down["gp_right"] = nil
-        end
+        setHeld("gp_left", leftDown)
+        setHeld("gp_right", rightDown)
 
         ------------------------------------------------------
         -- D-PAD (digital)
         ------------------------------------------------------
-        if gamepad:isGamepadDown("dpleft") then
-            Input.down["gp_left"] = true
-        end
-        if gamepad:isGamepadDown("dpright") then
-            Input.down["gp_right"] = true
-        end
-
-        ------------------------------------------------------
-        -- D-PAD Vertical (if needed later)
-        ------------------------------------------------------
-        if gamepad:isGamepadDown("dpup") then
-            Input.down["gp_up"] = true
-        else
-            Input.down["gp_up"] = nil
-        end
-
-        if gamepad:isGamepadDown("dpdown") then
-            Input.down["gp_down"] = true
-        else
-            Input.down["gp_down"] = nil
-        end
+        setHeld("gp_up", gamepad:isGamepadDown("dpup"))
+        setHeld("gp_down", gamepad:isGamepadDown("dpdown"))
     end
 end
 
@@ -168,23 +165,15 @@ function Input.wasReleased(key)
 end
 
 function Input.wasJumpPressed()
-    return Input.wasPressed("space")
-        or Input.wasPressed("w")
-        or Input.wasPressed("up")
-        or Input.wasPressed("gp_btn_a")
-        or Input.wasPressed("gp_btn_cross")
+    return anyActive(Input.pressed, jumpInputs)
 end
 
 function Input.wasJumpReleased()
-    return Input.wasReleased("space")
-        or Input.wasReleased("w")
-        or Input.wasReleased("up")
-        or Input.wasReleased("gp_btn_a")
-        or Input.wasReleased("gp_btn_cross")
+    return anyActive(Input.released, jumpInputs)
 end
 
 function Input.isJumpDown()
-    return Input.isDown("space", "w", "up", "gp_btn_a", "gp_btn_cross")
+    return Input.isDown(unpack(jumpInputs))
 end
 
 --------------------------------------------------------------
