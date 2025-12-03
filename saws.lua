@@ -29,6 +29,47 @@ local COLOR_RIM       = {0, 0, 0}
 local COLOR_RIM_LIGHT = {0, 0, 0}
 
 --------------------------------------------------------------
+-- SAW GEOMETRY HELPERS
+--------------------------------------------------------------
+
+local function buildSawPoints(radius, teeth)
+    local pts = {}
+    local outerR = radius
+    local innerR = radius * INNER_RATIO
+    local step = (math.pi*2) / teeth
+
+    for i = 0, teeth-1 do
+        local aO = i * step
+        local aI = aO + step * 0.5
+
+        pts[#pts+1] = math.cos(aO)*outerR
+        pts[#pts+1] = math.sin(aO)*outerR
+
+        pts[#pts+1] = math.cos(aI)*innerR
+        pts[#pts+1] = math.sin(aI)*innerR
+    end
+
+    return pts
+end
+
+local function rotatePoints(src, cosA, sinA, dest)
+    dest = dest or {}
+
+    for i = 1, #src, 2 do
+        local x0 = src[i]
+        local y0 = src[i+1]
+        dest[i]     = x0 * cosA - y0 * sinA
+        dest[i + 1] = x0 * sinA + y0 * cosA
+    end
+
+    for i = #src + 1, #dest do
+        dest[i] = nil
+    end
+
+    return dest
+end
+
+--------------------------------------------------------------
 -- SPAWN
 --------------------------------------------------------------
 
@@ -37,6 +78,9 @@ function Saw.spawn(x, y, opts)
     local dir = opts.dir or "horizontal"
     local mount = opts.mount or (dir == "horizontal" and "bottom" or "left")
 
+    local radius = opts.r or BASE_RADIUS
+    local rawPoints = buildSawPoints(radius, TEETH)
+
     table.insert(Saw.list, {
         anchorX = x,
         anchorY = y,
@@ -44,7 +88,7 @@ function Saw.spawn(x, y, opts)
         x = x,
         y = y,
 
-        r        = opts.r     or BASE_RADIUS,
+        r        = radius,
         angle    = opts.angle or 0,
         dir      = dir,
         mount    = mount,
@@ -56,6 +100,11 @@ function Saw.spawn(x, y, opts)
 
         sineAmp  = opts.sineAmp  or 0,
         sineFreq = opts.sineFreq or 0,
+
+        rawPoints = rawPoints,
+        baseTriangles = love.math.triangulate(rawPoints),
+        rotatedOutline = {},
+        rotatedTriangles = {},
 
         t    = 0,
         dead = false,
@@ -151,34 +200,6 @@ function Saw.update(dt, player)
     end
 end
 
---------------------------------------------------------------
--- SAW TEETH GEOMETRY
---------------------------------------------------------------
-
-local function buildSawPoints(radius, teeth)
-    local pts = {}
-    local outerR = radius
-    local innerR = radius * INNER_RATIO
-    local step = (math.pi*2) / teeth
-
-    for i = 0, teeth-1 do
-        local aO = i * step
-        local aI = aO + step * 0.5
-
-        pts[#pts+1] = math.cos(aO)*outerR
-        pts[#pts+1] = math.sin(aO)*outerR
-
-        pts[#pts+1] = math.cos(aI)*innerR
-        pts[#pts+1] = math.sin(aI)*innerR
-    end
-
-    return pts
-end
-
---------------------------------------------------------------
--- TRACK CAPSULE (now respects WALL_PAD for vertical)
---------------------------------------------------------------
-
 local function getCapsule(s)
     local half = s.trackLength * 0.5
 
@@ -272,20 +293,28 @@ end
 
 function Saw.draw()
     for _, s in ipairs(Saw.list) do
-        local raw = buildSawPoints(s.r, TEETH)
-        local rot = {}
+        local raw = s.rawPoints or buildSawPoints(s.r, TEETH)
+        if not s.rawPoints then
+            s.rawPoints = raw
+            s.baseTriangles = love.math.triangulate(raw)
+            s.rotatedOutline = s.rotatedOutline or {}
+            s.rotatedTriangles = s.rotatedTriangles or {}
+        end
 
+        
         local c = math.cos(s.angle)
         local sn = math.sin(s.angle)
 
-        for i = 1, #raw, 2 do
-            local x0 = raw[i]
-            local y0 = raw[i+1]
-            rot[#rot+1] = x0*c - y0*sn
-            rot[#rot+1] = x0*sn + y0*c
-        end
+        local rot = rotatePoints(raw, c, sn, s.rotatedOutline)
 
-        local tris = love.math.triangulate(rot)
+        local tris = s.rotatedTriangles or {}
+        for i, base in ipairs(s.baseTriangles) do
+            tris[i] = rotatePoints(base, c, sn, tris[i])
+        end
+        for i = #s.baseTriangles + 1, #tris do
+            tris[i] = nil
+        end
+        s.rotatedTriangles = tris
 
         ------------------------------------------------------
         -- TRACK BACK TRENCH
