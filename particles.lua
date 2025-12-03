@@ -119,7 +119,9 @@ function Particles.update(dt)
         -- fade
         p.life = p.life - dt
         if p.life <= 0 then
-            table.remove(particles, i)
+            local last = #particles
+            particles[i] = particles[last]
+            particles[last] = nil
         end
     end
 end
