@@ -88,7 +88,7 @@ end
 
 function Decorations.clear()
     for i = #list, 1, -1 do
-        table.remove(list, i)
+        list[i] = nil
     end
 end
 
