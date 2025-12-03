@@ -7,6 +7,8 @@ local Blink = require("blink")
 local Idle = require("idle")
 local Input = require("input")
 local Cube = require("cube")
+local Collision = require("player.collision")
+local Sleep = require("player.sleep")
 
 local Player = {}
 
@@ -21,9 +23,6 @@ local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 155
-
--- Sleep system: seconds of idle before falling asleep
-local SLEEP_THRESHOLD = 20.0
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -118,203 +117,6 @@ function Player.init(Level)
     p.spawnY = p.y
 end
 
---------------------------------------------------------------
--- COLLISION HELPERS
---------------------------------------------------------------
-
-local function tileAt(Level, tx, ty)
-    local grid = Level.solidGrid
-    if not grid then return false end
-
-    if tx < 1 or ty < 1 or tx > Level.width or ty > Level.height then
-        return false
-    end
-
-    local row = grid[ty]
-    return row and row[tx] == true
-end
-
---------------------------------------------------------------
--- GROUND SNAP
---------------------------------------------------------------
-
-local function tryGroundSnap(Level)
-    local TILE = Level.tileSize or 48
-
-    if p.vy < 0 or p.onGround then return end
-
-    local epsilon = 2
-    local footY   = p.y + p.h
-    local below   = math.floor(footY / TILE) + 1
-
-    local lx = math.floor((p.x + 1)       / TILE) + 1
-    local rx = math.floor((p.x + p.w - 2) / TILE) + 1
-
-    for tx = lx, rx do
-        if tileAt(Level, tx, below) then
-            local snapY = (below - 1) * TILE - p.h
-            if footY - snapY <= epsilon then
-                p.y = snapY
-                p.vy = 0
-                p.onGround = true
-                p.contactBottom = math.max(p.contactBottom, 0.5)
-                return
-            end
-        end
-    end
-end
-
---------------------------------------------------------------
--- HORIZONTAL COLLISION
---------------------------------------------------------------
-
-local function moveHorizontal(Level, amount)
-    if amount == 0 then return false end
-    local TILE = Level.tileSize or 48
-    local collided = false
-
-    local topTile    = math.floor(p.y / TILE) + 1
-    local bottomTile = math.floor((p.y + p.h - 1) / TILE) + 1
-
-    if amount > 0 then
-        -- moving right
-        local rightEdge = p.x + p.w
-        local startTile = math.floor((rightEdge - 1) / TILE) + 1
-        local endTile   = math.floor((rightEdge + amount - 1) / TILE) + 1
-        local targetX   = p.x + amount
-
-        for tx = startTile + 1, endTile do
-            for ty = topTile, bottomTile do
-                if tileAt(Level, tx, ty) then
-                    collided = true
-                    targetX = (tx - 1) * TILE - p.w
-                    break
-                end
-            end
-        end
-
-        p.x = targetX
-
-    else
-        -- moving left
-        local leftEdge = p.x
-        local startTile = math.floor(leftEdge / TILE) + 1
-        local endTile   = math.floor((leftEdge + amount) / TILE) + 1
-        local targetX   = p.x + amount
-
-        for tx = startTile - 1, endTile, -1 do
-            for ty = topTile, bottomTile do
-                if tileAt(Level, tx, ty) then
-                    collided = true
-                    targetX = tx * TILE
-                    break
-                end
-            end
-        end
-
-        p.x = targetX
-    end
-
-    if collided then
-        p.vx = 0
-        if amount > 0 then
-            p.contactRight = math.max(p.contactRight, 0.6)
-            p.springHorzVel = p.springHorzVel - 60
-            p.wallCoyoteTimerRight = p.wallCoyoteTime
-        else
-            p.contactLeft = math.max(p.contactLeft, 0.6)
-            p.springHorzVel = p.springHorzVel + 60
-            p.wallCoyoteTimerLeft = p.wallCoyoteTime
-        end
-    end
-
-    return collided
-end
-
---------------------------------------------------------------
--- VERTICAL COLLISION
---------------------------------------------------------------
-
-local function moveVertical(Level, amount)
-    if amount == 0 then return false end
-    local TILE = Level.tileSize or 48
-    local collided = false
-
-    local lx = math.floor(p.x / TILE) + 1
-    local rx = math.floor((p.x + p.w - 1) / TILE) + 1
-
-    if amount > 0 then
-        ------------------------------------------------------
-        -- Moving down
-        ------------------------------------------------------
-        local bottomEdge = p.y + p.h
-        local startTile  = math.floor(bottomEdge / TILE) + 1
-        local endTile    = math.floor((bottomEdge + amount) / TILE) + 1
-        local targetY    = p.y + amount
-
-        for ty = startTile, endTile do
-            for tx = lx, rx do
-                if tileAt(Level, tx, ty) then
-                    collided = true
-                    targetY = (ty - 1) * TILE - p.h
-                    break
-                end
-            end
-        end
-
-        p.y = targetY
-
-        if collided then
-            p.vy = 0
-            p.onGround = true
-
-            p.contactBottom = math.max(p.contactBottom, 0.7)
-            p.springVertVel = p.springVertVel - 160
-        end
-
-    else
-        ------------------------------------------------------
-        -- Moving up
-        ------------------------------------------------------
-        local topEdge  = p.y
-        local startTile = math.floor(topEdge / TILE) + 1
-        local endTile   = math.floor((topEdge + amount) / TILE) + 1
-        local targetY   = p.y + amount
-
-        for ty = startTile, endTile, -1 do
-            for tx = lx, rx do
-                if tileAt(Level, tx, ty) then
-                    collided = true
-                    targetY = ty * TILE
-                    break
-                end
-            end
-        end
-
-        p.y = targetY
-
-        if collided then
-            p.vy = 0
-            p.contactTop = math.max(p.contactTop, 0.6)
-            p.springVertVel = p.springVertVel + 80
-
-            Particles.puff(
-                p.x + p.w/2 + (math.random()-0.5)*4,
-                p.y - 2,
-                (math.random()*TILE - TILE/2)*1.4,
-                35 + math.random()*25,
-                4, 0.28,
-                {1,1,1,0.9}
-            )
-        end
-    end
-
-    return collided
-end
-
---------------------------------------------------------------
--- HELPERS
---------------------------------------------------------------
 
 local function clamp(v, mn, mx)
     return (v < mn and mn) or (v > mx and mx) or v
@@ -324,10 +126,6 @@ local function approach(a, b, dt, speed)
     if a < b then return math.min(a + speed * dt, b)
     else          return math.max(a - speed * dt, b)
     end
-end
-
-local function ease(t)
-    return t * t * (3 - 2 * t)
 end
 
 --------------------------------------------------------------
@@ -402,18 +200,7 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- WAKE ON INPUT (sleep/wake logic)
     ----------------------------------------------------------
-    if p.sleeping or p.sleepingTransition then
-        if move ~= 0 or jumpDown or jumpReleased then
-            p.sleeping = false
-            p.sleepingTransition = false
-            p.idleTimer = 0
-            p.sleepEyeT = 0
-
-            Blink.progress = 0
-            Blink.closing  = false
-            Blink.timer    = 2.5
-        end
-    end
+    Sleep.wakeOnInput(p, move, jumpDown, jumpReleased)
 
     ----------------------------------------------------------
     -- Jump buffer & coyote timers
@@ -632,9 +419,9 @@ function Player.update(dt, Level)
     -- Collision
     ----------------------------------------------------------
     p.onGround = false
-    moveHorizontal(Level, p.vx * dt)
-    moveVertical(Level, p.vy * dt)
-    tryGroundSnap(Level)
+    Collision.moveHorizontal(p, Level, p.vx * dt)
+    Collision.moveVertical(p, Level, p.vy * dt)
+    Collision.tryGroundSnap(p, Level)
 
     local justLanded = (not wasOnGround) and p.onGround
     if justLanded then
@@ -744,75 +531,12 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- SLEEP SYSTEM (idle timer + transition)
     ----------------------------------------------------------
-    local isIdle =
-        p.onGround and
-        math.abs(p.vx) < 5 and
-        math.abs(p.vy) < 5 and
-        move == 0
-
-    if isIdle then
-        p.idleTimer = p.idleTimer + dt
-
-        if not p.sleeping
-        and not p.sleepingTransition
-        and p.idleTimer >= SLEEP_THRESHOLD then
-
-            p.sleepingTransition = true
-            p.sleepEyeT = 0
-            Blink.timer = 9999
-            Blink.closing = false
-        end
-    else
-        p.idleTimer = 0
-        if p.sleeping or p.sleepingTransition then
-            p.sleeping = false
-            p.sleepingTransition = false
-            p.sleepEyeT = 0
-            Blink.progress = 0
-            Blink.timer = 2.5
-        end
-    end
+    Sleep.updateIdle(p, dt, move)
 
     ----------------------------------------------------------
     -- SLEEPY BLINK (Pixar-grade)
     ----------------------------------------------------------
-    if p.sleepingTransition then
-        p.sleepEyeT = p.sleepEyeT + dt / 0.9
-        if p.sleepEyeT >= 1 then
-            p.sleepEyeT = 1
-            p.sleepingTransition = false
-            p.sleeping = true
-        end
-
-        local t = p.sleepEyeT
-
-        -- 1) Half-blink
-        if t < 0.30 then
-            local k = ease(t / 0.30)
-            Blink.progress = k * 0.50
-
-        -- 2) Full blink
-        elseif t < 0.60 then
-            local k = ease((t - 0.30) / 0.30)
-            Blink.progress = 0.50 + k * 0.50
-
-        -- 3) Final sealed
-        else
-            Blink.progress = 1
-        end
-
-        Blink.closing = false
-        Blink.timer   = 9999
-    end
-
-    ----------------------------------------------------------
-    -- FULL SLEEP OVERRIDE
-    ----------------------------------------------------------
-    if p.sleeping then
-        Blink.progress = 1
-        Blink.closing = false
-        Blink.timer = 9999
-    end
+    Sleep.updateBlink(p, dt)
 
     return p
 end
