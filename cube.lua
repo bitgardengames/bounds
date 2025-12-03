@@ -48,20 +48,24 @@ end
 -- TILE COLLISION HELPERS
 --------------------------------------------------------------
 
-local function tileAtPixel(px, py)
-    local TILE = level.tileSize or 48
+local function tileAtPixel(px, py, TILE, grid, width, height)
     local tx = math.floor(px / TILE) + 1
     local ty = math.floor(py / TILE) + 1
-    return level.tileAt(tx, ty) == "#"
+
+    if tx < 1 or ty < 1 or tx > width or ty > height then
+        return false
+    end
+
+    local row = grid and grid[ty]
+    return row and row[tx] == true
 end
 
 --------------------------------------------------------------
 -- COLLISION RESOLUTION
 --------------------------------------------------------------
 
-local function resolveTileCollision(c)
+local function resolveTileCollision(c, TILE, grid, width, height)
     local x, y, w, h = c.x, c.y, c.w, c.h
-    local TILE = level.tileSize or 48
 
     c.grounded = false
 
@@ -71,8 +75,8 @@ local function resolveTileCollision(c)
     if c.vy > 0 then
         -- falling downward, probe just BELOW the cube
         local footY = y + h
-        local hitL = tileAtPixel(x + 2,     footY + 1)
-        local hitR = tileAtPixel(x + w - 2, footY + 1)
+        local hitL = tileAtPixel(x + 2,     footY + 1, TILE, grid, width, height)
+        local hitR = tileAtPixel(x + w - 2, footY + 1, TILE, grid, width, height)
 
         if hitL or hitR then
             c.vy = 0
@@ -86,8 +90,8 @@ local function resolveTileCollision(c)
     elseif c.vy < 0 then
         -- upward movement
         local headY = y
-        local hitL = tileAtPixel(x + 2,     headY)
-        local hitR = tileAtPixel(x + w - 2, headY)
+        local hitL = tileAtPixel(x + 2,     headY, TILE, grid, width, height)
+        local hitR = tileAtPixel(x + w - 2, headY, TILE, grid, width, height)
 
         if hitL or hitR then
             c.vy = 0
@@ -100,8 +104,8 @@ local function resolveTileCollision(c)
     ----------------------------------------------------------
     if c.vx > 0 then
         local rightX = x + w
-        local hitT = tileAtPixel(rightX + 1, y + 2)
-        local hitB = tileAtPixel(rightX + 1, y + h - 2)
+        local hitT = tileAtPixel(rightX + 1, y + 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(rightX + 1, y + h - 2, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -110,8 +114,8 @@ local function resolveTileCollision(c)
 
     elseif c.vx < 0 then
         local leftX = x
-        local hitT = tileAtPixel(leftX, y + 2)
-        local hitB = tileAtPixel(leftX, y + h - 2)
+        local hitT = tileAtPixel(leftX, y + 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(leftX, y + h - 2, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -180,6 +184,11 @@ end
 --------------------------------------------------------------
 
 function Cube.update(dt, player)
+    local tileSize = level.tileSize or 48
+    local grid = level.solidGrid
+    local width = level.width or 0
+    local height = level.height or 0
+
     for _, c in ipairs(Cube.list) do
 
         ------------------------------------------------------
@@ -207,7 +216,7 @@ function Cube.update(dt, player)
         ------------------------------------------------------
         -- COLLISIONS
         ------------------------------------------------------
-        resolveTileCollision(c)
+        resolveTileCollision(c, tileSize, grid, width, height)
     end
 end
 

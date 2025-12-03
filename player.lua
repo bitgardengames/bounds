@@ -123,7 +123,15 @@ end
 --------------------------------------------------------------
 
 local function tileAt(Level, tx, ty)
-    return Level.tileAt(tx, ty)
+    local grid = Level.solidGrid
+    if not grid then return false end
+
+    if tx < 1 or ty < 1 or tx > Level.width or ty > Level.height then
+        return false
+    end
+
+    local row = grid[ty]
+    return row and row[tx] == true
 end
 
 --------------------------------------------------------------
@@ -143,7 +151,7 @@ local function tryGroundSnap(Level)
     local rx = math.floor((p.x + p.w - 2) / TILE) + 1
 
     for tx = lx, rx do
-        if tileAt(Level, tx, below) == "#" then
+        if tileAt(Level, tx, below) then
             local snapY = (below - 1) * TILE - p.h
             if footY - snapY <= epsilon then
                 p.y = snapY
@@ -177,7 +185,7 @@ local function moveHorizontal(Level, amount)
 
         for tx = startTile + 1, endTile do
             for ty = topTile, bottomTile do
-                if tileAt(Level, tx, ty) == "#" then
+                if tileAt(Level, tx, ty) then
                     collided = true
                     targetX = (tx - 1) * TILE - p.w
                     break
@@ -196,7 +204,7 @@ local function moveHorizontal(Level, amount)
 
         for tx = startTile - 1, endTile, -1 do
             for ty = topTile, bottomTile do
-                if tileAt(Level, tx, ty) == "#" then
+                if tileAt(Level, tx, ty) then
                     collided = true
                     targetX = tx * TILE
                     break
@@ -246,7 +254,7 @@ local function moveVertical(Level, amount)
 
         for ty = startTile, endTile do
             for tx = lx, rx do
-                if tileAt(Level, tx, ty) == "#" then
+                if tileAt(Level, tx, ty) then
                     collided = true
                     targetY = (ty - 1) * TILE - p.h
                     break
@@ -275,7 +283,7 @@ local function moveVertical(Level, amount)
 
         for ty = startTile, endTile, -1 do
             for tx = lx, rx do
-                if tileAt(Level, tx, ty) == "#" then
+                if tileAt(Level, tx, ty) then
                     collided = true
                     targetY = ty * TILE
                     break
