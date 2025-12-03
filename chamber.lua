@@ -1,4 +1,5 @@
 local Plate = require("pressureplate")
+local Decorations = require("decorations")
 
 local Chamber = {
     exitEnabled = false,
@@ -26,6 +27,8 @@ function Chamber.update(dt, Player, Door, ExitTrigger)
         Door.setOpen(false)
         Chamber.exitEnabled = false
     end
+
+    Decorations.setJunctionBoxesActive(Chamber.exitEnabled)
 
     if Chamber.exitEnabled and ExitTrigger.playerInside(Player) and not Chamber.isComplete then
         Chamber.isComplete = true
