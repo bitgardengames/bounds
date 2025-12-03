@@ -133,6 +133,8 @@ end
 ------------------------------------------------------------
 -- DRAW
 ------------------------------------------------------------
+local visualOffset = 5
+
 function SecurityCamera.draw(style)
     if not SecurityCamera.active then return end
 
@@ -156,7 +158,7 @@ function SecurityCamera.draw(style)
     ------------------------------------------------------
     local plateW = 4
     local plateH = 32
-    local plateX = x
+    local plateX = x + visualOffset
     local plateY = y + h/2 - plateH/2
 
     love.graphics.setColor(0,0,0,1)
@@ -166,7 +168,7 @@ function SecurityCamera.draw(style)
         4, 4
     )
 
-    love.graphics.setColor(S.dark)
+    love.graphics.setColor(0.20, 0.20, 0.22)
     love.graphics.rectangle("fill",
         plateX, plateY,
         plateW, plateH,
@@ -176,9 +178,9 @@ function SecurityCamera.draw(style)
     ------------------------------------------------------
     -- ARM
     ------------------------------------------------------
-    local armX = x + 8
+    local armX = x + 13
     local armY = y + h/2 - 3
-    local armW = 16
+    local armW = 12
     local armH = 6
 
     love.graphics.setColor(0,0,0,1)

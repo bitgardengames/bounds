@@ -237,6 +237,8 @@ end
 -- DRAW
 --------------------------------------------------------------
 
+local visualOffset = 4
+
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
         -- Outline
@@ -244,7 +246,7 @@ function Cube.draw()
         love.graphics.rectangle(
             "fill",
             c.x - OUTLINE,
-            c.y - OUTLINE,
+            c.y - OUTLINE - visualOffset,
             c.w + OUTLINE*2,
             c.h + OUTLINE*2,
             6,6
@@ -255,20 +257,9 @@ function Cube.draw()
         love.graphics.rectangle(
             "fill",
             c.x,
-            c.y,
+            c.y - visualOffset,
             c.w,
             c.h,
-            6,6
-        )
-
-        -- Highlight
-        love.graphics.setColor(1,1,1,0.14)
-        love.graphics.rectangle(
-            "fill",
-            c.x + 6,
-            c.y + 4,
-            c.w - 12,
-            c.h * 0.3,
             6,6
         )
     end
