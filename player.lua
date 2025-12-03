@@ -327,10 +327,13 @@ end
 --------------------------------------------------------------
 
 function Player.update(dt, Level)
+    ----------------------------------------------------------
+    -- Death / respawn block
+    ----------------------------------------------------------
     if p.dead then
         p.respawnTimer = math.max(p.respawnTimer - dt, 0)
 
-        -- allow squash to recover while waiting to respawn
+        -- squash recovery while waiting
         p.contactBottom = approach(p.contactBottom, 0, dt, 8)
         p.contactTop    = approach(p.contactTop,    0, dt, 8)
         p.contactLeft   = approach(p.contactLeft,   0, dt, 8)
@@ -360,6 +363,8 @@ function Player.update(dt, Level)
             -- reset sleep state
             p.idleTimer = 0
             p.sleeping = false
+            p.sleepingTransition = false
+            p.sleepEyeT = 0
         end
 
         return p
@@ -367,7 +372,9 @@ function Player.update(dt, Level)
 
     local wasOnGround = p.onGround
 
-    -- contact smoothing
+    ----------------------------------------------------------
+    -- Damping idle squash
+    ----------------------------------------------------------
     local idleSquish = p.onGround and 0.08 or 0
     p.contactBottom = approach(p.contactBottom, idleSquish, dt, 10)
     p.contactTop    = approach(p.contactTop,    0, dt, 14)
@@ -375,30 +382,25 @@ function Player.update(dt, Level)
     p.contactRight  = approach(p.contactRight,  0, dt, 14)
 
     ----------------------------------------------------------
-    -- INPUT  (UPDATED FOR GAMEPAD)
+    -- Input
     ----------------------------------------------------------
     local move = 0
-
-    -- keyboard + gamepad mapped together
-    if Input.isDown("a", "left", "gp_left") then
-        move = move - 1
-    end
-    if Input.isDown("d", "right", "gp_right") then
-        move = move + 1
-    end
+    if Input.isDown("a", "left", "gp_left") then move = move - 1 end
+    if Input.isDown("d", "right", "gp_right") then move = move + 1 end
 
     local jumpDown     = Input.isJumpDown()
     local jumpReleased = Input.wasJumpReleased()
 
     ----------------------------------------------------------
-    -- WAKE ON INPUT (sleep system)
+    -- WAKE ON INPUT (sleep/wake logic)
     ----------------------------------------------------------
-    if p.sleeping then
+    if p.sleeping or p.sleepingTransition then
         if move ~= 0 or jumpDown or jumpReleased then
             p.sleeping = false
+            p.sleepingTransition = false
             p.idleTimer = 0
+            p.sleepEyeT = 0
 
-            -- wake eyes
             Blink.progress = 0
             Blink.closing  = false
             Blink.timer    = 2.5
@@ -406,7 +408,7 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- JUMP BUFFER + COYOTE
+    -- Jump buffer & coyote timers
     ----------------------------------------------------------
     if Input.consumeJump() then
         p.jumpBufferTimer = p.jumpBufferTime
@@ -424,22 +426,15 @@ function Player.update(dt, Level)
     p.wallCoyoteTimerRight = math.max(p.wallCoyoteTimerRight - dt, 0)
 
     ----------------------------------------------------------
-    -- HORIZONTAL MOVEMENT
+    -- Horizontal movement
     ----------------------------------------------------------
     local targetSpeed = move * p.maxSpeed
 
-    -- If we're currently pushing a cube, clamp AND override movement
+    -- Handle cube pushing
     if p.pushingCube then
-        local CUBE_PUSH_MAX = 140
-
-        -- Clamp target
-        targetSpeed = math.max(-CUBE_PUSH_MAX, math.min(targetSpeed, CUBE_PUSH_MAX))
-
-        local APPROACH_RATE = 8000  -- big number means fast, smooth approach
-
-        -- Approach formula:
+        targetSpeed = clamp(targetSpeed, -CUBE_PUSH_MAX, CUBE_PUSH_MAX)
         local diff = targetSpeed - p.vx
-        p.vx = p.vx + diff * dt * (APPROACH_RATE / 1000)
+        p.vx = p.vx + diff * dt * 8.0
     else
         local accelerating = math.abs(targetSpeed) > 0
         local accel = accelerating
@@ -451,8 +446,7 @@ function Player.update(dt, Level)
             p.vx = p.vx + dir * accel * dt
 
             if (dir == 1 and p.vx > targetSpeed)
-            or  (dir == -1 and p.vx < targetSpeed)
-            then
+            or (dir == -1 and p.vx < targetSpeed) then
                 p.vx = targetSpeed
             end
 
@@ -475,7 +469,7 @@ function Player.update(dt, Level)
 
             p.lastDir = dir
 
-            -- running dust trail (unchanged)
+            -- running dust
             if p.onGround then
                 local speed = math.abs(p.vx)
                 if speed > p.maxSpeed * 0.55 then
@@ -497,19 +491,14 @@ function Player.update(dt, Level)
                     p.runDustTimer = 0
                 end
             end
-
         else
-            -- deceleration (unchanged)
-            if p.vx > 0 then
-                p.vx = math.max(p.vx - accel*dt, 0)
-            elseif p.vx < 0 then
-                p.vx = math.min(p.vx + accel*dt, 0)
-            end
+            if p.vx > 0 then p.vx = math.max(p.vx - accel*dt, 0)
+            else            p.vx = math.min(p.vx + accel*dt, 0) end
         end
     end
 
     ----------------------------------------------------------
-    -- WALL SLIDING
+    -- Wall sliding
     ----------------------------------------------------------
     local touchingLeft  = p.wallCoyoteTimerLeft  > 0
     local touchingRight = p.wallCoyoteTimerRight > 0
@@ -532,26 +521,22 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- JUMPING (ground, wall, anticipation)
+    -- Jump logic (ground + wall + anticipation)
     ----------------------------------------------------------
     local doWall = false
     local wallDir = 0
 
-    -- wall jump check
-    if p.jumpBufferTimer > 0 then
-        if not p.onGround then
-            if p.wallCoyoteTimerLeft > 0 then
-                doWall = true
-                wallDir = 1
-            elseif p.wallCoyoteTimerRight > 0 then
-                doWall = true
-                wallDir = -1
-            end
+    if p.jumpBufferTimer > 0 and not p.onGround then
+        if p.wallCoyoteTimerLeft > 0 then
+            doWall = true
+            wallDir = 1
+        elseif p.wallCoyoteTimerRight > 0 then
+            doWall = true
+            wallDir = -1
         end
     end
 
     if doWall then
-        -- WALL JUMP
         p.vx = WALL_JUMP_PUSH * wallDir
         p.vy = WALL_JUMP_UP
         p.jumpBufferTimer = 0
@@ -574,29 +559,25 @@ function Player.update(dt, Level)
         p.gatherTime = 0
 
     else
-        -- Ground / coyote jump anticipation
         local canGroundJump = p.onGround or p.coyoteTimer > 0
 
         if canGroundJump and jumpDown and not p.gathering then
-            p.gathering     = true
-            p.gatherTime    = 0
+            p.gathering = true
+            p.gatherTime = 0
             p.preJumpSquish = 0
         end
 
         if p.gathering then
-            -- cancel if lost ground/coyote
             if not p.onGround and p.coyoteTimer <= 0 then
-                p.gathering      = false
-                p.gatherTime     = 0
-                p.preJumpSquish  = 0
+                p.gathering = false
+                p.gatherTime = 0
+                p.preJumpSquish = 0
             else
-                -- build squish while button is held
                 p.gatherTime = math.min(p.gatherTime + dt, p.gatherDuration)
                 local t = clamp(p.gatherTime / p.gatherDuration, 0, 1)
                 p.preJumpSquish = t * PRE_JUMP_SQUISH_SCALE
 
                 if jumpReleased then
-                    -- JUMP!
                     local stored = clamp(p.preJumpSquish, 0, PRE_JUMP_SQUISH_SCALE)
 
                     p.vy = p.jumpStrength
@@ -604,7 +585,6 @@ function Player.update(dt, Level)
                     p.jumpBufferTimer = 0
 
                     p.springVertVel = p.springVertVel + 150 + stored * 150
-
                     p.preJumpSquish = -stored * 0.8
 
                     Particles.puff(
@@ -616,7 +596,7 @@ function Player.update(dt, Level)
                         {1,1,1,1}
                     )
 
-                    p.gathering  = false
+                    p.gathering = false
                     p.gatherTime = 0
                 end
             end
@@ -624,7 +604,7 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- JUMP SQUISH DECAY
+    -- Jump squish decay
     ----------------------------------------------------------
     if not p.gathering then
         if p.preJumpSquish > 0 then
@@ -635,13 +615,13 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- GRAVITY
+    -- Gravity
     ----------------------------------------------------------
     p.vy = p.vy + GRAVITY * dt
     p.vy = clamp(p.vy, -math.huge, MAX_FALL_SPEED)
 
     ----------------------------------------------------------
-    -- COLLISION
+    -- Collision
     ----------------------------------------------------------
     p.onGround = false
     moveHorizontal(Level, p.vx * dt)
@@ -663,9 +643,8 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- SPRINGS
+    -- Springs
     ----------------------------------------------------------
-    -- vertical
     do
         local s = p.springVert
         local v = p.springVertVel
@@ -676,7 +655,6 @@ function Player.update(dt, Level)
         p.springVertVel = v
     end
 
-    -- horizontal
     do
         local s = p.springHorz
         local v = p.springHorzVel
@@ -688,21 +666,21 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- EYES
+    -- Eyes direction
     ----------------------------------------------------------
     local dx, dy = 0, 0
     if math.abs(p.vx) > 20 then dx = (p.vx > 0) and 1 or -1 end
     if math.abs(p.vy) > 50 then dy = (p.vy > 0) and 0.5 or -0.3 end
 
     local idleEyeX, idleEyeY = 0, 0
-    if not p.sleeping then
+    if not p.sleeping and not p.sleepingTransition then
         idleEyeX, idleEyeY = Idle.getEyeOffset()
     end
 
     dx = clamp(dx + idleEyeX, -1, 1)
     dy = clamp(dy + idleEyeY, -1, 1)
 
-    if p.sleeping then
+    if p.sleeping or p.sleepingTransition then
         dx, dy = 0, 0
     end
 
@@ -710,12 +688,10 @@ function Player.update(dt, Level)
     p.eyeDirY = approach(p.eyeDirY, dy, dt, 6)
 
     ----------------------------------------------------------
-    -- CUBE COLLISION (push-friendly)
+    -- CUBE collision push logic
     ----------------------------------------------------------
-    local cubes = Cube.list
     p.pushingCube = false
-
-    for _, c in ipairs(cubes) do
+    for _, c in ipairs(Cube.list) do
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
 
@@ -723,7 +699,6 @@ function Player.update(dt, Level)
         local cx2, cy2 = c.x + c.w, c.y + c.h
 
         if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
-            -- overlaps:
             local overlapLeft   = px2 - cx1
             local overlapRight  = cx2 - px1
             local overlapTop    = py2 - cy1
@@ -731,28 +706,18 @@ function Player.update(dt, Level)
 
             local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
-            ------------------------------------------------------
-            -- VERTICAL RESOLUTION (normal)
-            ------------------------------------------------------
             if minOverlap == overlapTop then
                 p.y = p.y - overlapTop
                 p.vy = 0
             elseif minOverlap == overlapBottom then
                 p.y = p.y + overlapBottom
                 p.vy = 0
-
-            ------------------------------------------------------
-            -- HORIZONTAL RESOLUTION (PUSH LOCK)
-            ------------------------------------------------------
             else
-                -- Determine push side
                 if overlapLeft == minOverlap then
-                    -- Player is LEFT of cube
                     p.x = c.x - p.w
                     p.pushingCube = true
-                    p.vx = math.min(p.vx, 0)   -- prevent "ramming"
+                    p.vx = math.min(p.vx, 0)
                 else
-                    -- Player is RIGHT of cube
                     p.x = c.x + c.w
                     p.pushingCube = true
                     p.vx = math.max(p.vx, 0)
@@ -762,57 +727,77 @@ function Player.update(dt, Level)
     end
 
     ----------------------------------------------------------
-    -- SLEEP LOGIC (timer & transitions)
+    -- SLEEP SYSTEM (idle timer + transition)
     ----------------------------------------------------------
-    local isIdle = p.onGround
-        and math.abs(p.vx) < 5
-        and math.abs(p.vy) < 5
-        and move == 0
+    local isIdle =
+        p.onGround and
+        math.abs(p.vx) < 5 and
+        math.abs(p.vy) < 5 and
+        move == 0
 
-    if not p.dead then
-		if isIdle then
-			p.idleTimer = p.idleTimer + dt
+    if isIdle then
+        p.idleTimer = p.idleTimer + dt
 
-			-- Begin sleep transition
-			if (not p.sleeping) and (not p.sleepingTransition)
-			   and p.idleTimer >= SLEEP_THRESHOLD then
+        if not p.sleeping
+        and not p.sleepingTransition
+        and p.idleTimer >= SLEEP_THRESHOLD then
 
-				p.sleepingTransition = true
-				p.sleepEyeT = 0     -- start tween
-				Blink.timer = 9999  -- freeze normal blinking
-				Blink.closing = false
-			end
-		else
-			-- Wake up fully
-			p.idleTimer = 0
-			p.sleepingTransition = false
-			p.sleeping = false
-			p.sleepEyeT = 0
-			Blink.progress = 0
-			Blink.timer = 2.5
-		end
+            p.sleepingTransition = true
+            p.sleepEyeT = 0
+            Blink.timer = 9999
+            Blink.closing = false
+        end
     else
         p.idleTimer = 0
-        p.sleeping = false
+        if p.sleeping or p.sleepingTransition then
+            p.sleeping = false
+            p.sleepingTransition = false
+            p.sleepEyeT = 0
+            Blink.progress = 0
+            Blink.timer = 2.5
+        end
     end
 
-	-- Sleep eye tween
-	if p.sleepingTransition then
-		p.sleepEyeT = p.sleepEyeT + dt / 0.35   -- 350ms ease
-		if p.sleepEyeT >= 1 then
-			p.sleepEyeT = 1
-			p.sleepingTransition = false
-			p.sleeping = true
-		end
-	end
+    ----------------------------------------------------------
+    -- SLEEPY BLINK (Pixar-grade)
+    ----------------------------------------------------------
+    if p.sleepingTransition then
+        p.sleepEyeT = p.sleepEyeT + dt / 0.9
+        if p.sleepEyeT >= 1 then
+            p.sleepEyeT = 1
+            p.sleepingTransition = false
+            p.sleeping = true
+        end
 
-	-- If transitioning OR fully asleep, force Blink to our tweened value
-	if p.sleeping or p.sleepingTransition then
-		local t = ease(p.sleepEyeT)
-		Blink.progress = t
-		Blink.closing  = false
-		Blink.timer    = 9999   -- freeze regular blinks
-	end
+        local t = p.sleepEyeT
+
+        -- 1) Half-blink
+        if t < 0.30 then
+            local k = ease(t / 0.30)
+            Blink.progress = k * 0.50
+
+        -- 2) Full blink
+        elseif t < 0.60 then
+            local k = ease((t - 0.30) / 0.30)
+            Blink.progress = 0.50 + k * 0.50
+
+        -- 3) Final sealed
+        else
+            Blink.progress = 1
+        end
+
+        Blink.closing = false
+        Blink.timer   = 9999
+    end
+
+    ----------------------------------------------------------
+    -- FULL SLEEP OVERRIDE
+    ----------------------------------------------------------
+    if p.sleeping then
+        Blink.progress = 1
+        Blink.closing = false
+        Blink.timer = 9999
+    end
 
     return p
 end
@@ -853,10 +838,14 @@ function Player.draw()
     cl = cl + clamp( sh,0,0.50)
     cr = cr + clamp(-sh,0,0.50)
 
+	if p.sleeping then
+		cb = cb + 0.18 -- sunk deeper into floor
+	end
+
     local pre = p.preJumpSquish
 
     if p.sleeping then
-        cb = cb + 0.10 -- slight extra squish into the floor while sleeping
+        cb = cb + 0.04 -- slight extra squish into the floor while sleeping
     end
 
     local baseEyeOffsetX = r*0.45

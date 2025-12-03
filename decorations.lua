@@ -238,7 +238,7 @@ Decorations.register("fan_large", {
             targetSpeed = 1.0,
             state = "normal",
             stateTimer = 0,
-            nextEvent = love.math.random(8, 18) + love.math.random()
+            nextEvent = love.math.random(20, 30) + love.math.random()
         }
     end,
 
@@ -261,7 +261,7 @@ Decorations.register("fan_large", {
 			if d.fanSpeed <= 0.10 then
 				d.state = "pause"
 				d.stateTimer = 0
-				d.pauseDuration = 4.2 + love.math.random() * 2.4
+				d.pauseDuration = 10 + love.math.random() * 2.4
 			end
 
 		elseif d.state == "pause" then

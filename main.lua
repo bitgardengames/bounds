@@ -76,7 +76,10 @@ function love.update(dt)
     ----------------------------------------------------------
     local pl = Player.update(dt, Level)
 
-    Blink.update(dt)
+	if not pl.sleeping and not pl.sleepingTransition then
+		Blink.update(dt)
+	end
+
     Cube.update(dt, pl)
     Plate.update(dt, pl, Cube.list)
     Door.update(dt)
