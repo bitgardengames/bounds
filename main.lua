@@ -97,12 +97,17 @@ end
 local function spawnObjects(chamber)
     local objects = chamber.objects or {}
 
+    local doorSpawned = false
+
     if objects.door then
         Door.spawn(objects.door.tx, objects.door.ty, TILE_SIZE)
+        doorSpawned = true
     end
 
     if objects.exit then
         Exit.spawn(objects.exit.tx * TILE_SIZE, objects.exit.ty * TILE_SIZE)
+    elseif doorSpawned then
+        Exit.spawn(objects.door.tx * TILE_SIZE, objects.door.ty * TILE_SIZE)
     else
         Exit.clear()
     end
