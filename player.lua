@@ -101,6 +101,8 @@ local p = {
     -- Sleep system
     idleTimer = 0,
     sleeping  = false,
+    sleepEyeT = 0,
+    sleepingTransition = false,
 }
 
 --------------------------------------------------------------
@@ -316,6 +318,10 @@ local function approach(a, b, dt, speed)
     end
 end
 
+local function ease(t)
+    return t * t * (3 - 2 * t)
+end
+
 --------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
@@ -436,7 +442,7 @@ function Player.update(dt, Level)
         p.vx = p.vx + diff * dt * (APPROACH_RATE / 1000)
     else
         local accelerating = math.abs(targetSpeed) > 0
-        local accel = accelerating 
+        local accel = accelerating
             and (p.onGround and p.acceleration or p.airAcceleration)
             or  (p.onGround and p.deceleration or p.airDeceleration)
 
@@ -450,8 +456,8 @@ function Player.update(dt, Level)
                 p.vx = targetSpeed
             end
 
-            local reversing = math.abs(p.vx) > 40 and 
-                              ((dir == 1 and p.lastDir == -1) or 
+            local reversing = math.abs(p.vx) > 40 and
+                              ((dir == 1 and p.lastDir == -1) or
                                (dir == -1 and p.lastDir == 1))
 
             local burstStart = (math.abs(p.vx) < 5 and math.abs(targetSpeed) > 200)
@@ -764,37 +770,49 @@ function Player.update(dt, Level)
         and move == 0
 
     if not p.dead then
-        if isIdle then
-            p.idleTimer = p.idleTimer + dt
+		if isIdle then
+			p.idleTimer = p.idleTimer + dt
 
-            if (not p.sleeping) and p.idleTimer >= SLEEP_THRESHOLD then
-                p.sleeping = true
+			-- Begin sleep transition
+			if (not p.sleeping) and (not p.sleepingTransition)
+			   and p.idleTimer >= SLEEP_THRESHOLD then
 
-                -- close eyes & freeze blink
-                Blink.progress = 1
-                Blink.closing  = false
-                Blink.timer    = 9999
-            end
-        else
-            p.idleTimer = 0
-            if p.sleeping then
-                p.sleeping = false
-                Blink.progress = 0
-                Blink.closing  = false
-                Blink.timer    = 2.5
-            end
-        end
+				p.sleepingTransition = true
+				p.sleepEyeT = 0     -- start tween
+				Blink.timer = 9999  -- freeze normal blinking
+				Blink.closing = false
+			end
+		else
+			-- Wake up fully
+			p.idleTimer = 0
+			p.sleepingTransition = false
+			p.sleeping = false
+			p.sleepEyeT = 0
+			Blink.progress = 0
+			Blink.timer = 2.5
+		end
     else
         p.idleTimer = 0
         p.sleeping = false
     end
 
-    -- While sleeping, keep blink "stuck" closed
-    if p.sleeping then
-        Blink.progress = 1
-        Blink.closing  = false
-        Blink.timer    = 9999
-    end
+	-- Sleep eye tween
+	if p.sleepingTransition then
+		p.sleepEyeT = p.sleepEyeT + dt / 0.35   -- 350ms ease
+		if p.sleepEyeT >= 1 then
+			p.sleepEyeT = 1
+			p.sleepingTransition = false
+			p.sleeping = true
+		end
+	end
+
+	-- If transitioning OR fully asleep, force Blink to our tweened value
+	if p.sleeping or p.sleepingTransition then
+		local t = ease(p.sleepEyeT)
+		Blink.progress = t
+		Blink.closing  = false
+		Blink.timer    = 9999   -- freeze regular blinks
+	end
 
     return p
 end
