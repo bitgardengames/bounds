@@ -225,53 +225,123 @@ Decorations.register("fan", {
 })
 
 --------------------------------------------------------------
--- LARGE FAN (2×2 tiles, rounded housing)
+-- LARGE FAN (2×2 tiles, premium wind-down/spin-up)
 --------------------------------------------------------------
 
 Decorations.register("fan_large", {
     w = 2,
     h = 2,
 
-    draw = function(x, y, w, h)
-        local S = Decorations.style
+	init = function(inst)
+        inst.data = {
+            fanSpeed = 1.0,
+            targetSpeed = 1.0,
+            state = "normal",
+            stateTimer = 0,
+            nextEvent = love.math.random(8, 18) + love.math.random()
+        }
+    end,
+
+	update = function(inst, dt)
+		local d = inst.data
+
+		------------------------------------------------------
+		-- STATE MACHINE (unchanged)
+		------------------------------------------------------
+		if d.state == "normal" then
+			d.targetSpeed = 1.0
+			d.nextEvent = d.nextEvent - dt
+			if d.nextEvent <= 0 then
+				d.state = "wind_down"
+				d.stateTimer = 0
+			end
+
+		elseif d.state == "wind_down" then
+			d.targetSpeed = 0.0
+			if d.fanSpeed <= 0.10 then
+				d.state = "pause"
+				d.stateTimer = 0
+				d.pauseDuration = 4.2 + love.math.random() * 2.4
+			end
+
+		elseif d.state == "pause" then
+			d.stateTimer = d.stateTimer + dt
+			d.targetSpeed = 0.0
+			if d.stateTimer >= d.pauseDuration then
+				d.state = "spin_up"
+				d.stateTimer = 0
+			end
+
+		elseif d.state == "spin_up" then
+			d.targetSpeed = 1.0
+			if d.fanSpeed >= 0.995 then
+				d.state = "normal"
+				d.nextEvent = love.math.random(10, 28)
+			end
+		end
+
+		------------------------------------------------------
+		-- FIXED SPEED SMOOTHING (no zipping, no reversal)
+		------------------------------------------------------
+		local accelRate = 1.25     -- gentle speed-up
+		local brakeRate = 0.45     -- heavy slow-down
+		local rate = (d.targetSpeed > d.fanSpeed) and accelRate or brakeRate
+
+		-- exponential smoothing (critically damped)
+		d.fanSpeed = d.fanSpeed + (d.targetSpeed - d.fanSpeed) * (1 - math.exp(-rate * dt))
+
+		-- clamp extremes
+		if d.fanSpeed < 0 then d.fanSpeed = 0 end
+		if d.fanSpeed > 1 then d.fanSpeed = 1 end
+
+		------------------------------------------------------
+		-- FIXED ROTATION (NEVER reverses direction)
+		------------------------------------------------------
+		d.angle = (d.angle or 0) + dt * (1.8 * d.fanSpeed)
+
+		-- keep angle bounded
+		if d.angle > math.pi * 2 then
+			d.angle = d.angle - math.pi * 2
+		end
+	end,
+
+    draw = function(x, y, w, h, inst)
+        local S  = Decorations.style
         local cx = x + w/2
         local cy = y + h/2
+        local d  = inst.data
 
         ------------------------------------------------------
-        -- Smaller housing footprint (inset from 2×2 tile space)
+        -- HOUSING (inset for cleaner proportions)
         ------------------------------------------------------
-        local inset = 8     -- shrink housing by 8px on all sides
+        local inset = 8
         local hx = x + inset
         local hy = y + inset
         local hw = w - inset * 2
         local hh = h - inset * 2
 
-        local t     = love.timer.getTime()
-        local angle = t * 1.8  -- soothing background rotation
-
-        ------------------------------------------------------
-        -- OUTER HOUSING (rounded square)
-        ------------------------------------------------------
         local housingRadius = 10
 
-        -- outline
+        -- Outline
         love.graphics.setColor(S.outline)
-        love.graphics.rectangle("fill",
+        love.graphics.rectangle(
+            "fill",
             hx - 4, hy - 4,
             hw + 8, hh + 8,
             housingRadius + 6, housingRadius + 6
         )
 
-        -- fill
+        -- Fill
         love.graphics.setColor(S.metal)
-        love.graphics.rectangle("fill",
+        love.graphics.rectangle(
+            "fill",
             hx, hy,
             hw, hh,
             housingRadius, housingRadius
         )
 
         ------------------------------------------------------
-        -- CORNER BOLTS
+        -- BOLTS
         ------------------------------------------------------
         love.graphics.setColor(S.dark)
         local boltR = 3
@@ -287,31 +357,34 @@ Decorations.register("fan_large", {
         love.graphics.circle("fill", bx2, by2, boltR)
 
         ------------------------------------------------------
-        -- FAN CAVITY: OUTER RING + INNER FILL
+        -- FAN CAVITY OUTER RING + INNER FILL
         ------------------------------------------------------
-        -- Outer radius: where the outline ring lives
         local cavityOuterR = hw * 0.42
 
-        -- 4px ring on the inside edge
+        -- Outline ring
         love.graphics.setColor(S.outline)
         love.graphics.setLineWidth(4)
         love.graphics.circle("line", cx, cy, cavityOuterR)
 
-        -- Inner dark fill, shrunk so ring remains visible
+        -- Inner cavity
         local cavityInnerR = cavityOuterR - 2
-
         love.graphics.setColor(S.dark)
         love.graphics.circle("fill", cx, cy, cavityInnerR)
 
         ------------------------------------------------------
-        -- BLADES (fit within inner cavity)
+        -- ROTATION
+        ------------------------------------------------------
+		local angle = d.angle or 0
+
+        ------------------------------------------------------
+        -- BLADES
         ------------------------------------------------------
         love.graphics.push()
         love.graphics.translate(cx, cy)
         love.graphics.rotate(angle)
 
-        local bladeW  = 8
-        local bladeL  = cavityInnerR - 4
+        local bladeW = 8
+        local bladeL = cavityInnerR - 4
 
         love.graphics.setColor(S.metal)
         for i = 1, 4 do
@@ -328,17 +401,14 @@ Decorations.register("fan_large", {
 
         love.graphics.pop()
 
-		------------------------------------------------------
-		-- CENTER HUB (8px, S.dark)
-		------------------------------------------------------
-		love.graphics.setColor(S.dark)
-		love.graphics.circle("fill", cx, cy, 8)
+        ------------------------------------------------------
+        -- CENTER HUB + CAP
+        ------------------------------------------------------
+        love.graphics.setColor(S.dark)
+        love.graphics.circle("fill", cx, cy, 8)
 
-		------------------------------------------------------
-		-- CENTER CAP (4px, S.metal)
-		------------------------------------------------------
-		love.graphics.setColor(S.metal)
-		love.graphics.circle("fill", cx, cy, 4)
+        love.graphics.setColor(S.metal)
+        love.graphics.circle("fill", cx, cy, 4)
     end
 })
 
