@@ -100,6 +100,19 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     end
 
     ----------------------------------------------------------
+    -- SUPPORT PROBE (keeps cube grounded while resting)
+    ----------------------------------------------------------
+    if c.vy == 0 then
+        local footY = c.y + h
+        local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
+        local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
+
+        if hitL or hitR then
+            c.grounded = true
+        end
+    end
+
+    ----------------------------------------------------------
     -- HORIZONTAL COLLISION
     ----------------------------------------------------------
     if c.vx > 0 then
