@@ -86,6 +86,12 @@ function Decorations.spawnLayer(layer, tileSize)
     end
 end
 
+function Decorations.clear()
+    for i = #list, 1, -1 do
+        table.remove(list, i)
+    end
+end
+
 --------------------------------------------------------------
 -- DRAW LOOP
 --------------------------------------------------------------

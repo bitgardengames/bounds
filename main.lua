@@ -20,6 +20,90 @@ local Decorations = require("decorations")
 local SecurityCamera = require("securitycamera")
 
 local TILE_SIZE = LevelData.tileSize or 48
+local currentChamber = 1
+local chamberCount = #LevelData.chambers
+local gameComplete = false
+
+local function clearActors()
+    Decorations.clear()
+    Saw.clear()
+    Cube.clear()
+    Plate.clear()
+    SecurityCamera.clear()
+    Exit.clear()
+end
+
+local function spawnDecorations(chamber)
+    Decorations.clear()
+    for _, layer in ipairs(chamber.layers or {}) do
+        if layer.kind == "decor" then
+            Decorations.spawnLayer(layer, TILE_SIZE)
+        end
+    end
+end
+
+local function spawnObjects(chamber)
+    local objects = chamber.objects or {}
+
+    if objects.door then
+        Door.spawn(objects.door.tx, objects.door.ty, TILE_SIZE)
+    end
+
+    if objects.exit then
+        Exit.spawn(objects.exit.tx * TILE_SIZE, objects.exit.ty * TILE_SIZE)
+    else
+        Exit.clear()
+    end
+
+    if objects.plates and objects.plates[1] then
+        local plate = objects.plates[1]
+        Plate.spawn(plate.tx * TILE_SIZE, plate.ty * TILE_SIZE)
+    else
+        Plate.clear()
+    end
+
+    Cube.clear()
+    for _, cube in ipairs(objects.cubes or {}) do
+        Cube.spawn(cube.tx * TILE_SIZE, cube.ty * TILE_SIZE)
+    end
+
+    Saw.clear()
+    for _, saw in ipairs(objects.saws or {}) do
+        Saw.spawn(saw.tx * TILE_SIZE, saw.ty * TILE_SIZE, {
+            dir = saw.dir,
+            mount = saw.mount,
+            speed = saw.speed,
+            length = saw.length,
+            sineAmp = saw.sineAmp,
+            sineFreq = saw.sineFreq,
+        })
+    end
+
+    SecurityCamera.clear()
+    SecurityCamera.tileSize = TILE_SIZE
+    if objects.securityCameras and objects.securityCameras[1] then
+        local cam = objects.securityCameras[1]
+        SecurityCamera.spawn(cam.tx, cam.ty)
+    end
+end
+
+local function loadChamber(index)
+    local chamber = LevelData.chambers[index]
+    assert(chamber, "No chamber data for index " .. tostring(index))
+
+    chamber.tileSize = LevelData.tileSize
+
+    Level.load(chamber)
+    TILE_SIZE = Level.tileSize or TILE_SIZE
+
+    Chamber.reset(index, chamberCount)
+    clearActors()
+    spawnDecorations(chamber)
+    spawnObjects(chamber)
+
+    local spawn = (chamber.objects and chamber.objects.playerStart) or { tx = 2, ty = 4 }
+    Player.setSpawn(spawn.tx * TILE_SIZE, spawn.ty * TILE_SIZE)
+end
 
 --------------------------------------------------------------
 -- LOVE CALLBACKS
@@ -28,41 +112,8 @@ local TILE_SIZE = LevelData.tileSize or 48
 function love.load()
     Blink.init()
 
-    -- initialize player at top-left region of level
-    Level.load(LevelData)
-    TILE_SIZE = Level.tileSize or TILE_SIZE
-
-    -- Spawn decorations
-    for _, layer in ipairs(LevelData.layers) do
-        if layer.kind == "decor" then
-            Decorations.spawnLayer(layer, TILE_SIZE)
-        end
-    end
-
     Player.init(Level)
-
-    ----------------------------------------------------------
-    -- SAW HAZARDS — test layout
-    ----------------------------------------------------------
-    local TILE = TILE_SIZE
-
-    SecurityCamera.spawn(1, 2)
-
-    -- Center ceiling-mounted horizontal saw
-    Saw.spawn(TILE * 20, TILE * 1, {dir="horizontal", mount="top", speed=1})
-
-    -- Vertical saw in the wall-kick shaft (left-mounted)
-    Saw.spawn(TILE * 31, TILE * 13, {dir="vertical", mount="left", speed=1})
-
-    -- Pressure plate
-    Plate.spawn(TILE_SIZE * 12, TILE_SIZE * 21)
-
-    -- Ze Cube
-    Cube.spawn(48*10, 48*20)
-
-    -- Exit door
-    Door.spawn(16, 20, TILE)
-    Exit.spawn(TILE * 5, TILE * 18)
+    loadChamber(currentChamber)
 end
 
 function love.update(dt)
@@ -114,8 +165,14 @@ function love.update(dt)
     -- Completion / triggers
     ----------------------------------------------------------
     Chamber.update(dt, pl, Door, Exit)
-    if Chamber.isComplete then
-        print("LEVEL COMPLETE!")
+    if Chamber.isComplete and not gameComplete then
+        if currentChamber < chamberCount then
+            currentChamber = currentChamber + 1
+            loadChamber(currentChamber)
+        else
+            gameComplete = true
+            print("LEVEL COMPLETE!")
+        end
     end
 
     ----------------------------------------------------------

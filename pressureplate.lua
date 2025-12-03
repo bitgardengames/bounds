@@ -45,6 +45,12 @@ function Plate.spawn(x, y)
     Plate.t       = 0
 end
 
+function Plate.clear()
+    Plate.active = false
+    Plate.pressed = false
+    Plate.t = 0
+end
+
 --------------------------------------------------------------
 -- QUERY
 --------------------------------------------------------------
