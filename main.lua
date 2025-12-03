@@ -34,6 +34,9 @@ local Transition = {
     nextChamber = nil,
 }
 
+-- Forward declarations
+local loadChamber
+
 local function startTransition(nextChamber)
     Transition.active = true
     Transition.phase = "fadeOut"
@@ -136,7 +139,7 @@ local function spawnObjects(chamber)
     end
 end
 
-local function loadChamber(index)
+function loadChamber(index)
     local chamber = LevelData.chambers[index]
     assert(chamber, "No chamber data for index " .. tostring(index))
 
