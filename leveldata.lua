@@ -12,7 +12,7 @@ local LevelData = {
                     objects = {
                         {type="vent", tx=12, ty=5},
                         {type="vent", tx=27, ty=13},
-                        {type="vent", tx=14, ty=18},
+                        {type="vent", tx=14, ty=16},
                         {type="fan", tx=15, ty=8},
 
                         -- Tall panels
@@ -31,7 +31,7 @@ local LevelData = {
 
                         {type="fan_large", tx=23, ty=15 },
 
-                        {type="pipe_v", tx=6,  ty=1 },
+                        --[[{type="pipe_v", tx=6,  ty=1 },
                         {type="pipe_curve_br", tx=6,  ty=2 },
                         {type="pipe_h", tx=7,  ty=2 },
                         {type="pipe_h", tx=8,  ty=2 },
@@ -39,7 +39,18 @@ local LevelData = {
                         {type="pipe_junctionbox", tx=10,  ty=2 },
                         {type="pipe_h", tx=11,  ty=2 },
                         {type="pipe_curve_bl", tx=12,  ty=2 },
-                        {type="pipe_v", tx=12,  ty=1 },
+                        {type="pipe_v", tx=12,  ty=1 },]]
+						
+						{type="pipe_v", tx=27,  ty=21 },
+						{type="pipe_curve_tr", tx=27,  ty=20 },
+						{type="pipe_h", tx=28,  ty=20 },
+						{type="pipe_h", tx=29,  ty=20 },
+						{type="pipe_h", tx=30,  ty=20 },
+						{type="pipe_junctionbox", tx=31,  ty=20 },
+						{type="pipe_h", tx=32,  ty=20 },
+						{type="pipe_h", tx=33,  ty=20 },
+						{type="pipe_h", tx=34,  ty=20 },
+						{type="pipe_h", tx=35,  ty=20 },
                     },
                 },
 
@@ -56,10 +67,7 @@ local LevelData = {
                         { x = 40, y = 1,  w = 1,  h = 23 },  -- right wall
 
                         -- Mid-room platform
-                        { x = 16, y = 15, w = 6, h = 1 },
-
-                        -- Right shelf
-                        { x = 29, y = 11, w = 4, h = 1 },
+                        { x = 15, y = 20, w = 8, h = 1 },
 
                         -- Upper-left ledge
                         { x = 2, y = 8, w = 5, h = 1 },
@@ -76,12 +84,12 @@ local LevelData = {
 
             objects = {
                 playerStart = { tx = 3, ty = 4 },
-                door = { tx = 25, ty = 20 },
+                door = { tx = 36, ty = 20 },
                 plates = {
-                    { tx = 12, ty = 21 },
+                    { tx = 27, ty = 21 },
                 },
                 cubes = {
-                    { tx = 17, ty = 14 },
+                    { tx = 17, ty = 19 },
                 },
                 securityCameras = {
                     { tx = 1, ty = 2 },
