@@ -819,7 +819,8 @@ function Player.draw()
 
     local vxNorm = clamp(p.vx / p.maxSpeed, -1, 1)
     local idleLean = p.sleeping and 0 or Idle.getLeanOffset()
-    local lean = vxNorm * 0.10 + idleLean
+    local sleepRock = p.sleeping and math.sin(Idle.t * math.pi * 2) * 0.06 or 0
+    local lean = vxNorm * 0.10 + idleLean + sleepRock
 
     local cb = p.contactBottom
     local ct = p.contactTop
@@ -907,6 +908,26 @@ function Player.draw()
 
     love.graphics.setColor(colors.fill)
     love.graphics.polygon("fill", poly)
+
+    if p.sleeping then
+        local bx, by, br, ba = Idle.getSleepBubble()
+        if bx then
+            love.graphics.setColor(1, 1, 1, 0.30 * ba)
+            love.graphics.circle("fill", bx * r, by * r, br * r * 1.15)
+
+            love.graphics.setColor(193/255, 227/255, 255/255, 0.70 * ba)
+            love.graphics.circle("fill", bx * r, by * r, br * r)
+
+            love.graphics.setColor(1, 1, 1, 0.85 * ba)
+            love.graphics.circle("fill", bx * r + br * r * 0.30, by * r - br * r * 0.25, br * r * 0.35)
+        end
+
+        local crownSize = r * (0.10 + math.sin(Idle.t * math.pi * 2) * 0.02)
+        love.graphics.setColor(1, 1, 1, 0.65)
+        love.graphics.ellipse("fill", 0, -r * 0.90, crownSize * 1.8, crownSize)
+        love.graphics.setColor(193/255, 227/255, 255/255, 0.85)
+        love.graphics.ellipse("fill", 0, -r * 0.92, crownSize * 1.2, crownSize * 0.70)
+    end
 
     love.graphics.setColor(0,0,0)
     local eyeOffsetX = baseEyeOffsetX
