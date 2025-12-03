@@ -3,15 +3,11 @@ local TAU = math.pi * 2
 local Idle = {
     -- normalized [0,1) accumulator for the breathing loop
     t = 0,
-    breatheAmp = 0.03,     -- ±3% scale when awake/idle
-    breatheAmpSleep = 0.05, -- ±5% scale while sleeping for a cozier rise/fall
-    breatheAmpCurrent = 0.03,
-    breatheSpeed = 1.0,    -- Hz
-    sleepBreatheSpeed = 0.55,
+    breatheAmp = 0.03,   -- ±3% scale
+    breatheSpeed = 1.0,  -- Hz
     effectTimer = 0,
     timeToNext = 0,
     activeEffect = nil,
-    sleepTimer = 0,
 }
 
 local function clamp(v, mn, mx)
@@ -34,23 +30,9 @@ local function startEffect(kind, params)
     Idle.effectTimer = 0
 end
 
-function Idle.update(dt, isIdle, isSleeping)
-    local targetAmp = isSleeping and Idle.breatheAmpSleep or Idle.breatheAmp
-    Idle.breatheAmpCurrent = Idle.breatheAmpCurrent + (targetAmp - Idle.breatheAmpCurrent) * math.min(dt * 6, 1)
-
-    local breatheRate
-    if isSleeping then
-        breatheRate = Idle.sleepBreatheSpeed
-    else
-        breatheRate = Idle.breatheSpeed * (isIdle and 1 or 0.25)
-    end
+function Idle.update(dt, isIdle)
+    local breatheRate = Idle.breatheSpeed * (isIdle and 1 or 0.25)
     Idle.t = (Idle.t + dt * breatheRate) % 1
-
-    if isSleeping then
-        Idle.sleepTimer = Idle.sleepTimer + dt
-    else
-        Idle.sleepTimer = 0
-    end
 
     if isIdle then
 
@@ -95,7 +77,7 @@ end
 
 -- returns scale multiplier (1.0 = neutral)
 function Idle.getScale()
-    return 1 + math.sin(Idle.t * TAU) * Idle.breatheAmpCurrent
+    return 1 + math.sin(Idle.t * TAU) * Idle.breatheAmp
 end
 
 function Idle.getEyeOffset()
@@ -153,24 +135,6 @@ function Idle.getLeanOffset()
     end
 
     return 0
-end
-
--- Returns normalized offsets (relative to the player's radius) for a sleepy bubble
--- plus an opacity scalar. Returns nil when not sleeping.
-function Idle.getSleepBubble()
-    if Idle.sleepTimer <= 0 then return nil end
-
-    local cycle = 2.6
-    local phase = (Idle.sleepTimer % cycle) / cycle
-    local grow = math.sin(phase * math.pi)
-    local rise = math.sin(phase * math.pi) * 0.22
-
-    local offsetX = -0.52
-    local offsetY = -0.02 - rise
-    local radius  = 0.13 + grow * 0.08
-    local opacity = 0.65 + (1 - phase) * 0.25
-
-    return offsetX, offsetY, radius, opacity
 end
 
 return Idle
