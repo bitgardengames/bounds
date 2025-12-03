@@ -65,7 +65,7 @@ end
 --------------------------------------------------------------
 
 local function resolveTileCollision(c, TILE, grid, width, height)
-    local x, y, w, h = c.x, c.y, c.w, c.h
+    local w, h = c.w, c.h
 
     c.grounded = false
 
@@ -74,9 +74,9 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     ----------------------------------------------------------
     if c.vy > 0 then
         -- falling downward, probe just BELOW the cube
-        local footY = y + h
-        local hitL = tileAtPixel(x + 2,     footY + 1, TILE, grid, width, height)
-        local hitR = tileAtPixel(x + w - 2, footY + 1, TILE, grid, width, height)
+        local footY = c.y + h
+        local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
+        local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
 
         if hitL or hitR then
             c.vy = 0
@@ -89,9 +89,9 @@ local function resolveTileCollision(c, TILE, grid, width, height)
 
     elseif c.vy < 0 then
         -- upward movement
-        local headY = y
-        local hitL = tileAtPixel(x + 2,     headY, TILE, grid, width, height)
-        local hitR = tileAtPixel(x + w - 2, headY, TILE, grid, width, height)
+        local headY = c.y
+        local hitL = tileAtPixel(c.x + 2,     headY, TILE, grid, width, height)
+        local hitR = tileAtPixel(c.x + w - 2, headY, TILE, grid, width, height)
 
         if hitL or hitR then
             c.vy = 0
@@ -116,9 +116,9 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     -- HORIZONTAL COLLISION
     ----------------------------------------------------------
     if c.vx > 0 then
-        local rightX = x + w
-        local hitT = tileAtPixel(rightX + 1, y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(rightX + 1, y + h - 2, TILE, grid, width, height)
+        local rightX = c.x + w
+        local hitT = tileAtPixel(rightX + 1, c.y + 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(rightX + 1, c.y + h - 2, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -126,9 +126,9 @@ local function resolveTileCollision(c, TILE, grid, width, height)
         end
 
     elseif c.vx < 0 then
-        local leftX = x
-        local hitT = tileAtPixel(leftX, y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(leftX, y + h - 2, TILE, grid, width, height)
+        local leftX = c.x
+        local hitT = tileAtPixel(leftX, c.y + 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(leftX, c.y + h - 2, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
