@@ -707,11 +707,18 @@ function Player.update(dt, Level)
             local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
             if minOverlap == overlapTop then
-                p.y = p.y - overlapTop
+                p.y = c.y - p.h
                 p.vy = 0
+                p.onGround = true
+
+                p.contactBottom = math.max(p.contactBottom, 0.7)
+                p.springVertVel = p.springVertVel - 160
             elseif minOverlap == overlapBottom then
                 p.y = p.y + overlapBottom
                 p.vy = 0
+
+                p.contactTop = math.max(p.contactTop, 0.6)
+                p.springVertVel = p.springVertVel + 80
             else
                 if overlapLeft == minOverlap then
                     p.x = c.x - p.w
