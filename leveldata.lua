@@ -31,7 +31,17 @@ local LevelData = {
 				{ type="vent_round", tx=7,  ty=12 },
 				{ type="vent_round", tx=30, ty=18 },
 				
-				{ type="fan_large", tx=23, ty=15 }
+				{ type="fan_large", tx=23, ty=15 },
+				
+				{ type="pipe_v", tx=6,  ty=1 },
+				{ type="pipe_curve_br", tx=6,  ty=2 },
+				{ type="pipe_h", tx=7,  ty=2 },
+				{ type="pipe_h", tx=8,  ty=2 },
+				{ type="pipe_h", tx=9,  ty=2 },
+				{ type="pipe_junctionbox", tx=10,  ty=2 },
+				{ type="pipe_h", tx=11,  ty=2 },
+				{ type="pipe_curve_bl", tx=12,  ty=2 },
+				{ type="pipe_v", tx=12,  ty=1 },
 			},
 		},
 

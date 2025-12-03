@@ -24,9 +24,10 @@ Decorations.list = list   -- expose if needed
 
 Decorations.style = {
     dark = {0.1, 0.1, 0.1, 1},
-    outline = {68/255, 83/255, 97/255, 1},
+    outline = {45/255, 66/255, 86/255, 1},
     panel = {0.90, 0.90, 0.93, 1},
-    background = {82/255, 101/255, 114/255, 1},
+    --background = {82/255, 101/255, 114/255, 1},
+    background = {69/255, 89/255, 105/255},
     metal = {82/255, 101/255, 114/255, 1},
     grill = {72/255, 91/255, 104/255, 1},
     fanFill = {0.88, 0.88, 0.92, 1},
@@ -493,6 +494,223 @@ Decorations.register("vent_round", {
                 2, 2
             )
         end
+    end
+})
+
+--------------------------------------------------------------
+-- PIPE: HORIZONTAL
+--------------------------------------------------------------
+Decorations.register("pipe_h", {
+    w = 1, h = 1,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+        local pipeFill = 4
+        local O = 4
+
+        local thick = pipeFill + O*2   -- total pipe thickness (12px)
+        local cy = y + h/2 - thick/2
+
+        -- Outline
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", x, cy, w, thick)
+
+        -- Fill
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill",
+            x + 0,
+            cy + O,
+            w,
+            pipeFill
+        )
+    end
+})
+
+--------------------------------------------------------------
+-- PIPE: VERTICAL
+--------------------------------------------------------------
+Decorations.register("pipe_v", {
+    w = 1, h = 1,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+        local pipeFill = 4
+        local O = 4
+
+        local thick = pipeFill + O*2
+        local cx = x + w/2 - thick/2
+
+        -- Outline
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", cx, y, thick, h)
+
+        -- Fill
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill",
+            cx + O,
+            y + 0,
+            pipeFill,
+            h
+        )
+    end
+})
+
+--------------------------------------------------------------
+-- PIPE: JUNCTION BOX
+--------------------------------------------------------------
+Decorations.register("pipe_junctionbox", {
+    w = 1,
+    h = 1,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+
+        local O = 4         -- outline thickness (same as pipes)
+        local boxH = h/2    -- 24px tall if tile is 48px
+        local boxY = y + h/2 - boxH/2
+        local radius = 8
+
+        ----------------------------------------------------------
+        -- OUTLINE (outer box)
+        ----------------------------------------------------------
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle(
+            "fill",
+            x,
+            boxY,
+            w,
+            boxH,
+            radius, radius
+        )
+
+        ----------------------------------------------------------
+        -- INNER FILL
+        ----------------------------------------------------------
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle(
+            "fill",
+            x + O,
+            boxY + O,
+            w - O*2,
+            boxH - O*2,
+            radius - 4, radius - 4
+        )
+
+        ----------------------------------------------------------
+        -- CENTER LIGHT (wider, centered, outlined)
+        ----------------------------------------------------------
+        local lightW = 20     -- wider than before
+        local lightH = 8
+        local lightX = x + w/2 - lightW/2
+        local lightY = boxY + boxH/2 - lightH/2
+
+        -- LIGHT OUTLINE
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle(
+            "fill",
+            lightX - 2,
+            lightY - 2,
+            lightW + 4,
+            lightH + 4,
+            3, 3
+        )
+
+        -- LIGHT FILL (inactive default)
+        love.graphics.setColor(1.0, 0.35, 0.35, 0.95)
+        love.graphics.rectangle(
+            "fill",
+            lightX,
+            lightY,
+            lightW,
+            lightH,
+            3, 3
+        )
+
+        --[[ SOFT GLOW
+        love.graphics.setColor(1.0, 0.35, 0.35, 0.22)
+        love.graphics.rectangle(
+            "fill",
+            lightX - 4,
+            lightY - 4,
+            lightW + 8,
+            lightH + 8,
+            4, 4
+        )]]
+    end
+})
+
+--------------------------------------------------------------
+-- INTERNAL: Draw a rounded 90° pipe corner
+--------------------------------------------------------------
+local function drawPipeCurve(x, y, w, h, rotate)
+    local S = Decorations.style
+    local pipeFill = 4
+    local O = 4
+    local thick = pipeFill + O*2
+
+    -- The curve radius = half tile
+    local R = w/2
+
+    love.graphics.push()
+    love.graphics.translate(x + w/2, y + h/2)  -- center tile
+    love.graphics.rotate(rotate)
+    love.graphics.translate(-w/2, -h/2)
+
+    ----------------------------------------------------------
+    -- OUTLINE ARC
+    ----------------------------------------------------------
+    love.graphics.setColor(S.outline)
+    love.graphics.setLineWidth(thick)
+    love.graphics.arc("line", "open",
+        w, h,            -- arc center
+        R,               -- radius
+        math.pi,         -- start angle
+        math.pi*1.5      -- end angle
+    )
+
+    ----------------------------------------------------------
+    -- FILL ARC
+    ----------------------------------------------------------
+    love.graphics.setColor(S.metal)
+    love.graphics.setLineWidth(pipeFill)
+    love.graphics.arc("line", "open",
+        w, h,
+        R,
+        math.pi,
+        math.pi*1.5
+    )
+
+    love.graphics.pop()
+end
+
+--------------------------------------------------------------
+-- PIPE CURVE PIECES (rounded corners)
+--------------------------------------------------------------
+Decorations.register("pipe_curve_tr", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawPipeCurve(x,y,w,h, 0)
+    end
+})
+
+Decorations.register("pipe_curve_tl", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawPipeCurve(x,y,w,h, math.pi*0.5)
+    end
+})
+
+Decorations.register("pipe_curve_bl", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawPipeCurve(x,y,w,h, math.pi)
+    end
+})
+
+Decorations.register("pipe_curve_br", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawPipeCurve(x,y,w,h, math.pi*1.5)
     end
 })
 
