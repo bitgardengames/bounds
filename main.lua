@@ -100,7 +100,7 @@ function love.update(dt)
         math.abs(pl.vy) < 5
 
     -- only drive Idle when not sleeping
-    Idle.update(dt, isIdle and not pl.sleeping)
+    Idle.update(dt, isIdle and not pl.sleeping, pl.sleeping)
 
     ----------------------------------------------------------
     -- Camera
