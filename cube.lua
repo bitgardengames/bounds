@@ -40,6 +40,10 @@ function Cube.spawn(x, y)
     })
 end
 
+function Cube.clear()
+    Cube.list = {}
+end
+
 --------------------------------------------------------------
 -- TILE COLLISION HELPERS
 --------------------------------------------------------------

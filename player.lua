@@ -981,6 +981,16 @@ end
 function Player.setSpawn(x, y)
     p.spawnX = x
     p.spawnY = y
+    p.x = x
+    p.y = y
+    p.vx = 0
+    p.vy = 0
+    p.onGround = false
+    p.sleeping = false
+    p.contactBottom = 0
+    p.contactTop    = 0
+    p.contactLeft   = 0
+    p.contactRight  = 0
 end
 
 return Player

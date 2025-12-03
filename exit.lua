@@ -13,6 +13,12 @@ function Exit.spawn(x, y)
     Exit.active = true
 end
 
+function Exit.clear()
+    Exit.active = false
+    Exit.x = 0
+    Exit.y = 0
+end
+
 function Exit.playerInside(player)
     if not Exit.active then return false end
 
