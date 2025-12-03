@@ -2,6 +2,7 @@
 ------------------------------------------------------------
 -- Single-instance decorative security camera
 -- Smooth tracking, UNIFORM LED pulse, full draw logic
+-- With premium pupil "refocus" animation
 ------------------------------------------------------------
 
 local Player = require("player")  -- direct access to player
@@ -12,8 +13,30 @@ local SecurityCamera = {
     x = 0,
     y = 0,
     angle = 0,
-    time = 0
+    time = 0,
+
+    --------------------------------------------------------
+    -- NEW: Refocus animation state
+    --------------------------------------------------------
+    pupilScale = 1.0,       -- 1.0 = normal, 0.65 = contracted
+    refocusTimer = 0,       -- counts up during contraction
+    refocusActive = false,
+    nextRefocus = 2.0       -- randomized on spawn and each cycle
 }
+
+local player = Player.get()
+
+------------------------------------------------------------
+-- helpers
+------------------------------------------------------------
+local function randomRefocusDelay()
+    return 30 + love.math.random() * 60 -- 30–90 second range
+end
+
+local function startRefocus()
+    SecurityCamera.refocusTimer = 0
+    SecurityCamera.refocusActive = true
+end
 
 ------------------------------------------------------------
 -- SPAWN (single camera)
@@ -21,8 +44,15 @@ local SecurityCamera = {
 function SecurityCamera.spawn(tx, ty)
     SecurityCamera.x = tx * SecurityCamera.tileSize
     SecurityCamera.y = ty * SecurityCamera.tileSize
+
     SecurityCamera.angle = 0
-    SecurityCamera.time = 0
+    SecurityCamera.time  = 0
+
+    SecurityCamera.pupilScale = 1
+    SecurityCamera.refocusTimer = 0
+    SecurityCamera.refocusActive = false
+    SecurityCamera.nextRefocus = randomRefocusDelay()
+
     SecurityCamera.active = true
 end
 
@@ -39,11 +69,13 @@ end
 function SecurityCamera.update(dt)
     if not SecurityCamera.active then return end
 
-    local player = Player.get()
     if not player then return end
 
     SecurityCamera.time = SecurityCamera.time + dt
 
+    ----------------------------------------------------------------
+    -- TARGET TRACKING
+    ----------------------------------------------------------------
     local px = player.x + player.w / 2
     local py = player.y + player.h / 2
 
@@ -52,10 +84,50 @@ function SecurityCamera.update(dt)
 
     local dx = px - cx
     local dy = py - cy
+
     local targetAngle = math.atan2(dy, dx)
 
     SecurityCamera.angle =
         SecurityCamera.angle + (targetAngle - SecurityCamera.angle) * 0.18
+
+    ----------------------------------------------------------------
+    -- PREMIUM REFOCUS ANIMATION
+    ----------------------------------------------------------------
+    -- Trigger extra refocus when the player dies
+    if player.dead and not SecurityCamera.refocusActive then
+        startRefocus()
+    end
+
+    -- Idle randomized refocus timing
+    if not SecurityCamera.refocusActive then
+        SecurityCamera.nextRefocus = SecurityCamera.nextRefocus - dt
+        if SecurityCamera.nextRefocus <= 0 then
+            startRefocus()
+            SecurityCamera.nextRefocus = randomRefocusDelay()
+        end
+    end
+
+    -- Animation curve (fast pinch → smooth relax)
+    if SecurityCamera.refocusActive then
+        SecurityCamera.refocusTimer = SecurityCamera.refocusTimer + dt
+
+        local t = SecurityCamera.refocusTimer
+
+        if t < 0.08 then
+            -- Fast contraction (linear)
+            SecurityCamera.pupilScale = 1 - t / 0.08 * 0.35  -- down to ~0.65
+        else
+            -- Smooth recovery
+            local k = (t - 0.08) / 0.22  -- ~220ms recover
+            k = math.min(k, 1)
+            SecurityCamera.pupilScale = 0.65 + (1 - 0.65) * (k * k * (3 - 2*k))
+        end
+
+        if t >= 0.30 then
+            SecurityCamera.refocusActive = false
+            SecurityCamera.pupilScale = 1
+        end
+    end
 end
 
 ------------------------------------------------------------
@@ -122,12 +194,12 @@ function SecurityCamera.draw(style)
     )
 
     ------------------------------------------------------
-    -- CAMERA BODY  (WIDTH +2)
+    -- CAMERA BODY
     ------------------------------------------------------
     local ox = 4
     local bodyX = armX + armW
     local bodyY = y + 8
-    local bodyW = 42   -- WAS 40 → now 42
+    local bodyW = 42
     local bodyH = 28
 
     love.graphics.setColor(0,0,0,1)
@@ -145,41 +217,39 @@ function SecurityCamera.draw(style)
     )
 
     ------------------------------------------------------
-    -- LED BACKING (shifted left 2px, down 2px)
+    -- LED
     ------------------------------------------------------
-    local ledX = bodyX + 8      -- WAS +6 → now 2px left
-    local ledY = bodyY + 8      -- WAS +6 → now 2px down
+    local ledX = bodyX + 8
+    local ledY = bodyY + 8
     local ledR = 2.2
 
-    -- Outline
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", ledX, ledY, ledR + 4)
 
-    -- Dark fill
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", ledX, ledY, ledR + 1)
 
-    ------------------------------------------------------
-    -- LED (uniform glow)
-    ------------------------------------------------------
     love.graphics.setColor(1, 0.25, 0.25, ledAlpha)
     love.graphics.circle("fill", ledX, ledY, ledR)
 
     ------------------------------------------------------
-    -- LENS (auto-adjusts to new body width)
+    -- LENS + REFOCUSING PUPIL
     ------------------------------------------------------
     local lx = bodyX + bodyW * 0.62 + 2
     local ly = bodyY + bodyH/2
 
+    -- Lens housing
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", lx, ly, 12)
 
-    local pupilDist = 4
+    -- Tracking pupil (scaled)
+    local pupilDist = 4 * SecurityCamera.pupilScale
     local pupilX = lx + math.cos(angle) * pupilDist
     local pupilY = ly + math.sin(angle) * pupilDist
+    local pupilR = 5 * SecurityCamera.pupilScale
 
     love.graphics.setColor(1,1,1)
-    love.graphics.circle("fill", pupilX, pupilY, 5)
+    love.graphics.circle("fill", pupilX, pupilY, pupilR)
 end
 
 return SecurityCamera

@@ -22,6 +22,9 @@ local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 155
 
+-- Sleep system: seconds of idle before falling asleep
+local SLEEP_THRESHOLD = 20.0
+
 --------------------------------------------------------------
 -- PLAYER DATA
 --------------------------------------------------------------
@@ -78,7 +81,7 @@ local p = {
     gatherDuration = 0.02,
 
     onGround = false,
-	pushingCube = false,
+    pushingCube = false,
 
     coyoteTime       = 0.12,
     coyoteTimer      = 0,
@@ -94,6 +97,10 @@ local p = {
     respawnDelay = 1.0,
     respawnTimer = 0,
     dead = false,
+
+    -- Sleep system
+    idleTimer = 0,
+    sleeping  = false,
 }
 
 --------------------------------------------------------------
@@ -343,6 +350,10 @@ function Player.update(dt, Level)
             p.contactRight = 0
             p.onGround = false
             p.dead = false
+
+            -- reset sleep state
+            p.idleTimer = 0
+            p.sleeping = false
         end
 
         return p
@@ -374,6 +385,21 @@ function Player.update(dt, Level)
     local jumpReleased = Input.wasJumpReleased()
 
     ----------------------------------------------------------
+    -- WAKE ON INPUT (sleep system)
+    ----------------------------------------------------------
+    if p.sleeping then
+        if move ~= 0 or jumpDown or jumpReleased then
+            p.sleeping = false
+            p.idleTimer = 0
+
+            -- wake eyes
+            Blink.progress = 0
+            Blink.closing  = false
+            Blink.timer    = 2.5
+        end
+    end
+
+    ----------------------------------------------------------
     -- JUMP BUFFER + COYOTE
     ----------------------------------------------------------
     if Input.consumeJump() then
@@ -394,87 +420,87 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- HORIZONTAL MOVEMENT
     ----------------------------------------------------------
-	local targetSpeed = move * p.maxSpeed
+    local targetSpeed = move * p.maxSpeed
 
-	-- If we're currently pushing a cube, clamp AND override movement
-	if p.pushingCube then
-		local CUBE_PUSH_MAX = 140
+    -- If we're currently pushing a cube, clamp AND override movement
+    if p.pushingCube then
+        local CUBE_PUSH_MAX = 140
 
-		-- Clamp target
-		targetSpeed = math.max(-CUBE_PUSH_MAX, math.min(targetSpeed, CUBE_PUSH_MAX))
+        -- Clamp target
+        targetSpeed = math.max(-CUBE_PUSH_MAX, math.min(targetSpeed, CUBE_PUSH_MAX))
 
-		local APPROACH_RATE = 8000  -- big number means fast, smooth approach
+        local APPROACH_RATE = 8000  -- big number means fast, smooth approach
 
-		-- Approach formula:
-		local diff = targetSpeed - p.vx
-		p.vx = p.vx + diff * dt * (APPROACH_RATE / 1000)
-	else
-		local accelerating = math.abs(targetSpeed) > 0
-		local accel = accelerating 
-			and (p.onGround and p.acceleration or p.airAcceleration)
-			or  (p.onGround and p.deceleration or p.airDeceleration)
+        -- Approach formula:
+        local diff = targetSpeed - p.vx
+        p.vx = p.vx + diff * dt * (APPROACH_RATE / 1000)
+    else
+        local accelerating = math.abs(targetSpeed) > 0
+        local accel = accelerating 
+            and (p.onGround and p.acceleration or p.airAcceleration)
+            or  (p.onGround and p.deceleration or p.airDeceleration)
 
-		if accelerating then
-			local dir = (targetSpeed > p.vx) and 1 or -1
-			p.vx = p.vx + dir * accel * dt
+        if accelerating then
+            local dir = (targetSpeed > p.vx) and 1 or -1
+            p.vx = p.vx + dir * accel * dt
 
-			if (dir == 1 and p.vx > targetSpeed)
-			or  (dir == -1 and p.vx < targetSpeed)
-			then
-				p.vx = targetSpeed
-			end
+            if (dir == 1 and p.vx > targetSpeed)
+            or  (dir == -1 and p.vx < targetSpeed)
+            then
+                p.vx = targetSpeed
+            end
 
-			local reversing = math.abs(p.vx) > 40 and 
-							  ((dir == 1 and p.lastDir == -1) or 
-							   (dir == -1 and p.lastDir == 1))
+            local reversing = math.abs(p.vx) > 40 and 
+                              ((dir == 1 and p.lastDir == -1) or 
+                               (dir == -1 and p.lastDir == 1))
 
-			local burstStart = (math.abs(p.vx) < 5 and math.abs(targetSpeed) > 200)
+            local burstStart = (math.abs(p.vx) < 5 and math.abs(targetSpeed) > 200)
 
-			if (reversing or burstStart) and p.onGround then
-				Particles.puff(
-					p.x + p.w/2,
-					p.y + p.h,
-					(math.random()-0.5)*30,
-					5,
-					4, 0.25,
-					{1,1,1,0.9}
-				)
-			end
+            if (reversing or burstStart) and p.onGround then
+                Particles.puff(
+                    p.x + p.w/2,
+                    p.y + p.h,
+                    (math.random()-0.5)*30,
+                    5,
+                    4, 0.25,
+                    {1,1,1,0.9}
+                )
+            end
 
-			p.lastDir = dir
+            p.lastDir = dir
 
-			-- running dust trail (unchanged)
-			if p.onGround then
-				local speed = math.abs(p.vx)
-				if speed > p.maxSpeed * 0.55 then
-					p.runDustTimer = (p.runDustTimer or 0) - dt
-					local interval = 0.12 - (speed / p.maxSpeed) * 0.04
+            -- running dust trail (unchanged)
+            if p.onGround then
+                local speed = math.abs(p.vx)
+                if speed > p.maxSpeed * 0.55 then
+                    p.runDustTimer = (p.runDustTimer or 0) - dt
+                    local interval = 0.12 - (speed / p.maxSpeed) * 0.04
 
-					if p.runDustTimer <= 0 then
-						p.runDustTimer = interval
-						Particles.puff(
-							p.x + p.w/2 + (math.random()-0.5)*8,
-							p.y + p.h + 2,
-							(math.random()*22 - 11),
-							-(10 + math.random()*18),
-							3.5, 0.28,
-							{1,1,1,0.85}
-						)
-					end
-				else
-					p.runDustTimer = 0
-				end
-			end
+                    if p.runDustTimer <= 0 then
+                        p.runDustTimer = interval
+                        Particles.puff(
+                            p.x + p.w/2 + (math.random()-0.5)*8,
+                            p.y + p.h + 2,
+                            (math.random()*22 - 11),
+                            -(10 + math.random()*18),
+                            3.5, 0.28,
+                            {1,1,1,0.85}
+                        )
+                    end
+                else
+                    p.runDustTimer = 0
+                end
+            end
 
-		else
-			-- deceleration (unchanged)
-			if p.vx > 0 then
-				p.vx = math.max(p.vx - accel*dt, 0)
-			elseif p.vx < 0 then
-				p.vx = math.min(p.vx + accel*dt, 0)
-			end
-		end
-	end
+        else
+            -- deceleration (unchanged)
+            if p.vx > 0 then
+                p.vx = math.max(p.vx - accel*dt, 0)
+            elseif p.vx < 0 then
+                p.vx = math.min(p.vx + accel*dt, 0)
+            end
+        end
+    end
 
     ----------------------------------------------------------
     -- WALL SLIDING
@@ -662,64 +688,113 @@ function Player.update(dt, Level)
     if math.abs(p.vx) > 20 then dx = (p.vx > 0) and 1 or -1 end
     if math.abs(p.vy) > 50 then dy = (p.vy > 0) and 0.5 or -0.3 end
 
-    local idleEyeX, idleEyeY = Idle.getEyeOffset()
+    local idleEyeX, idleEyeY = 0, 0
+    if not p.sleeping then
+        idleEyeX, idleEyeY = Idle.getEyeOffset()
+    end
+
     dx = clamp(dx + idleEyeX, -1, 1)
     dy = clamp(dy + idleEyeY, -1, 1)
+
+    if p.sleeping then
+        dx, dy = 0, 0
+    end
 
     p.eyeDirX = approach(p.eyeDirX, dx, dt, 6)
     p.eyeDirY = approach(p.eyeDirY, dy, dt, 6)
 
-	----------------------------------------------------------
-	-- CUBE COLLISION (push-friendly)
-	----------------------------------------------------------
-	local cubes = Cube.list
-	p.pushingCube = false
+    ----------------------------------------------------------
+    -- CUBE COLLISION (push-friendly)
+    ----------------------------------------------------------
+    local cubes = Cube.list
+    p.pushingCube = false
 
-	for _, c in ipairs(cubes) do
-		local px1, py1 = p.x, p.y
-		local px2, py2 = p.x + p.w, p.y + p.h
+    for _, c in ipairs(cubes) do
+        local px1, py1 = p.x, p.y
+        local px2, py2 = p.x + p.w, p.y + p.h
 
-		local cx1, cy1 = c.x, c.y
-		local cx2, cy2 = c.x + c.w, c.y + c.h
+        local cx1, cy1 = c.x, c.y
+        local cx2, cy2 = c.x + c.w, c.y + c.h
 
-		if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
-			-- overlaps:
-			local overlapLeft   = px2 - cx1
-			local overlapRight  = cx2 - px1
-			local overlapTop    = py2 - cy1
-			local overlapBottom = cy2 - py1
+        if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
+            -- overlaps:
+            local overlapLeft   = px2 - cx1
+            local overlapRight  = cx2 - px1
+            local overlapTop    = py2 - cy1
+            local overlapBottom = cy2 - py1
 
-			local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
+            local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
-			------------------------------------------------------
-			-- VERTICAL RESOLUTION (normal)
-			------------------------------------------------------
-			if minOverlap == overlapTop then
-				p.y = p.y - overlapTop
-				p.vy = 0
-			elseif minOverlap == overlapBottom then
-				p.y = p.y + overlapBottom
-				p.vy = 0
+            ------------------------------------------------------
+            -- VERTICAL RESOLUTION (normal)
+            ------------------------------------------------------
+            if minOverlap == overlapTop then
+                p.y = p.y - overlapTop
+                p.vy = 0
+            elseif minOverlap == overlapBottom then
+                p.y = p.y + overlapBottom
+                p.vy = 0
 
-			------------------------------------------------------
-			-- HORIZONTAL RESOLUTION (PUSH LOCK)
-			------------------------------------------------------
-			else
-				-- Determine push side
-				if overlapLeft == minOverlap then
-					-- Player is LEFT of cube
-					p.x = c.x - p.w
-					p.pushingCube = true
-					p.vx = math.min(p.vx, 0)   -- prevent "ramming"
-				else
-					-- Player is RIGHT of cube
-					p.x = c.x + c.w
-					p.pushingCube = true
-					p.vx = math.max(p.vx, 0)
-				end
-			end
-		end
-	end
+            ------------------------------------------------------
+            -- HORIZONTAL RESOLUTION (PUSH LOCK)
+            ------------------------------------------------------
+            else
+                -- Determine push side
+                if overlapLeft == minOverlap then
+                    -- Player is LEFT of cube
+                    p.x = c.x - p.w
+                    p.pushingCube = true
+                    p.vx = math.min(p.vx, 0)   -- prevent "ramming"
+                else
+                    -- Player is RIGHT of cube
+                    p.x = c.x + c.w
+                    p.pushingCube = true
+                    p.vx = math.max(p.vx, 0)
+                end
+            end
+        end
+    end
+
+    ----------------------------------------------------------
+    -- SLEEP LOGIC (timer & transitions)
+    ----------------------------------------------------------
+    local isIdle = p.onGround
+        and math.abs(p.vx) < 5
+        and math.abs(p.vy) < 5
+        and move == 0
+
+    if not p.dead then
+        if isIdle then
+            p.idleTimer = p.idleTimer + dt
+
+            if (not p.sleeping) and p.idleTimer >= SLEEP_THRESHOLD then
+                p.sleeping = true
+
+                -- close eyes & freeze blink
+                Blink.progress = 1
+                Blink.closing  = false
+                Blink.timer    = 9999
+            end
+        else
+            p.idleTimer = 0
+            if p.sleeping then
+                p.sleeping = false
+                Blink.progress = 0
+                Blink.closing  = false
+                Blink.timer    = 2.5
+            end
+        end
+    else
+        p.idleTimer = 0
+        p.sleeping = false
+    end
+
+    -- While sleeping, keep blink "stuck" closed
+    if p.sleeping then
+        Blink.progress = 1
+        Blink.closing  = false
+        Blink.timer    = 9999
+    end
 
     return p
 end
@@ -743,7 +818,8 @@ function Player.draw()
     local cy = p.y + p.h - r - 4
 
     local vxNorm = clamp(p.vx / p.maxSpeed, -1, 1)
-    local lean = vxNorm * 0.10 + Idle.getLeanOffset()
+    local idleLean = p.sleeping and 0 or Idle.getLeanOffset()
+    local lean = vxNorm * 0.10 + idleLean
 
     local cb = p.contactBottom
     local ct = p.contactTop
@@ -760,6 +836,10 @@ function Player.draw()
     cr = cr + clamp(-sh,0,0.50)
 
     local pre = p.preJumpSquish
+
+    if p.sleeping then
+        cb = cb + 0.10 -- slight extra squish into the floor while sleeping
+    end
 
     local baseEyeOffsetX = r*0.45
     local baseEyeOffsetY = -r*0.25
@@ -831,11 +911,15 @@ function Player.draw()
     love.graphics.setColor(0,0,0)
     local eyeOffsetX = baseEyeOffsetX
     local eyeOffsetY = baseEyeOffsetY + cb*r*0.10
+    if p.sleeping then
+        eyeOffsetY = eyeOffsetY + r*0.04 -- nudge eyes slightly lower when asleep
+    end
 
     love.graphics.circle("fill", -eyeOffsetX+lx, eyeOffsetY+ly, eyeRadius)
     love.graphics.circle("fill",  eyeOffsetX+lx, eyeOffsetY+ly, eyeRadius)
 
     if eyeRadius < 0.5 then
+        -- closed-eye lines (used automatically when Blink scale -> 0)
         love.graphics.setLineWidth(2)
         love.graphics.line(
             -eyeOffsetX+lx - r*0.20,
@@ -870,6 +954,10 @@ function Player.kill()
     p.vx, p.vy = 0, 0
     p.gathering = false
     p.jumpBufferTimer = 0
+
+    -- reset sleep on death
+    p.idleTimer = 0
+    p.sleeping  = false
 
     for i = 1, 8 do
         Particles.puff(
