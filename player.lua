@@ -23,7 +23,8 @@ local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 155
-local CUBE_TOP_OFFSET = 1
+local CUBE_TOP_OFFSET = 5
+local CUBE_SIDE_INSET = 4
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -495,8 +496,8 @@ function Player.update(dt, Level)
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
 
-        local cx1, cy1 = c.x, c.y
-        local cx2, cy2 = c.x + c.w, c.y + c.h
+        local cx1, cy1 = c.x + CUBE_SIDE_INSET, c.y
+        local cx2, cy2 = c.x + c.w - CUBE_SIDE_INSET, c.y + c.h
 
         if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
             local overlapLeft   = px2 - cx1
@@ -524,11 +525,11 @@ function Player.update(dt, Level)
                 p.springVertVel = p.springVertVel + 80
             else
                 if overlapLeft == minOverlap then
-                    p.x = c.x - p.w
+                    p.x = cx1 - p.w
                     p.pushingCube = true
                     p.vx = math.min(p.vx, 0)
                 else
-                    p.x = c.x + c.w
+                    p.x = cx2
                     p.pushingCube = true
                     p.vx = math.max(p.vx, 0)
                 end
