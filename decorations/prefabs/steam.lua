@@ -26,13 +26,18 @@ return function(Decorations)
     Decorations.register("pipe_big_steamvent_burst", {
         w = 1, h = 1,
 
-        init = function(inst)
+        init = function(inst, entry)
+            inst.data.active = not (entry and entry.active == false)
             inst.data.timer = 0
             inst.data.nextPuff = 0.8 + love.math.random() * 1.8
         end,
 
         update = function(inst, dt)
             local d = inst.data
+            if d.active == false then
+                return
+            end
+
             d.timer = d.timer + dt
 
             if d.timer >= d.nextPuff then

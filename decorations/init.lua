@@ -40,11 +40,12 @@ function Decorations.spawn(entry, tileSize)
         y = entry.ty * tileSize,
         w = wTiles * tileSize,
         h = hTiles * tileSize,
-        data = {},
+        data = shallowCopy(entry.data),
+        config = entry,
     }
 
     if prefab.init then
-        prefab.init(inst)
+        prefab.init(inst, entry)
     end
 
     table.insert(list, inst)
@@ -93,6 +94,17 @@ Decorations.Particles = Particles
 local function loadPrefab(moduleName)
     local loader = require("decorations.prefabs." .. moduleName)
     loader(Decorations)
+end
+
+local function shallowCopy(source)
+    if not source then return {} end
+
+    local copy = {}
+    for k, v in pairs(source) do
+        copy[k] = v
+    end
+
+    return copy
 end
 
 loadPrefab("panels")
