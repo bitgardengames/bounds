@@ -433,7 +433,7 @@ function Player.update(dt, Level)
         for i=1,3 do
             Particles.puff(
                 p.x + p.w/2 + (math.random()-0.5)*12,
-                p.y + p.h + 2,
+                p.y + p.h + 1,
                 (math.random()-0.5)*40,
                 math.random()*20,
                 4, 0.30,
