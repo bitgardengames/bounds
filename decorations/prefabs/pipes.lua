@@ -325,6 +325,169 @@ return function(Decorations)
 		end
 	})
 
+	Decorations.register("pipe_big_t_right", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cy = y + h/2 - thick/2
+			local cx = x + w/2 - thick/2
+
+			-----------------------------------------
+			-- OUTLINE
+			-----------------------------------------
+			love.graphics.setColor(S.outline)
+
+			-- Full vertical trunk
+			love.graphics.rectangle("fill",
+				cx, y,
+				thick, h
+			)
+
+			-- HALF horizontal pipe (CENTER → RIGHT)
+			love.graphics.rectangle("fill",
+				x + w/2,   -- start halfway across
+				cy,
+				w/2,       -- half width
+				thick
+			)
+
+			-----------------------------------------
+			-- FILL
+			-----------------------------------------
+			love.graphics.setColor(S.metal)
+
+			-- Vertical fill
+			love.graphics.rectangle("fill",
+				cx + O, y,
+				pipeFill, h
+			)
+
+			-- Horizontal fill (right side only)
+			love.graphics.rectangle("fill",
+				x + w/2,
+				cy + O,
+				w/2,
+				pipeFill
+			)
+		end
+	})
+
+	Decorations.register("pipe_big_t_up", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cy = y + h/2 - thick/2
+			local cx = x + w/2 - thick/2
+
+			-----------------------------------------
+			-- OUTLINE
+			-----------------------------------------
+			love.graphics.setColor(S.outline)
+
+			-- Full horizontal trunk
+			love.graphics.rectangle("fill",
+				x, cy,
+				w, thick
+			)
+
+			-- HALF vertical pipe (TOP → CENTER)
+			love.graphics.rectangle("fill",
+				cx,
+				y,
+				thick,
+				h/2
+			)
+
+			-----------------------------------------
+			-- FILL
+			-----------------------------------------
+			love.graphics.setColor(S.metal)
+
+			-- Horizontal fill
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+
+			-- Vertical fill (top half only)
+			love.graphics.rectangle("fill",
+				cx + O,
+				y,
+				pipeFill,
+				h/2
+			)
+		end
+	})
+
+	Decorations.register("pipe_big_t_down", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cy = y + h/2 - thick/2
+			local cx = x + w/2 - thick/2
+
+			-----------------------------------------
+			-- OUTLINE
+			-----------------------------------------
+			love.graphics.setColor(S.outline)
+
+			-- Full horizontal trunk
+			love.graphics.rectangle("fill",
+				x, cy,
+				w, thick
+			)
+
+			-- HALF vertical pipe (CENTER → BOTTOM)
+			love.graphics.rectangle("fill",
+				cx,
+				y + h/2,
+				thick,
+				h/2
+			)
+
+			-----------------------------------------
+			-- FILL
+			-----------------------------------------
+			love.graphics.setColor(S.metal)
+
+			-- Horizontal fill
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+
+			-- Vertical fill (bottom half only)
+			love.graphics.rectangle("fill",
+				cx + O,
+				y + h/2,
+				pipeFill,
+				h/2
+			)
+		end
+	})
+
 	Decorations.register("pipe_big_cross", {
 		w = 1, h = 1,
 
