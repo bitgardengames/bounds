@@ -46,25 +46,22 @@ function Idle.update(dt, isIdle)
             Idle.timeToNext = Idle.timeToNext - dt
             if Idle.timeToNext <= 0 then
                 local roll = math.random()
+				local dir = (math.random() < 0.5) and -1 or 1
                 if roll < 0.20 then
                     startEffect("glance", { duration = 0.9, dir = -1 })
                 elseif roll < 0.40 then
                     startEffect("glance", { duration = 0.9, dir = 1 })
                 elseif roll < 0.58 then
-                    local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("peek", { duration = 1.1, dir = dir })
                 elseif roll < 0.72 then
-                    local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("lean", { duration = 1.4, dir = dir })
                 elseif roll < 0.86 then
-                    local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("wiggle", { duration = 1.2, dir = dir, cycles = 2.5 })
                 elseif roll < 0.94 then
                     startEffect("rock", { duration = 1.5, cycles = 2.4 })
                 elseif roll < 0.97 then
-                    startEffect("scratch", { duration = 1.1, dir = -1 })
+                    startEffect("scratch", { duration = 1.1, dir = dir })
                 else
-                    local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("look_up", { duration = 1.0, dir = dir })
                 end
             end
