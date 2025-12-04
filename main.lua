@@ -272,10 +272,10 @@ function love.draw()
     -- DRAW ORDER
     ----------------------------------------------------------
     local camX, camY = 0, 0
+	Player.draw()
     Level.draw(camX, camY)
     SecurityCamera.draw(Decorations.style)
     Saw.draw()
-    Player.draw()
     Door.draw()
     Cube.draw()
     Plate.draw()
