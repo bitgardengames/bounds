@@ -51,7 +51,7 @@ local LevelData = {
 						{type="pipe_big_v", tx=3,  ty=12},
 						{type="pipe_big_v", tx=3,  ty=13},
 						{type="pipe_big_v", tx=3,  ty=14},
-						{type="pipe_big_v", tx=3,  ty=15},
+						{type="pipe_big_t_right", tx=3,  ty=15},
 						{type="pipe_big_v", tx=3,  ty=16},
 						{type="pipe_big_v", tx=3,  ty=17},
 						{type="pipe_big_v", tx=3,  ty=18},

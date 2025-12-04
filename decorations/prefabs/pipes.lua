@@ -285,4 +285,128 @@ return function(Decorations)
             drawBigPipeCurve(x,y,w,h, math.pi * 1.5)
         end,
     })
+
+	local pipeFill = 16
+	local O = 4
+	local thick = pipeFill + O*2   -- 24px
+
+	Decorations.register("pipe_big_t_up", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cx = x + w/2 - thick/2         -- vertical trunk (centered)
+			local cy = y + h/2 - thick/2         -- horizontal branch (centered)
+
+			-- OUTLINE — vertical trunk
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", cx, y, thick, h)
+
+			-- OUTLINE — horizontal branch
+			love.graphics.rectangle("fill", x, cy, w, thick)
+
+			-- FILL — vertical trunk interior
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				cx + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			-- FILL — horizontal branch interior
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+		end
+	})
+
+	Decorations.register("pipe_big_t_down", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cx = x + w/2 - thick/2
+			local cy = y + h/2 - thick/2
+
+			-- Same geometry as T_up (symmetrical)
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", cx, y, thick, h)
+			love.graphics.rectangle("fill", x, cy, w, thick)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				cx + O, y,
+				pipeFill, h
+			)
+
+			love.graphics.rectangle("fill",
+				x, cy + O,
+				w, pipeFill
+			)
+		end
+	})
+
+	Decorations.register("pipe_big_t_right", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cy = y + h/2 - thick/2     -- horizontal pipe center
+			local cx = x + w/2 - thick/2     -- vertical pipe center
+
+			love.graphics.setColor(S.outline)
+			-- horizontal trunk
+			love.graphics.rectangle("fill", x, cy, w, thick)
+			-- vertical branch
+			love.graphics.rectangle("fill", cx, y, thick, h)
+
+			love.graphics.setColor(S.metal)
+			-- horizontal interior
+			love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
+			-- vertical interior
+			love.graphics.rectangle("fill", cx + O, y, pipeFill, h)
+		end
+	})
+
+	Decorations.register("pipe_big_t_left", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2
+
+			local cy = y + h/2 - thick/2
+			local cx = x + w/2 - thick/2
+
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", x, cy, w, thick)
+			love.graphics.rectangle("fill", cx, y, thick, h)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
+			love.graphics.rectangle("fill", cx + O, y, pipeFill, h)
+		end
+	})
 end
