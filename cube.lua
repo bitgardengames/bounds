@@ -16,11 +16,11 @@ local Cube = { list = {} }
 local CUBE_SIZE = 32
 local GRAVITY = 1800
 local MAX_FALL_SPEED = 900
-local PUSH_ACCEL = 720     -- smoother acceleration, feels weighty
-local CUBE_PUSH_MAX = 155  -- caps speed while being pushed
-local PUSH_STICTION = 28   -- extra resistance before the cube budges
-local FRICTION = 8
-local PUSH_FRICTION_SCALE = 0.45
+local PUSH_ACCEL = 520     -- slower acceleration for a heftier feel
+local CUBE_PUSH_MAX = 120  -- caps speed while being pushed
+local PUSH_STICTION = 16   -- extra resistance before the cube budges
+local FRICTION = 4
+local PUSH_FRICTION_SCALE = 0.10
 
 local OUTLINE = 4
 local COLOR_FILL = {0.92, 0.92, 0.95}
