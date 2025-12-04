@@ -544,19 +544,22 @@ function Player.update(dt, Level)
         end
     end
 
-    if p.pushingCube and p.onGround then
-        p.contactBottom = math.max(p.contactBottom, 0.16)
-        p.springVertVel = p.springVertVel - 28 * dt
-
+    if p.pushingCube then
         local pushDir = p.pushingCubeDir
-        if pushDir ~= 0 then
-            if pushDir < 0 then
-                p.contactLeft = math.max(p.contactLeft, 0.18)
-            else
-                p.contactRight = math.max(p.contactRight, 0.18)
-            end
 
-            p.springHorzVel = p.springHorzVel + pushDir * 28 * dt
+        if p.onGround then
+            p.contactBottom = math.max(p.contactBottom, 0.16)
+            p.springVertVel = p.springVertVel - 28 * dt
+
+            if pushDir ~= 0 then
+                if pushDir < 0 then
+                    p.contactLeft = math.max(p.contactLeft, 0.18)
+                else
+                    p.contactRight = math.max(p.contactRight, 0.18)
+                end
+
+                p.springHorzVel = p.springHorzVel + pushDir * 28 * dt
+            end
         end
 
         local c = p.pushingCubeRef
