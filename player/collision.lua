@@ -2,7 +2,7 @@ local Particles = require("particles")
 
 local Collision = {}
 
-local PLATFORM_OFFSET = 1
+local PLATFORM_OFFSET = 0
 
 local function tileAt(Level, tx, ty)
     local grid = Level.solidGrid
