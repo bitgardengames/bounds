@@ -2,6 +2,8 @@ local Particles = require("particles")
 
 local Collision = {}
 
+local PLATFORM_OFFSET = 1
+
 local function tileAt(Level, tx, ty)
     local grid = Level.solidGrid
     if not grid then return false end
@@ -28,7 +30,7 @@ function Collision.tryGroundSnap(p, Level)
 
     for tx = lx, rx do
         if tileAt(Level, tx, below) then
-            local snapY = (below - 1) * TILE - p.h
+            local snapY = (below - 1) * TILE - p.h - PLATFORM_OFFSET
             if footY - snapY <= epsilon then
                 p.y = snapY
                 p.vy = 0
@@ -124,7 +126,7 @@ function Collision.moveVertical(p, Level, amount)
             for tx = lx, rx do
                 if tileAt(Level, tx, ty) then
                     collided = true
-                    targetY = (ty - 1) * TILE - p.h
+                    targetY = (ty - 1) * TILE - p.h - PLATFORM_OFFSET
                     break
                 end
             end
