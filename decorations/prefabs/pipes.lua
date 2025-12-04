@@ -119,6 +119,124 @@ return function(Decorations)
         end,
     })
 
+	Decorations.register("pipe_h_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+			local pipeFill = 4
+			local O = 4
+
+			local thick = pipeFill + O*2        -- 12px total conduit height
+			local cy = y + h/2 - thick/2        -- center Y
+
+			----------------------------------------------------------------
+			-- BASE CONDUIT (same as pipe_h)
+			----------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", x, cy, w, thick)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+
+			----------------------------------------------------------------
+			-- COUPLING BAND (4px larger just like big pipes)
+			----------------------------------------------------------------
+
+			-- Outer coupling size
+			local joinW = 10                 -- Outer width of the coupling
+			local joinFill = joinW - O*2     -- Inner metal fill (2px)
+
+			local joinH = thick + 8          -- 12 + 8 = 20px tall coupling
+			local jy = y + h/2 - joinH/2     -- vertically centered
+			local jx = x + w/2 - joinW/2     -- horizontally centered
+
+			-- Outline
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx,
+				jy,
+				joinW,
+				joinH
+			)
+
+			-- Inner metal fill
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinFill,
+				joinH - O*2
+			)
+		end
+	})
+
+	Decorations.register("pipe_v_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+			local pipeFill = 4
+			local O = 4
+
+			local thick = pipeFill + O*2        -- 12px total conduit width
+			local cx = x + w/2 - thick/2        -- center X
+
+			----------------------------------------------------------------
+			-- BASE CONDUIT (same as pipe_v)
+			----------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				cx,
+				y,
+				thick,
+				h
+			)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				cx + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			----------------------------------------------------------------
+			-- COUPLING BAND (oversized by 4px each side)
+			----------------------------------------------------------------
+
+			local joinH = 10                    -- outer coupling height
+			local joinFill = joinH - O*2        -- inner fill (2px)
+
+			local joinW = thick + 8             -- 12 + 8 = 20px wide
+			local jx = x + w/2 - joinW/2        -- centered horizontally
+			local jy = y + h/2 - joinH/2        -- centered vertically
+
+			-- Outline block
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx,
+				jy,
+				joinW,
+				joinH
+			)
+
+			-- Inner fill
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinW - O*2,
+				joinFill
+			)
+		end
+	})
+
     local function drawPipeCurve(x, y, w, h, rotate)
         local S = Decorations.style
         local pipeFill = 4

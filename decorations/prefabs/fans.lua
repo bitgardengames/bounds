@@ -1,36 +1,73 @@
 return function(Decorations)
-    Decorations.register("fan", {
-        w = 1,
-        h = 1,
+	Decorations.register("fan", {
+		w = 1,
+		h = 1,
 
-        draw = function(x, y, w, h)
-            local S = Decorations.style
-            local cx = x + w/2
-            local cy = y + h/2
-            local r = w * 0.42
+		draw = function(x, y, w, h)
+			local S = Decorations.style
 
-            local t = love.timer.getTime()
-            local angle = t * 1.8
+			-- Center of the tile in pixel coords
+			local cx = x + w/2
+			local cy = y + h/2
 
-            love.graphics.setColor(S.outline)
-            love.graphics.circle("fill", cx, cy, r + 4)
+			-- Fan radius
+			local r = w * 0.42
 
-            love.graphics.setColor(S.dark)
-            love.graphics.circle("fill", cx, cy, r)
+			-- Spin animation (same as before)
+			local t = love.timer.getTime()
+			local angle = t * 1.8
 
-            love.graphics.setColor(S.metal)
-            love.graphics.push()
-            love.graphics.translate(cx, cy)
-            love.graphics.rotate(angle)
+			----------------------------------------------------------
+			-- OUTER OUTLINE RING
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.circle("fill", cx, cy, r + 4)
 
-            for _ = 1, 4 do
-                love.graphics.rotate(math.pi * 0.5)
-                love.graphics.rectangle("fill", -4, -r + 4, 8, r - 8, 4, 4)
-            end
+			----------------------------------------------------------
+			-- DARK CAVITY BACKDROP
+			----------------------------------------------------------
+			love.graphics.setColor(S.dark)
+			love.graphics.circle("fill", cx, cy, r)
 
-            love.graphics.pop()
-        end,
-    })
+			----------------------------------------------------------
+			-- BLADES
+			----------------------------------------------------------
+			love.graphics.push()
+			love.graphics.translate(cx, cy)
+			love.graphics.rotate(angle)
+
+			love.graphics.setColor(S.metal)
+
+			local bladeCount = 4
+			local bladeW     = 6
+			local bladeL     = r - 3
+
+			for _ = 1, bladeCount do
+				love.graphics.rotate(math.pi * 0.5)
+				love.graphics.rectangle(
+					"fill",
+					-bladeW/2,
+					-bladeL,
+					bladeW,
+					bladeL,
+					4, 4
+				)
+			end
+
+			love.graphics.pop()
+
+			----------------------------------------------------------
+			-- CENTER HUB (NEW — matches fan_large and fan_3 style)
+			----------------------------------------------------------
+			-- Outer dark hub
+			love.graphics.setColor(S.dark)
+			love.graphics.circle("fill", cx, cy, 6)
+
+			-- Inner metal cap
+			love.graphics.setColor(S.metal)
+			love.graphics.circle("fill", cx, cy, 2)
+		end,
+	})
 
     Decorations.register("fan_large", {
         w = 2,
@@ -181,4 +218,103 @@ return function(Decorations)
             love.graphics.circle("fill", cx, cy, 4)
         end,
     })
+
+	Decorations.register("fan_3", {
+		w = 3,
+		h = 3,
+
+		init = function(inst)
+			inst.data = {
+				angle = 0,
+				speed = 0.30,   -- slow and heavy
+			}
+		end,
+
+		update = function(inst, dt)
+			local d = inst.data
+			d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
+		end,
+
+		draw = function(x, y, w, h, inst)
+			local S = Decorations.style
+			local d = inst.data
+
+			----------------------------------------------------------
+			-- PIXEL DIMENSIONS (Decorations already converted tiles)
+			----------------------------------------------------------
+			local cx = x + w/2
+			local cy = y + h/2
+			local radius = math.min(w, h) * 0.48 -- main scale reference
+
+			----------------------------------------------------------
+			-- RING RADII
+			----------------------------------------------------------
+			local outerR  = radius                         -- outline ring
+			local innerR  = outerR - 4                     -- 4px housing thickness
+			local ringR   = innerR - 4                     -- secondary ring (outline)
+			local cavityR = ringR - 12                     -- bigger dark cavity (+14px diameter total)
+
+			----------------------------------------------------------
+			-- OUTER OUTLINE RING
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.circle("fill", cx, cy, outerR)
+
+			----------------------------------------------------------
+			-- METAL INNER HOUSING
+			----------------------------------------------------------
+			love.graphics.setColor(S.metal)
+			love.graphics.circle("fill", cx, cy, innerR)
+
+			----------------------------------------------------------
+			-- INNER OUTLINE RING
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.circle("fill", cx, cy, ringR)
+
+			----------------------------------------------------------
+			-- DARK CAVITY (expanded)
+			----------------------------------------------------------
+			love.graphics.setColor(S.dark)
+			love.graphics.circle("fill", cx, cy, cavityR)
+
+			----------------------------------------------------------
+			-- BLADES (simple, bold, large)
+			----------------------------------------------------------
+			love.graphics.push()
+			love.graphics.translate(cx, cy)
+			love.graphics.rotate(d.angle)
+
+			love.graphics.setColor(S.metal)
+
+			local bladeCount  = 3
+			local bladeLength = cavityR * 0.92   -- larger to match bigger cavity
+			local bladeWidth  = cavityR * 0.34   -- slightly wider blade
+			local cornerR     = 10
+
+			for i = 1, bladeCount do
+				love.graphics.rotate((math.pi * 2) / bladeCount)
+
+				love.graphics.rectangle(
+					"fill",
+					-bladeWidth/2,
+					-bladeLength,
+					bladeWidth,
+					bladeLength,
+					cornerR, cornerR
+				)
+			end
+
+			love.graphics.pop()
+
+			----------------------------------------------------------
+			-- CENTER CAP
+			----------------------------------------------------------
+			love.graphics.setColor(S.dark)
+			love.graphics.circle("fill", cx, cy, 14)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.circle("fill", cx, cy, 8)
+		end,
+	})
 end

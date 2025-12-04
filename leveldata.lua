@@ -33,6 +33,7 @@ local LevelData = {
 						-- Fans
 						{type="fan", tx=15, ty=8},
                         {type="fan_large", tx=23, ty=15},
+                        {type="fan_3", tx=26, ty=8},
 
 						-- Pipes
 						{type="pipe_big_h", tx=38,  ty=2},
@@ -63,14 +64,14 @@ local LevelData = {
 						-- Conduit
 						{type="pipe_v", tx=27,  ty=21},
 						{type="pipe_curve_tr", tx=27,  ty=20},
-						{type="pipe_h", tx=28,  ty=20},
+						{type="pipe_h_join", tx=28,  ty=20},
 						{type="pipe_h", tx=29,  ty=20},
-						{type="pipe_h", tx=30,  ty=20},
+						{type="pipe_h_join", tx=30,  ty=20},
 						{type="pipe_junctionbox", tx=31,  ty=20},
-						{type="pipe_h", tx=32,  ty=20},
+						{type="pipe_h_join", tx=32,  ty=20},
 						{type="pipe_h", tx=33,  ty=20},
 						{type="pipe_h", tx=34,  ty=20},
-						{type="pipe_h", tx=35,  ty=20},
+						{type="pipe_h_join", tx=35,  ty=20},
                     },
                 },
 
