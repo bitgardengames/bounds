@@ -252,71 +252,62 @@ return function(Decorations)
 		w = 3,
 		h = 3,
 
-                init = function(inst, entry)
-                        local d = inst.data or {}
-                        d.active = not (entry and entry.active == false)
+		init = function(inst, entry)
+			local d = inst.data or {}
+			d.active = not (entry and entry.active == false)
 
-                        d.angle = d.angle or ((d.active ~= false) and 0 or (love.math.random() * math.pi * 2))
-                        d.speed = d.speed or ((d.active ~= false) and 0.30 or 0)
+			d.angle = d.angle or ((d.active ~= false) and 0 or (love.math.random() * math.pi * 2))
+			d.speed = d.speed or ((d.active ~= false) and 0.30 or 0)
 
-                        inst.data = d
-                end,
+			inst.data = d
+		end,
 
-                update = function(inst, dt)
-                        local d = inst.data
-
-                        if d.active == false then
-                                return
-                        end
-
-                        d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
-                end,
+		update = function(inst, dt)
+			local d = inst.data
+			if d.active == false then return end
+			d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
+		end,
 
 		draw = function(x, y, w, h, inst)
 			local S = Decorations.style
 			local d = inst.data
 
 			----------------------------------------------------------
-			-- PIXEL DIMENSIONS (Decorations already converted tiles)
+			-- PIXEL DIMENSIONS
 			----------------------------------------------------------
 			local cx = x + w/2
 			local cy = y + h/2
-			local radius = math.min(w, h) * 0.48 -- main scale reference
+
+			-- Base radius from pixel dimensions
+			local radius = math.min(w, h) * 0.48
 
 			----------------------------------------------------------
 			-- RING RADII
 			----------------------------------------------------------
-			local outerR  = radius                         -- outline ring
-			local innerR  = outerR - 4                     -- 4px housing thickness
-			local ringR   = innerR - 4                     -- secondary ring (outline)
-			local cavityR = ringR - 12                     -- bigger dark cavity (+14px diameter total)
+			local outerR  = radius
+			local innerR  = outerR - 4
+			local ringR   = innerR - 4
+
+			-- cavity expanded by 16px diameter (radius +8)
+			local cavityR = (ringR - 12) + 8
 
 			----------------------------------------------------------
-			-- OUTER OUTLINE RING
+			-- HOUSING RINGS
 			----------------------------------------------------------
 			love.graphics.setColor(S.outline)
 			love.graphics.circle("fill", cx, cy, outerR)
 
-			----------------------------------------------------------
-			-- METAL INNER HOUSING
-			----------------------------------------------------------
 			love.graphics.setColor(S.metal)
 			love.graphics.circle("fill", cx, cy, innerR)
 
-			----------------------------------------------------------
-			-- INNER OUTLINE RING
-			----------------------------------------------------------
 			love.graphics.setColor(S.outline)
 			love.graphics.circle("fill", cx, cy, ringR)
 
-			----------------------------------------------------------
-			-- DARK CAVITY (expanded)
-			----------------------------------------------------------
 			love.graphics.setColor(S.dark)
 			love.graphics.circle("fill", cx, cy, cavityR)
 
 			----------------------------------------------------------
-			-- BLADES (simple, bold, large)
+			-- BLADES (NOW 5)
 			----------------------------------------------------------
 			love.graphics.push()
 			love.graphics.translate(cx, cy)
@@ -324,14 +315,13 @@ return function(Decorations)
 
 			love.graphics.setColor(S.metal)
 
-			local bladeCount  = 3
-			local bladeLength = cavityR * 0.92   -- larger to match bigger cavity
-			local bladeWidth  = cavityR * 0.34   -- slightly wider blade
+			local bladeCount  = 5         -- ★ UPDATED
+			local bladeLength = cavityR * 0.90
+			local bladeWidth  = cavityR * 0.28
 			local cornerR     = 10
 
 			for i = 1, bladeCount do
 				love.graphics.rotate((math.pi * 2) / bladeCount)
-
 				love.graphics.rectangle(
 					"fill",
 					-bladeWidth/2,
