@@ -22,7 +22,7 @@ local WALL_SLIDE_FACTOR = 0.45
 local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
-local CUBE_PUSH_MAX = 155
+local CUBE_PUSH_MAX = 120
 
 --------------------------------------------------------------
 -- PLAYER DATA
