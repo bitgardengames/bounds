@@ -1,3 +1,7 @@
+local pipeFill = 16
+local O = 4
+local thick = pipeFill + O*2
+
 return function(Decorations)
     Decorations.register("pipe_h", {
         w = 1, h = 1,
@@ -286,10 +290,6 @@ return function(Decorations)
         end,
     })
 
-	local pipeFill = 16
-	local O = 4
-	local thick = pipeFill + O*2   -- 24px
-
 	Decorations.register("pipe_big_t_left", {
 		w = 1, h = 1,
 
@@ -508,6 +508,145 @@ return function(Decorations)
 			love.graphics.setColor(S.metal)
 			love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
 			love.graphics.rectangle("fill", cx + O, y, pipeFill, h)
+		end
+	})
+
+	Decorations.register("pipe_big_h_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			-- PIPE CONSTANTS
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2       -- 24px total pipe height
+			local cy = y + h/2 - thick/2       -- pipe vertical center
+
+			----------------------------------------------------------
+			-- BASE PIPE (same as pipe_big_h)
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", x, cy, w, thick)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+
+			----------------------------------------------------------
+			-- JOIN COLLAR / COUPLING (now 4px larger on both sides)
+			----------------------------------------------------------
+
+			-- Horizontal width of coupling band
+			local joinW = 12                       -- OUTER width
+			local joinFill = joinW - O*2           -- INNER width (4px)
+
+			-- NEW: Coupling height (4px above + 4px below pipe)
+			local joinH = thick + 8                -- 24 + 8 = 32px
+
+			-- NEW: Vertical anchor of coupling
+			local jy = y + h/2 - joinH/2           -- centered on tile
+
+			-- X-position stays centered horizontally
+			local jx = x + w/2 - joinW/2
+
+			----------------------------------------------------------
+			-- OUTLINE BAND (slightly oversized coupling)
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx,
+				jy,
+				joinW,
+				joinH
+			)
+
+			----------------------------------------------------------
+			-- INNER METAL FILL (also oversized)
+			----------------------------------------------------------
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinFill,
+				joinH - O*2
+			)
+		end
+	})
+
+	Decorations.register("pipe_big_v_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			-- PIPE CONSTANTS
+			local pipeFill = 16
+			local O = 4
+			local thick = pipeFill + O*2       -- 24px total pipe width
+			local cx = x + w/2 - thick/2       -- pipe horizontal center
+
+			----------------------------------------------------------
+			-- BASE PIPE (same as pipe_big_v)
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				cx,
+				y,
+				thick,
+				h
+			)
+
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				cx + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			----------------------------------------------------------
+			-- JOIN COLLAR / COUPLING (4px bigger on left & right)
+			----------------------------------------------------------
+
+			-- Vertical height of coupling band
+			local joinH = 12                       -- OUTER height (same idea as joinW in horizontal)
+			local joinFill = joinH - O*2           -- INNER fill height (4px)
+
+			-- NEW: Coupling width (4px + 4px larger than pipe)
+			local joinW = thick + 8                -- 24 + 8 = 32px
+
+			-- NEW: Horizontal anchor of coupling (centered)
+			local jx = x + w/2 - joinW/2
+
+			-- Vertical anchor (centered on tile)
+			local jy = y + h/2 - joinH/2
+
+			----------------------------------------------------------
+			-- OUTLINE BAND (oversized coupling)
+			----------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx,
+				jy,
+				joinW,
+				joinH
+			)
+
+			----------------------------------------------------------
+			-- INNER METAL FILL
+			----------------------------------------------------------
+			love.graphics.setColor(S.metal)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinW - O*2,
+				joinFill
+			)
 		end
 	})
 end
