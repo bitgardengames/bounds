@@ -40,7 +40,6 @@ function Cube.spawn(x, y)
         vy = 0,
         grounded = false,
         weight = 1,
-        squish = 0,
         visualOffset = 4,
         pushDustTimer = 0,
     })
@@ -151,8 +150,9 @@ local function applyPush(c, player, dt)
     local px, py = player.x, player.y
     local pw, ph = player.w, player.h
 
-    local verticalOverlap = player.onGround and (py + ph > c.y + 4 and py < c.y + c.h - 4)
-    local touching = verticalOverlap and ((px + pw >= c.x - 12 and px + pw <= c.x + 4) or (px >= c.x + c.w - 4 and px <= c.x + c.w + 12))
+    local verticalOverlap = (py + ph > c.y + 2 and py < c.y + c.h - 2)
+    local horizontalTouch = (px + pw >= c.x - 6 and px <= c.x + c.w + 6)
+    local touching = player.onGround and verticalOverlap and horizontalTouch
 
     if not touching then
         return false
@@ -160,9 +160,12 @@ local function applyPush(c, player, dt)
 
     -- Determine push direction
     local dir = 0
-    if px + pw < c.x then  -- player left of cube
+    local playerCenter = px + pw / 2
+    local cubeCenter = c.x + c.w / 2
+
+    if playerCenter < cubeCenter and px + pw <= c.x + c.w then
         dir = 1
-    elseif px > c.x + c.w then -- player right of cube
+    elseif playerCenter > cubeCenter and px >= c.x then
         dir = -1
     end
 
@@ -253,14 +256,7 @@ function Cube.update(dt, player)
         local pushing = applyPush(c, player, dt)
         applyFriction(c, dt, pushing)
 
-        local targetSquish = 0
-        if pushing and c.grounded then
-            targetSquish = math.min(math.abs(c.vx) / CUBE_PUSH_MAX, 1) * 0.16
-        end
-
-        local targetOffset = c.grounded and (4 + targetSquish * 10) or 2
-
-        c.squish = c.squish + (targetSquish - c.squish) * dt * 8
+        local targetOffset = c.grounded and 4 or 2
         c.visualOffset = c.visualOffset + (targetOffset - c.visualOffset) * dt * 10
 
         ------------------------------------------------------
@@ -285,13 +281,10 @@ local visualOffset = 4
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
         local offset = c.visualOffset or visualOffset
-        local squish = c.squish or 0
-        local scaleX = 1 + squish * 0.60
-        local scaleY = 1 - squish * 0.55
-        local w = c.w * scaleX
-        local h = c.h * scaleY
-        local ox = (c.w - w) / 2
-        local oy = (c.h - h)
+        local w = c.w
+        local h = c.h
+        local ox = 0
+        local oy = 0
 
         -- Outline
         love.graphics.setColor(COLOR_OUTLINE)
