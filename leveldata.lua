@@ -31,16 +31,16 @@ local LevelData = {
 
                         {type="fan_large", tx=23, ty=15 },
 
-                        --[[{type="pipe_v", tx=6,  ty=1 },
-                        {type="pipe_curve_br", tx=6,  ty=2 },
-                        {type="pipe_h", tx=7,  ty=2 },
-                        {type="pipe_h", tx=8,  ty=2 },
-                        {type="pipe_h", tx=9,  ty=2 },
-                        {type="pipe_junctionbox", tx=10,  ty=2 },
-                        {type="pipe_h", tx=11,  ty=2 },
-                        {type="pipe_curve_bl", tx=12,  ty=2 },
-                        {type="pipe_v", tx=12,  ty=1 },]]
-						
+						{type="pipe_big_h", tx=38,  ty=2 },
+						{type="pipe_big_h", tx=37,  ty=2 },
+						{type="pipe_big_h", tx=36,  ty=2 },
+						{type="pipe_big_steamvent_burst", tx=35,  ty=2 },
+						--{type="pipe_big_viewport", tx=35,  ty=2 },
+						{type="pipe_big_h", tx=34,  ty=2 },
+						{type="pipe_big_h", tx=33,  ty=2 },
+						{type="pipe_big_curve_br", tx=32,  ty=2 },
+						{type="pipe_big_v", tx=32,  ty=1 },
+
 						{type="pipe_v", tx=27,  ty=21 },
 						{type="pipe_curve_tr", tx=27,  ty=20 },
 						{type="pipe_h", tx=28,  ty=20 },

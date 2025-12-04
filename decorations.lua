@@ -7,6 +7,8 @@
 --  • Simple registration API
 --------------------------------------------------------------
 
+local Particles = require("particles")
+
 local Decorations = {}
 
 --------------------------------------------------------------
@@ -715,6 +717,262 @@ Decorations.register("pipe_curve_br", {
     w = 1, h = 1,
     draw = function(x,y,w,h)
         drawPipeCurve(x,y,w,h, math.pi*1.5)
+    end
+})
+
+--------------------------------------------------------------
+-- CHUNKY PIPE: HORIZONTAL
+--------------------------------------------------------------
+Decorations.register("pipe_big_h", {
+    w = 1, h = 1,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+
+        local pipeFill = 16   -- THICKER pipe interior
+        local O = 4           -- outline thickness (same as all pipes)
+        local thick = pipeFill + O*2   -- total vertical thickness (24px)
+        local cy = y + h/2 - thick/2   -- center vertically in tile
+
+        ----------------------------------------------------------
+        -- OUTLINE
+        ----------------------------------------------------------
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", x, cy, w, thick)
+
+        ----------------------------------------------------------
+        -- FILL
+        ----------------------------------------------------------
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill",
+            x,
+            cy + O,
+            w,
+            pipeFill
+        )
+    end
+})
+
+--------------------------------------------------------------
+-- CHUNKY PIPE: VERTICAL
+--------------------------------------------------------------
+Decorations.register("pipe_big_v", {
+    w = 1, h = 1,
+
+    draw = function(x, y, w, h)
+        local S = Decorations.style
+
+        local pipeFill = 16
+        local O = 4
+        local thick = pipeFill + O*2     -- total horizontal thickness
+        local cx = x + w/2 - thick/2     -- center horizontally
+
+        ----------------------------------------------------------
+        -- OUTLINE
+        ----------------------------------------------------------
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", cx, y, thick, h)
+
+        ----------------------------------------------------------
+        -- FILL
+        ----------------------------------------------------------
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill",
+            cx + O,
+            y,
+            pipeFill,
+            h
+        )
+    end
+})
+
+--------------------------------------------------------------
+-- INTERNAL: Draw a rounded 90° curve for *big* pipes
+--------------------------------------------------------------
+local function drawBigPipeCurve(x, y, w, h, rotate)
+    local S = Decorations.style
+
+    local pipeFill = 16     -- thicker interior
+    local O = 4
+    local thick = pipeFill + O*2
+    local R = w/2           -- radius stays the same (half tile)
+
+    love.graphics.push()
+    love.graphics.translate(x + w/2, y + h/2)
+    love.graphics.rotate(rotate)
+    love.graphics.translate(-w/2, -h/2)
+
+    ----------------------------------------------------------
+    -- OUTLINE ARC
+    ----------------------------------------------------------
+    love.graphics.setColor(S.outline)
+    love.graphics.setLineWidth(thick)
+    love.graphics.arc("line", "open",
+        w, h,              -- arc center (bottom-right of tile)
+        R,                 -- radius
+        math.pi,           -- start angle
+        math.pi * 1.5      -- end angle (90° bend)
+    )
+
+    ----------------------------------------------------------
+    -- FILL ARC
+    ----------------------------------------------------------
+    love.graphics.setColor(S.metal)
+    love.graphics.setLineWidth(pipeFill)
+    love.graphics.arc("line", "open",
+        w, h,
+        R,
+        math.pi,
+        math.pi * 1.5
+    )
+
+    love.graphics.pop()
+end
+
+Decorations.register("pipe_big_curve_tr", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawBigPipeCurve(x,y,w,h, 0)
+    end
+})
+
+Decorations.register("pipe_big_curve_tl", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawBigPipeCurve(x,y,w,h, math.pi * 0.5)
+    end
+})
+
+Decorations.register("pipe_big_curve_bl", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawBigPipeCurve(x,y,w,h, math.pi)
+    end
+})
+
+Decorations.register("pipe_big_curve_br", {
+    w = 1, h = 1,
+    draw = function(x,y,w,h)
+        drawBigPipeCurve(x,y,w,h, math.pi * 1.5)
+    end
+})
+
+--------------------------------------------------------------
+-- MINI BURST STEAM (more upward drift + slightly longer life)
+--------------------------------------------------------------
+local function emitSteamBurst(x, y, inst)
+
+    local count = 3 + math.random(2)
+
+    for i = 1, count do
+
+        local drift  = (love.math.random() - 0.5) * 10
+
+        -- stronger upward jet
+        -- old: -26 to -48
+        -- new: -32 to -58
+        local upward = -32 - love.math.random() * 26
+
+        local r = 3.5 + love.math.random() * 2.0
+
+        -- old: 0.28–0.40
+        -- new: 0.34–0.52
+        local life  = 0.34 + love.math.random() * 0.18
+
+        local alpha = 0.10 + love.math.random() * 0.08
+
+        Particles.steam(
+            x + (love.math.random()-0.5)*2,
+            y + (love.math.random()-0.5)*2,
+            drift * 0.25,
+            upward,
+            r,
+            life,
+            {1,1,1,alpha}
+        )
+    end
+end
+
+--------------------------------------------------------------
+-- MINI BURST CYCLE STEAM VENT
+--------------------------------------------------------------
+Decorations.register("pipe_big_steamvent_burst", {
+    w = 1, h = 1,
+
+    init = function(inst)
+        inst.data.timer = 0
+        inst.data.nextPuff = 0.8 + love.math.random() * 1.8
+    end,
+
+    update = function(inst, dt)
+        local d = inst.data
+        d.timer = d.timer + dt
+
+        if d.timer >= d.nextPuff then
+            d.timer = 0
+            d.nextPuff = 0.8 + love.math.random() * 1.8
+
+            local cx = inst.x + inst.w * 0.5
+            local cy = inst.y + inst.h * 0.5
+
+            emitSteamBurst(cx, cy, inst)
+        end
+    end,
+
+    draw = function(x, y, w, h, inst)
+        local S = Decorations.style
+
+        ----------------------------------------------------------
+        -- PIPE BODY
+        ----------------------------------------------------------
+        local pipeFill = 16
+        local O = 4
+        local thick = pipeFill + O*2
+        local cy = y + h/2 - thick/2
+
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", x, cy, w, thick)
+
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
+
+        ----------------------------------------------------------
+        -- FRONT VENT PLATE
+        ----------------------------------------------------------
+        local ventW = w * 0.80
+        local ventH = 28
+        local vx = x + w/2 - ventW/2
+        local vy = cy + thick/2 - ventH/2
+        local r = 6
+
+        love.graphics.setColor(S.outline)
+        love.graphics.rectangle("fill", vx - 4, vy - 4,
+            ventW + 8, ventH + 8, r + 3, r + 3)
+
+        love.graphics.setColor(S.metal)
+        love.graphics.rectangle("fill", vx, vy,
+            ventW, ventH, r, r)
+
+        ----------------------------------------------------------
+        -- GRILL SLATS
+        ----------------------------------------------------------
+        love.graphics.setColor(S.dark)
+        local slats = 3
+        local slatH = 4
+
+        local totalSlatHeight = slats * slatH
+        local remaining = ventH - totalSlatHeight
+        local gap = remaining / (slats + 1)
+
+        for i = 1, slats do
+            local sy = vy + gap*i + slatH*(i-1)
+
+            love.graphics.rectangle("fill",
+                vx + 4, sy,
+                ventW - 8, slatH,
+                2, 2
+            )
+        end
     end
 })
 

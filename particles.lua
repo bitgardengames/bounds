@@ -24,11 +24,14 @@ function Particles.spawn(x, y, vx, vy, radius, life, color)
         life    = life or 0.4,
         maxLife = life or 0.4,
         color   = color or {1, 1, 1, 1},
-        gravity = 400,        -- small downward pull
+        gravity = 400,
     })
 end
+-- From original file:
 
+--------------------------------------------------------------
 -- FLOATY PUFF (no gravity, soft easing)
+--------------------------------------------------------------
 function Particles.puff(x, y, vx, vy, radius, life, color)
     color = color or {1,1,1,1}
 
@@ -42,10 +45,14 @@ function Particles.puff(x, y, vx, vy, radius, life, color)
         maxLife = life or 0.4,
         color   = color,
         gravity = 0,
+        softFade = true,
     })
 end
+-- From original file:
 
+--------------------------------------------------------------
 -- BRIGHT SPARKLE (no gravity, quick fade)
+--------------------------------------------------------------
 function Particles.sparkle(x, y, vx, vy, radius, life, color)
     color = color or {1, 0.9, 0.5, 1}
 
@@ -62,20 +69,22 @@ function Particles.sparkle(x, y, vx, vy, radius, life, color)
         softFade = true,
     })
 end
+-- From original file:
 
--- SMALL DIAMOND SHARD (soft fade, gentle gravity, spins)
+--------------------------------------------------------------
+-- DIAMOND SHARD (soft fade, gravity, spinning)
+--------------------------------------------------------------
 function Particles.shard(x, y, vx, vy, size, life, color)
     color = color or {1, 1, 1, 1}
 
     table.insert(particles, {
-        x = x,
-        y = y,
+        x = x, y = y,
         vx = vx or 0,
         vy = vy or 0,
         r  = size or 5,
-        life    = life or 0.45,
+        life = life or 0.45,
         maxLife = life or 0.45,
-        color   = color,
+        color = color,
         gravity = 70,
         softFade = true,
         shape = "diamond",
@@ -83,66 +92,117 @@ function Particles.shard(x, y, vx, vy, size, life, color)
         spin = (math.random() - 0.5) * 6,
     })
 end
+-- From original file:
 
--- WALL SLIDE SOFT DUST (slight downward drift, soft fade)
+--------------------------------------------------------------
+-- WALL SLIDE DUST (soft fade, light downward gravity)
+--------------------------------------------------------------
 function Particles.wallDust(x, y, vx, vy, radius, life, color)
     color = color or {1,1,1,1}
 
     table.insert(particles, {
-        x = x,
-        y = y,
+        x = x, y = y,
         vx = vx or 0,
         vy = vy or 0,
         r  = radius or 3,
-        life    = life or 0.25,
+        life = life or 0.25,
         maxLife = life or 0.25,
+        color = color,
+        gravity = 40,
+        softFade = true,
+    })
+end
+-- From original file:
+
+--------------------------------------------------------------
+-- NEW: STEAM PARTICLE TYPE (billows, grows, soft fade)
+--------------------------------------------------------------
+function Particles.steam(x, y, vx, vy, radius, life, color)
+    color = color or {1,1,1,0.20}
+
+    table.insert(particles, {
+        x = x, y = y,
+        vx = vx or 0,
+        vy = vy or 0,
+        r  = radius or 6,
+        life    = life or 0.9,
+        maxLife = life or 0.9,
         color   = color,
-        gravity = 40,     -- MUCH lighter than 400
-        softFade = true,  -- <--- flag for soft easing
+        gravity = 0,
+        steam   = true,   -- <--- important flag
     })
 end
 
+--------------------------------------------------------------
+-- UPDATE
+--------------------------------------------------------------
 function Particles.update(dt)
     for i = #particles, 1, -1 do
         local p = particles[i]
 
-        -- movement
         p.x = p.x + p.vx * dt
         p.y = p.y + p.vy * dt
         p.vy = p.vy + p.gravity * dt
 
-        -- rotation for special shapes
         if p.rotation then
             p.rotation = p.rotation + (p.spin or 0) * dt
         end
 
-        -- fade
         p.life = p.life - dt
         if p.life <= 0 then
-            local last = #particles
-            particles[i] = particles[last]
-            particles[last] = nil
+            particles[i] = particles[#particles]
+            particles[#particles] = nil
         end
     end
 end
+-- From original file:
 
+--------------------------------------------------------------
+-- DRAW
+--------------------------------------------------------------
 function Particles.draw()
     for _, p in ipairs(particles) do
         local t = p.life / p.maxLife
-        local alpha = p.softFade and (t * t) or t   -- cubic ease-out fade
-        local size = p.softFade and (p.r * (0.4 + 0.6 * t)) or (p.r * t)
-        love.graphics.setColor(p.color[1], p.color[2], p.color[3], (p.color[4] or 1) * alpha)
 
-        if p.shape == "diamond" then
-            love.graphics.push()
-            love.graphics.translate(p.x, p.y)
-            love.graphics.rotate((p.rotation or 0) + math.pi / 4)
-            local side = size * 1.6
-            local radius = side * 0.22
-            love.graphics.rectangle("fill", -side/2, -side/2, side, side, radius, radius)
-            love.graphics.pop()
-        else
+        ----------------------------------------------------------
+        -- SPECIAL STEAM LOGIC (the big fix!)
+        ----------------------------------------------------------
+        if p.steam then
+            -- steam grows as it fades
+            local alpha = t ^ 1.4
+            local size  = p.r * (1.0 + (1 - t) * 1.4)
+
+            love.graphics.setColor(
+                p.color[1], p.color[2], p.color[3],
+                (p.color[4] or 1) * alpha
+            )
+
             love.graphics.circle("fill", p.x, p.y, size)
+        else
+            ------------------------------------------------------
+            -- ORIGINAL SYSTEM (unchanged)
+            ------------------------------------------------------
+            local alpha = p.softFade and (t * t) or t
+            local size  = p.softFade and (p.r * (0.4 + 0.6 * t))
+                                          or (p.r * t)
+
+            love.graphics.setColor(
+                p.color[1], p.color[2], p.color[3],
+                (p.color[4] or 1) * alpha
+            )
+
+            if p.shape == "diamond" then
+                love.graphics.push()
+                love.graphics.translate(p.x, p.y)
+                love.graphics.rotate((p.rotation or 0) + math.pi/4)
+                local side = size * 1.6
+                local radius = side * 0.22
+                love.graphics.rectangle("fill",
+                    -side/2, -side/2, side, side, radius, radius)
+                love.graphics.pop()
+            else
+                love.graphics.circle("fill", p.x, p.y, size)
+            end
         end
     end
 end
