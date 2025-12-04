@@ -81,6 +81,7 @@ local p = {
 
     onGround = false,
     pushingCube = false,
+    pushingCubeDir = 0,
 
     coyoteTime       = 0.12,
     coyoteTimer      = 0,
@@ -233,7 +234,7 @@ function Player.update(dt, Level)
     if p.pushingCube then
         targetSpeed = clamp(targetSpeed, -CUBE_PUSH_MAX, CUBE_PUSH_MAX)
         local diff = targetSpeed - p.vx
-        p.vx = p.vx + diff * dt * 8.0
+        p.vx = p.vx + diff * dt * 7.0
     else
         local accelerating = math.abs(targetSpeed) > 0
         local accel = accelerating
@@ -490,6 +491,7 @@ function Player.update(dt, Level)
     -- CUBE collision push logic
     ----------------------------------------------------------
     p.pushingCube = false
+    p.pushingCubeDir = 0
     for _, c in ipairs(Cube.list) do
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
@@ -511,6 +513,7 @@ function Player.update(dt, Level)
                 end
 
                 p.pushingCube = true
+                p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
             else
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
                     p.y = cy1 - p.h
@@ -527,6 +530,22 @@ function Player.update(dt, Level)
 
                 p.vy = 0
             end
+        end
+    end
+
+    if p.pushingCube and p.onGround then
+        p.contactBottom = math.max(p.contactBottom, 0.16)
+        p.springVertVel = p.springVertVel - 28 * dt
+
+        local pushDir = p.pushingCubeDir
+        if pushDir ~= 0 then
+            if pushDir < 0 then
+                p.contactLeft = math.max(p.contactLeft, 0.18)
+            else
+                p.contactRight = math.max(p.contactRight, 0.18)
+            end
+
+            p.springHorzVel = p.springHorzVel + pushDir * 28 * dt
         end
     end
 

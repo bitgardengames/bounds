@@ -5,6 +5,7 @@
 --------------------------------------------------------------
 
 local level = require("level")
+local Particles = require("particles")
 
 local Cube = { list = {} }
 
@@ -15,9 +16,11 @@ local Cube = { list = {} }
 local CUBE_SIZE = 32
 local GRAVITY = 1800
 local MAX_FALL_SPEED = 900
-local PUSH_ACCEL = 900     -- smoother acceleration
+local PUSH_ACCEL = 720     -- smoother acceleration, feels weighty
 local CUBE_PUSH_MAX = 155  -- caps speed while being pushed
+local PUSH_STICTION = 28   -- extra resistance before the cube budges
 local FRICTION = 8
+local PUSH_FRICTION_SCALE = 0.45
 
 local OUTLINE = 4
 local COLOR_FILL = {0.92, 0.92, 0.95}
@@ -37,6 +40,9 @@ function Cube.spawn(x, y)
         vy = 0,
         grounded = false,
         weight = 1,
+        squish = 0,
+        visualOffset = 4,
+        pushDustTimer = 0,
     })
 end
 
@@ -145,8 +151,8 @@ local function applyPush(c, player, dt)
     local px, py = player.x, player.y
     local pw, ph = player.w, player.h
 
-	local verticalOverlap = player.onGround and (py + ph > c.y + 4 and py < c.y + c.h - 4)
-	local touching = verticalOverlap and ((px + pw >= c.x - 12 and px + pw <= c.x + 4) or (px >= c.x + c.w - 4 and px <= c.x + c.w + 12))
+    local verticalOverlap = player.onGround and (py + ph > c.y + 4 and py < c.y + c.h - 4)
+    local touching = verticalOverlap and ((px + pw >= c.x - 12 and px + pw <= c.x + 4) or (px >= c.x + c.w - 4 and px <= c.x + c.w + 12))
 
     if not touching then
         return false
@@ -162,7 +168,32 @@ local function applyPush(c, player, dt)
 
     if dir ~= 0 then
         local target = dir * CUBE_PUSH_MAX
-        c.vx = c.vx + (target - c.vx) * dt * 16
+
+        -- Start with a little "stiction" so the block feels hefty before moving
+        local resistance = PUSH_STICTION
+        if math.abs(c.vx) < resistance then
+            c.vx = c.vx + dir * math.min(resistance, CUBE_PUSH_MAX) * dt
+        end
+
+        c.vx = c.vx + (target - c.vx) * dt * (PUSH_ACCEL / 45)
+
+        if c.grounded and math.abs(c.vx) > 24 then
+            c.pushDustTimer = (c.pushDustTimer or 0) - dt
+
+            if c.pushDustTimer <= 0 then
+                c.pushDustTimer = 0.22
+                Particles.puff(
+                    c.x + c.w/2 + dir * (c.w * 0.52),
+                    c.y + c.h + 4,
+                    dir * 8,
+                    -10 + math.random()*12,
+                    4.5, 0.32,
+                    {1,1,1,0.82}
+                )
+            end
+        else
+            c.pushDustTimer = 0
+        end
     end
 
     return true
@@ -174,7 +205,6 @@ end
 
 local function applyFriction(c, dt, beingPushed)
     if not c.grounded then return end
-    if beingPushed then return end
 
     if math.abs(c.vx) < 1 then
         c.vx = 0
@@ -182,6 +212,9 @@ local function applyFriction(c, dt, beingPushed)
     end
 
     local frictionForce = FRICTION * 1200
+    if beingPushed then
+        frictionForce = frictionForce * PUSH_FRICTION_SCALE
+    end
 
     if c.vx > 0 then
         c.vx = c.vx - frictionForce * dt
@@ -220,6 +253,16 @@ function Cube.update(dt, player)
         local pushing = applyPush(c, player, dt)
         applyFriction(c, dt, pushing)
 
+        local targetSquish = 0
+        if pushing and c.grounded then
+            targetSquish = math.min(math.abs(c.vx) / CUBE_PUSH_MAX, 1) * 0.16
+        end
+
+        local targetOffset = c.grounded and (4 + targetSquish * 10) or 2
+
+        c.squish = c.squish + (targetSquish - c.squish) * dt * 8
+        c.visualOffset = c.visualOffset + (targetOffset - c.visualOffset) * dt * 10
+
         ------------------------------------------------------
         -- APPLY MOTION
         ------------------------------------------------------
@@ -241,14 +284,23 @@ local visualOffset = 4
 
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
+        local offset = c.visualOffset or visualOffset
+        local squish = c.squish or 0
+        local scaleX = 1 + squish * 0.60
+        local scaleY = 1 - squish * 0.55
+        local w = c.w * scaleX
+        local h = c.h * scaleY
+        local ox = (c.w - w) / 2
+        local oy = (c.h - h)
+
         -- Outline
         love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.rectangle(
             "fill",
-            c.x - OUTLINE,
-            c.y - OUTLINE - visualOffset,
-            c.w + OUTLINE*2,
-            c.h + OUTLINE*2,
+            c.x - OUTLINE + ox,
+            c.y - OUTLINE - offset + oy,
+            w + OUTLINE*2,
+            h + OUTLINE*2,
             6,6
         )
 
@@ -256,10 +308,10 @@ function Cube.draw()
         love.graphics.setColor(COLOR_FILL)
         love.graphics.rectangle(
             "fill",
-            c.x,
-            c.y - visualOffset,
-            c.w,
-            c.h,
+            c.x + ox,
+            c.y - offset + oy,
+            w,
+            h,
             6,6
         )
     end
