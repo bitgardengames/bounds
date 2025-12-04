@@ -720,11 +720,11 @@ function Player.draw()
         love.graphics.rotate(tilt)
 
         love.graphics.setColor(colors.fill)
-        love.graphics.circle("fill", 0, 0, 4)
+        love.graphics.circle("fill", 0, 0, 6)
 
         love.graphics.setColor(colors.outline)
         love.graphics.setLineWidth(4)
-        love.graphics.circle("line", 0, 0, 4)
+        love.graphics.circle("line", 0, 0, 6)
         love.graphics.setLineWidth(1)
 
         love.graphics.pop()
