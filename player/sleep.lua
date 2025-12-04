@@ -2,7 +2,7 @@ local Blink = require("blink")
 
 local Sleep = {}
 
-local SLEEP_THRESHOLD = 20.0
+local SLEEP_THRESHOLD = 60.0
 
 local function ease(t)
     return t * t * (3 - 2 * t)
