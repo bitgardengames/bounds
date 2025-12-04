@@ -113,5 +113,6 @@ loadPrefab("fans")
 loadPrefab("lights")
 loadPrefab("pipes")
 loadPrefab("steam")
+loadPrefab("signs")
 
 return Decorations

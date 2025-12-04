@@ -136,12 +136,12 @@ local function spawnObjects(chamber)
         })
     end
 
-    SecurityCamera.clear()
-    SecurityCamera.tileSize = TILE_SIZE
-    if objects.securityCameras and objects.securityCameras[1] then
-        local cam = objects.securityCameras[1]
-        SecurityCamera.spawn(cam.tx, cam.ty)
-    end
+	SecurityCamera.clear()
+	SecurityCamera.tileSize = TILE_SIZE
+
+	for _, cam in ipairs(objects.securityCameras or {}) do
+		SecurityCamera.spawn(cam.tx, cam.ty, cam.dir or 1)
+	end
 end
 
 function loadChamber(index)

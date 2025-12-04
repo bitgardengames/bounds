@@ -1,27 +1,28 @@
 -- securitycamera.lua
 ------------------------------------------------------------
--- Single-instance decorative security camera
--- Smooth tracking, UNIFORM LED pulse, full draw logic
--- With premium pupil "refocus" animation
+-- Decorative security camera with tracking + refocus
+-- Now supports left/right mounting via dir = 1 or -1
 ------------------------------------------------------------
 
 local Player = require("player")  -- direct access to player
 
 local SecurityCamera = {
     tileSize = 48,
-    active = false,
-    x = 0,
-    y = 0,
-    angle = 0,
-    time = 0,
+    active   = false,
+    x        = 0,
+    y        = 0,
+    angle    = 0,
+    time     = 0,
+
+    dir      = 1,    -- 1 = left wall (default), -1 = right wall
 
     --------------------------------------------------------
-    -- NEW: Refocus animation state
+    -- Refocus animation state
     --------------------------------------------------------
-    pupilScale = 1.0,       -- 1.0 = normal, 0.65 = contracted
-    refocusTimer = 0,       -- counts up during contraction
+    pupilScale    = 1.0,  -- 1.0 = normal, 0.65 = contracted
+    refocusTimer  = 0,
     refocusActive = false,
-    nextRefocus = 2.0       -- randomized on spawn and each cycle
+    nextRefocus   = 2.0,
 }
 
 local player = Player.get()
@@ -34,24 +35,28 @@ local function randomRefocusDelay()
 end
 
 local function startRefocus()
-    SecurityCamera.refocusTimer = 0
+    SecurityCamera.refocusTimer  = 0
     SecurityCamera.refocusActive = true
 end
 
 ------------------------------------------------------------
--- SPAWN (single camera)
+-- SPAWN
 ------------------------------------------------------------
-function SecurityCamera.spawn(tx, ty)
+-- tx, ty: tile coordinates
+-- dir: 1 (left wall, looking right) or -1 (right wall, looking left)
+function SecurityCamera.spawn(tx, ty, dir)
     SecurityCamera.x = tx * SecurityCamera.tileSize
     SecurityCamera.y = ty * SecurityCamera.tileSize
 
     SecurityCamera.angle = 0
     SecurityCamera.time  = 0
 
-    SecurityCamera.pupilScale = 1
-    SecurityCamera.refocusTimer = 0
+    SecurityCamera.dir   = dir or 1
+
+    SecurityCamera.pupilScale    = 1
+    SecurityCamera.refocusTimer  = 0
     SecurityCamera.refocusActive = false
-    SecurityCamera.nextRefocus = randomRefocusDelay()
+    SecurityCamera.nextRefocus   = randomRefocusDelay()
 
     SecurityCamera.active = true
 end
@@ -68,13 +73,12 @@ end
 ------------------------------------------------------------
 function SecurityCamera.update(dt)
     if not SecurityCamera.active then return end
-
     if not player then return end
 
     SecurityCamera.time = SecurityCamera.time + dt
 
     ----------------------------------------------------------------
-    -- TARGET TRACKING
+    -- TARGET TRACKING (no dir-flip here; we handle mirroring in draw)
     ----------------------------------------------------------------
     local px = player.x + player.w / 2
     local py = player.y + player.h / 2
@@ -85,10 +89,16 @@ function SecurityCamera.update(dt)
     local dx = px - cx
     local dy = py - cy
 
-    local targetAngle = math.atan2(dy, dx)
+	local targetAngle
+	if SecurityCamera.dir == 1 then
+		-- mounted on left wall, camera faces right
+		targetAngle = math.atan2(dy, dx)
+	else
+		-- mounted on right wall, camera faces left (mirror X)
+		targetAngle = math.atan2(dy, -dx)
+	end
 
-    SecurityCamera.angle =
-        SecurityCamera.angle + (targetAngle - SecurityCamera.angle) * 0.18
+    SecurityCamera.angle = SecurityCamera.angle + (targetAngle - SecurityCamera.angle) * 0.18
 
     ----------------------------------------------------------------
     -- PREMIUM REFOCUS ANIMATION
@@ -145,6 +155,7 @@ function SecurityCamera.draw(style)
     local h = SecurityCamera.tileSize
     local angle = SecurityCamera.angle
     local t = SecurityCamera.time
+    local dir = SecurityCamera.dir or 1  -- 1 or -1
 
     ----------------------------------------------------------------
     -- UNIFORM BLINK
@@ -154,13 +165,69 @@ function SecurityCamera.draw(style)
     local ledAlpha = 0.25 + blink * 0.55
 
     ------------------------------------------------------
-    -- MOUNT PLATE
+    -- GEOMETRY (dir-aware positions)
     ------------------------------------------------------
     local plateW = 4
     local plateH = 32
-    local plateX = x + visualOffset
+
+    -- plate near left or right wall
+    local plateX
+    if dir == 1 then
+        plateX = x + visualOffset
+    else
+        plateX = x + w - visualOffset - plateW
+    end
     local plateY = y + h/2 - plateH/2
 
+    -- arm
+    local armW = 12
+    local armH = 6
+    local armGap = 8 -- distance between plate & arm
+
+    local armX
+    if dir == 1 then
+        armX = plateX + armGap
+    else
+        armX = plateX - armGap - armW
+    end
+    local armY = y + h/2 - armH/2
+
+    -- body
+    local bodyW = 42
+    local bodyH = 28
+
+    local bodyX
+    if dir == 1 then
+        bodyX = armX + armW
+    else
+        bodyX = armX - bodyW
+    end
+    local bodyY = y + 8
+
+    -- LED position (one side of the body)
+    local ledOffsetX = 8
+    local ledX
+    if dir == 1 then
+        ledX = bodyX + ledOffsetX
+    else
+        ledX = bodyX + bodyW - ledOffsetX
+    end
+    local ledY = bodyY + 8
+    local ledR = 2.2
+
+    -- Lens position inside body (mirrored)
+    local lensOffset = bodyW * 0.62 + 2
+    local lx
+    if dir == 1 then
+        lx = bodyX + lensOffset
+    else
+        lx = bodyX + bodyW - lensOffset
+    end
+    local ly = bodyY + bodyH/2
+
+    ------------------------------------------------------
+    -- MOUNT PLATE
+    ------------------------------------------------------
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
         plateX - 4, plateY - 4,
@@ -178,11 +245,6 @@ function SecurityCamera.draw(style)
     ------------------------------------------------------
     -- ARM
     ------------------------------------------------------
-    local armX = x + 13
-    local armY = y + h/2 - 3
-    local armW = 12
-    local armH = 6
-
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
         armX - 4, armY - 4,
@@ -199,10 +261,6 @@ function SecurityCamera.draw(style)
     -- CAMERA BODY
     ------------------------------------------------------
     local ox = 4
-    local bodyX = armX + armW
-    local bodyY = y + 8
-    local bodyW = 42
-    local bodyH = 28
 
     love.graphics.setColor(0,0,0,1)
     love.graphics.rectangle("fill",
@@ -221,10 +279,6 @@ function SecurityCamera.draw(style)
     ------------------------------------------------------
     -- LED
     ------------------------------------------------------
-    local ledX = bodyX + 8
-    local ledY = bodyY + 8
-    local ledR = 2.2
-
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", ledX, ledY, ledR + 4)
 
@@ -237,21 +291,22 @@ function SecurityCamera.draw(style)
     ------------------------------------------------------
     -- LENS + REFOCUSING PUPIL
     ------------------------------------------------------
-    local lx = bodyX + bodyW * 0.62 + 2
-    local ly = bodyY + bodyH/2
-
     -- Lens housing
     love.graphics.setColor(S.dark)
     love.graphics.circle("fill", lx, ly, 12)
 
-    -- Tracking pupil (scaled)
-    local pupilDist = 4 * SecurityCamera.pupilScale
-    local pupilX = lx + math.cos(angle) * pupilDist
-    local pupilY = ly + math.sin(angle) * pupilDist
-    local pupilR = 5 * SecurityCamera.pupilScale
+	-- Tracking pupil (scaled + correctly mirrored horizontally)
+	local pupilDist = 4 * SecurityCamera.pupilScale
 
-    love.graphics.setColor(1,1,1)
-    love.graphics.circle("fill", pupilX, pupilY, pupilR)
+	local dx = math.cos(angle) * pupilDist * dir   -- mirror horizontally (once)
+	local dy = math.sin(angle) * pupilDist         -- do not mirror Y
+
+	local pupilX = lx + dx
+	local pupilY = ly + dy
+	local pupilR = 5 * SecurityCamera.pupilScale
+
+	love.graphics.setColor(1,1,1)
+	love.graphics.circle("fill", pupilX, pupilY, pupilR)
 end
 
 return SecurityCamera

@@ -72,6 +72,9 @@ local LevelData = {
 						{type="pipe_h", tx=33,  ty=20},
 						{type="pipe_h", tx=34,  ty=20},
 						{type="pipe_h_join", tx=35,  ty=20},
+						
+						-- Signs
+						{ type = "sign", tx = 4, ty = 5, data = { text = "CH-01" }},
                     },
                 },
 
@@ -113,7 +116,8 @@ local LevelData = {
                     {tx = 17, ty = 19},
                 },
                 securityCameras = {
-                    {tx = 1, ty = 2},
+                    --{tx = 1, ty = 2},
+                    {tx = 38, ty = 5, dir = -1},
                 },
             },
         },
