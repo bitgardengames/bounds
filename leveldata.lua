@@ -31,15 +31,15 @@ local LevelData = {
 
 
 						-- Fans
-						{type="fan", tx=15, ty=8},
+                        {type="fan", tx=15, ty=8, active=false},
                         {type="fan_large", tx=23, ty=15},
-                        {type="fan_3", tx=26, ty=8},
+                        {type="fan_3", tx=26, ty=8, active=false},
 
 						-- Pipes
 						{type="pipe_big_h", tx=38,  ty=2},
 						{type="pipe_big_h_join", tx=37,  ty=2},
 						{type="pipe_big_h", tx=36,  ty=2},
-						{type="pipe_big_steamvent_burst", tx=35,  ty=2},
+                        {type="pipe_big_steamvent_burst", tx=35,  ty=2, active=false},
 						{type="pipe_big_h", tx=34,  ty=2},
 						{type="pipe_big_h_join", tx=33,  ty=2},
 						{type="pipe_big_curve_br", tx=32,  ty=2},

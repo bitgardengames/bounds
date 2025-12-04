@@ -1,21 +1,33 @@
 return function(Decorations)
-	Decorations.register("fan", {
-		w = 1,
-		h = 1,
+        Decorations.register("fan", {
+                w = 1,
+                h = 1,
 
-		draw = function(x, y, w, h)
-			local S = Decorations.style
+                init = function(inst, entry)
+                        local d = inst.data or {}
+                        d.active = not (entry and entry.active == false)
 
-			-- Center of the tile in pixel coords
-			local cx = x + w/2
-			local cy = y + h/2
+                        if not d.active then
+                                d.angle = d.angle or (love.math.random() * math.pi * 2)
+                        end
 
-			-- Fan radius
-			local r = w * 0.42
+                        inst.data = d
+                end,
 
-			-- Spin animation (same as before)
-			local t = love.timer.getTime()
-			local angle = t * 1.8
+                draw = function(x, y, w, h, inst)
+                        local S = Decorations.style
+                        local d = inst.data or {}
+
+                        -- Center of the tile in pixel coords
+                        local cx = x + w/2
+                        local cy = y + h/2
+
+                        -- Fan radius
+                        local r = w * 0.42
+
+                        -- Spin animation (same as before)
+                        local t = love.timer.getTime()
+                        local angle = (d.active ~= false) and (t * 1.8) or (d.angle or 0)
 
 			----------------------------------------------------------
 			-- OUTER OUTLINE RING
@@ -73,18 +85,35 @@ return function(Decorations)
         w = 2,
         h = 2,
 
-        init = function(inst)
-            inst.data = {
-                fanSpeed = 1.0,
-                targetSpeed = 1.0,
-                state = "normal",
-                stateTimer = 0,
-                nextEvent = love.math.random(20, 30) + love.math.random(),
-            }
+        init = function(inst, entry)
+            local d = inst.data or {}
+            d.active = not (entry and entry.active == false)
+
+            if d.active then
+                d.fanSpeed = d.fanSpeed or 1.0
+                d.targetSpeed = d.targetSpeed or 1.0
+                d.state = d.state or "normal"
+                d.stateTimer = d.stateTimer or 0
+                d.nextEvent = d.nextEvent or (love.math.random(20, 30) + love.math.random())
+                d.angle = d.angle or 0
+            else
+                d.fanSpeed = 0
+                d.targetSpeed = 0
+                d.state = "static"
+                d.stateTimer = 0
+                d.nextEvent = 0
+                d.angle = d.angle or (love.math.random() * math.pi * 2)
+            end
+
+            inst.data = d
         end,
 
         update = function(inst, dt)
             local d = inst.data
+
+            if d.active == false then
+                return
+            end
 
             if d.state == "normal" then
                 d.targetSpeed = 1.0
@@ -223,17 +252,25 @@ return function(Decorations)
 		w = 3,
 		h = 3,
 
-		init = function(inst)
-			inst.data = {
-				angle = 0,
-				speed = 0.30,   -- slow and heavy
-			}
-		end,
+                init = function(inst, entry)
+                        local d = inst.data or {}
+                        d.active = not (entry and entry.active == false)
 
-		update = function(inst, dt)
-			local d = inst.data
-			d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
-		end,
+                        d.angle = d.angle or ((d.active ~= false) and 0 or (love.math.random() * math.pi * 2))
+                        d.speed = d.speed or ((d.active ~= false) and 0.30 or 0)
+
+                        inst.data = d
+                end,
+
+                update = function(inst, dt)
+                        local d = inst.data
+
+                        if d.active == false then
+                                return
+                        end
+
+                        d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
+                end,
 
 		draw = function(x, y, w, h, inst)
 			local S = Decorations.style
