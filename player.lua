@@ -82,6 +82,8 @@ local p = {
     onGround = false,
     pushingCube = false,
     pushingCubeDir = 0,
+    pushingCubeRef = nil,
+    pushingCubeGap = 0,
 
     coyoteTime       = 0.12,
     coyoteTimer      = 0,
@@ -170,6 +172,11 @@ function Player.update(dt, Level)
             p.contactRight = 0
             p.onGround = false
             p.dead = false
+
+            p.pushingCube = false
+            p.pushingCubeDir = 0
+            p.pushingCubeRef = nil
+            p.pushingCubeGap = 0
 
             -- reset sleep state
             p.idleTimer = 0
@@ -492,6 +499,8 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     p.pushingCube = false
     p.pushingCubeDir = 0
+    p.pushingCubeRef = nil
+    p.pushingCubeGap = 0
     for _, c in ipairs(Cube.list) do
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
@@ -514,6 +523,8 @@ function Player.update(dt, Level)
 
                 p.pushingCube = true
                 p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
+                p.pushingCubeRef = c
+                p.pushingCubeGap = 1.5
             else
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
                     p.y = cy1 - p.h
@@ -546,6 +557,23 @@ function Player.update(dt, Level)
             end
 
             p.springHorzVel = p.springHorzVel + pushDir * 28 * dt
+        end
+
+        local c = p.pushingCubeRef
+        if c then
+            local gap = p.pushingCubeGap or 0
+            local alignSpeed = math.min(dt * 14, 1)
+
+            if pushDir < 0 then
+                local targetX = c.x + c.w + gap
+                p.x = p.x + (targetX - p.x) * alignSpeed
+            elseif pushDir > 0 then
+                local targetX = c.x - p.w - gap
+                p.x = p.x + (targetX - p.x) * alignSpeed
+            end
+
+            local followBlend = 0.65
+            p.vx = p.vx * (1 - followBlend) + c.vx * followBlend
         end
     end
 
