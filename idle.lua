@@ -62,8 +62,7 @@ function Idle.update(dt, isIdle)
                 elseif roll < 0.94 then
                     startEffect("rock", { duration = 1.5, cycles = 2.4 })
                 elseif roll < 0.97 then
-                    local dir = (math.random() < 0.5) and -1 or 1
-                    startEffect("scratch", { duration = 1.1, dir = dir })
+                    startEffect("scratch", { duration = 1.1, dir = -1 })
                 else
                     local dir = (math.random() < 0.5) and -1 or 1
                     startEffect("look_up", { duration = 1.0, dir = dir })
@@ -146,27 +145,27 @@ function Idle.getHandPose()
 
     local progress = clamp(Idle.effectTimer / effect.duration, 0, 1)
 
-    local phase1, phase2, phase3, phase4 = 0.18, 0.20, 0.32, 0.22
+    local phase1, phase2, phase3, phase4 = 0.20, 0.22, 0.30, 0.28
     local t, x, y = 0, 0, 0
 
     if progress < phase1 then
         t = progress / phase1
-        x = 1.05 - t * 0.38
-        y = 0.26 - t * 0.04
+        x = 0.95 - t * 0.33
+        y = 0.18 - t * 0.04
     elseif progress < phase1 + phase2 then
         t = (progress - phase1) / phase2
-        x = 0.67 - t * 0.28
-        y = 0.22 - t * 0.62
+        x = 0.62 - t * 0.20
+        y = 0.14 - t * 0.32
     elseif progress < phase1 + phase2 + phase3 then
         t = (progress - phase1 - phase2) / phase3
-        local scratch = math.sin(t * math.pi * 6) * 0.10
-        local tap = math.sin(t * math.pi * 3 + math.pi/4) * 0.05
-        x = 0.39 + scratch
-        y = -0.40 + tap
+        local scratch = math.sin(t * math.pi * 4) * 0.06
+        local tap = math.sin(t * math.pi * 2.6 + math.pi/4) * 0.03
+        x = 0.42 + scratch
+        y = -0.18 + tap
     else
         t = (progress - phase1 - phase2 - phase3) / phase4
-        x = 0.39 + t * 0.66
-        y = -0.40 + t * 0.72
+        x = 0.42 + t * 0.55
+        y = -0.18 + t * 0.40
     end
 
     return x * effect.dir, y
