@@ -17,6 +17,17 @@ Decorations.style = {
     fanFill = {0.88, 0.88, 0.92, 1},
 }
 
+local function shallowCopy(source)
+    if not source then return {} end
+
+    local copy = {}
+    for k, v in pairs(source) do
+        copy[k] = v
+    end
+
+    return copy
+end
+
 function Decorations.register(name, prefab)
     assert(prefab.draw, "Prefab '" .. name .. "' must include a draw function.")
     registry[name] = prefab
@@ -94,17 +105,6 @@ Decorations.Particles = Particles
 local function loadPrefab(moduleName)
     local loader = require("decorations.prefabs." .. moduleName)
     loader(Decorations)
-end
-
-local function shallowCopy(source)
-    if not source then return {} end
-
-    local copy = {}
-    for k, v in pairs(source) do
-        copy[k] = v
-    end
-
-    return copy
 end
 
 loadPrefab("panels")

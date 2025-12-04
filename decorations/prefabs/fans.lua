@@ -128,7 +128,7 @@ return function(Decorations)
                 if d.fanSpeed <= 0.10 then
                     d.state = "pause"
                     d.stateTimer = 0
-                    d.pauseDuration = 10 + love.math.random() * 2.4
+                    d.pauseDuration = 16 + love.math.random() * 2.4
                 end
 
             elseif d.state == "pause" then
