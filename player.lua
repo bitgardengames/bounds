@@ -524,7 +524,7 @@ function Player.update(dt, Level)
                 p.pushingCube = true
                 p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
                 p.pushingCubeRef = c
-                p.pushingCubeGap = 1.5
+                p.pushingCubeGap = 2.0
             else
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
                     p.y = cy1 - p.h
@@ -562,14 +562,13 @@ function Player.update(dt, Level)
         local c = p.pushingCubeRef
         if c then
             local gap = p.pushingCubeGap or 0
-            local alignSpeed = math.min(dt * 14, 1)
 
             if pushDir < 0 then
                 local targetX = c.x + c.w + gap
-                p.x = p.x + (targetX - p.x) * alignSpeed
+                p.x = targetX
             elseif pushDir > 0 then
                 local targetX = c.x - p.w - gap
-                p.x = p.x + (targetX - p.x) * alignSpeed
+                p.x = targetX
             end
 
             local followBlend = 0.65
