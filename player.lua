@@ -713,25 +713,18 @@ function Player.draw()
     if handX and handY then
         local hx = handX * r
         local hy = handY * r
-        local palmW = r * 0.60
-        local palmH = r * 0.42
-        local radius = palmH * 0.55
         local tilt = -0.20 * (handX >= 0 and 1 or -1)
 
         love.graphics.push()
         love.graphics.translate(hx, hy)
         love.graphics.rotate(tilt)
 
-        love.graphics.setColor(colors.outline)
-        love.graphics.rectangle("fill", -palmW/2 - 2, -palmH/2 - 2, palmW + 4, palmH + 4, radius, radius)
-
         love.graphics.setColor(colors.fill)
-        love.graphics.rectangle("fill", -palmW/2, -palmH/2, palmW, palmH, radius, radius)
+        love.graphics.circle("fill", 0, 0, 4)
 
         love.graphics.setColor(colors.outline)
         love.graphics.setLineWidth(4)
-        love.graphics.line(-palmW*0.18, -palmH*0.05, palmW*0.18, -palmH*0.12)
-        love.graphics.line(-palmW*0.08, palmH*0.08, palmW*0.22, palmH*0.02)
+        love.graphics.circle("line", 0, 0, 4)
         love.graphics.setLineWidth(1)
 
         love.graphics.pop()
