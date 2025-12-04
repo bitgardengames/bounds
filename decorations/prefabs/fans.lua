@@ -307,7 +307,7 @@ return function(Decorations)
 			love.graphics.circle("fill", cx, cy, cavityR)
 
 			----------------------------------------------------------
-			-- BLADES (NOW 5)
+			-- BLADES
 			----------------------------------------------------------
 			love.graphics.push()
 			love.graphics.translate(cx, cy)
@@ -315,9 +315,9 @@ return function(Decorations)
 
 			love.graphics.setColor(S.metal)
 
-			local bladeCount  = 5         -- ★ UPDATED
-			local bladeLength = cavityR * 0.90
-			local bladeWidth  = cavityR * 0.28
+			local bladeCount  = 5
+			local bladeLength = cavityR * 0.92
+			local bladeWidth  = cavityR * 0.24
 			local cornerR     = 10
 
 			for i = 1, bladeCount do
