@@ -23,7 +23,7 @@ local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 155
-local CUBE_TOP_OFFSET = 0
+local CUBE_TOP_OFFSET = 1
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -103,6 +103,8 @@ local p = {
     sleeping  = false,
     sleepEyeT = 0,
     sleepingTransition = false,
+
+    prevY = 0,
 }
 
 --------------------------------------------------------------
@@ -134,6 +136,8 @@ end
 --------------------------------------------------------------
 
 function Player.update(dt, Level)
+    p.prevY = p.y
+
     ----------------------------------------------------------
     -- Death / respawn block
     ----------------------------------------------------------
@@ -502,7 +506,8 @@ function Player.update(dt, Level)
 
             local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
-            local landingFromAbove = p.vy >= 0 and (py1 + p.h * 0.25) < cy1
+            local wasAbove = (p.prevY + p.h) <= cy1
+            local landingFromAbove = p.vy >= 0 and wasAbove
 
             if landingFromAbove or minOverlap == overlapTop then
                 p.y = c.y - p.h - CUBE_TOP_OFFSET
