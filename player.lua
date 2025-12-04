@@ -638,6 +638,11 @@ function Player.draw()
         cb = cb + 0.04 -- slight extra squish into the floor while sleeping
     end
 
+    local handX, handY = nil, nil
+    if not p.sleeping and not p.sleepingTransition then
+        handX, handY = Idle.getHandPose()
+    end
+
     local baseEyeOffsetX = r*0.45
     local baseEyeOffsetY = -r*0.25
     local eyeRadius = r*0.28 * Blink.getEyeScale()
@@ -651,6 +656,33 @@ function Player.draw()
     love.graphics.push()
     love.graphics.translate(cx, cy)
     love.graphics.rotate(lean)
+
+    if handX and handY then
+        local hx = handX * r
+        local hy = handY * r
+        local palmW = r * 0.60
+        local palmH = r * 0.42
+        local radius = palmH * 0.55
+        local tilt = -0.20 * (handX >= 0 and 1 or -1)
+
+        love.graphics.push()
+        love.graphics.translate(hx, hy)
+        love.graphics.rotate(tilt)
+
+        love.graphics.setColor(colors.outline)
+        love.graphics.rectangle("fill", -palmW/2 - 2, -palmH/2 - 2, palmW + 4, palmH + 4, radius, radius)
+
+        love.graphics.setColor(colors.fill)
+        love.graphics.rectangle("fill", -palmW/2, -palmH/2, palmW, palmH, radius, radius)
+
+        love.graphics.setColor(colors.outline)
+        love.graphics.setLineWidth(4)
+        love.graphics.line(-palmW*0.18, -palmH*0.05, palmW*0.18, -palmH*0.12)
+        love.graphics.line(-palmW*0.08, palmH*0.08, palmW*0.22, palmH*0.02)
+        love.graphics.setLineWidth(1)
+
+        love.graphics.pop()
+    end
 
     for i = 0, segments do
         local angle = (i/segments)*math.pi*2
