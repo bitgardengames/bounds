@@ -23,7 +23,7 @@ local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 155
-local CUBE_TOP_OFFSET = 8
+local CUBE_TOP_OFFSET = 0
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -502,7 +502,9 @@ function Player.update(dt, Level)
 
             local minOverlap = math.min(overlapLeft, overlapRight, overlapTop, overlapBottom)
 
-            if minOverlap == overlapTop then
+            local landingFromAbove = p.vy >= 0 and (py1 + p.h * 0.25) < cy1
+
+            if landingFromAbove or minOverlap == overlapTop then
                 p.y = c.y - p.h - CUBE_TOP_OFFSET
                 p.vy = 0
                 p.onGround = true
