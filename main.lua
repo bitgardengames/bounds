@@ -17,7 +17,7 @@ local Chamber = require("chamber")
 local Plate = require("pressureplate")
 local Cube = require("cube")
 local Decorations = require("decorations")
-local SecurityCamera = require("securitycamera")
+local Monitor = require("monitor")
 
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
@@ -81,7 +81,7 @@ local function clearActors()
     Saw.clear()
     Cube.clear()
     Plate.clear()
-    SecurityCamera.clear()
+    Monitor.clear()
     Exit.clear()
 end
 
@@ -136,12 +136,12 @@ local function spawnObjects(chamber)
         })
     end
 
-	SecurityCamera.clear()
-	SecurityCamera.tileSize = TILE_SIZE
+        Monitor.clear()
+        Monitor.tileSize = TILE_SIZE
 
-	for _, cam in ipairs(objects.securityCameras or {}) do
-		SecurityCamera.spawn(cam.tx, cam.ty, cam.dir or 1)
-	end
+        for _, monitor in ipairs(objects.monitors or {}) do
+                Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1)
+        end
 end
 
 function loadChamber(index)
@@ -191,7 +191,7 @@ function love.update(dt)
     Cube.update(dt, pl)
     Plate.update(dt, pl, Cube.list)
     Door.update(dt)
-    SecurityCamera.update(dt)
+    Monitor.update(dt)
     Particles.update(dt)
     Decorations.update(dt)
 
@@ -274,7 +274,7 @@ function love.draw()
     local camX, camY = 0, 0
 	Player.draw()
     Level.draw(camX, camY)
-    SecurityCamera.draw(Decorations.style)
+    Monitor.draw(Decorations.style)
     Saw.draw()
     Door.draw()
     Cube.draw()

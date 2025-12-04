@@ -115,7 +115,7 @@ local LevelData = {
                 cubes = {
                     {tx = 17, ty = 19},
                 },
-                securityCameras = {
+                monitors = {
                     --{tx = 1, ty = 2},
                     {tx = 38, ty = 5, dir = -1},
                 },
@@ -224,7 +224,7 @@ local LevelData = {
                 cubes = {
                     { tx = 10, ty = 20 },
                 },
-                securityCameras = {
+                monitors = {
                     { tx = 1, ty = 2 },
                 },
                 saws = {

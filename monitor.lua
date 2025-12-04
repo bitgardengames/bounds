@@ -1,12 +1,12 @@
--- securitycamera.lua
+-- monitor.lua
 ------------------------------------------------------------
--- Decorative security camera with tracking + refocus
+-- Decorative monitor with tracking + refocus
 -- Now supports left/right mounting via dir = 1 or -1
 ------------------------------------------------------------
 
 local Player = require("player")  -- direct access to player
 
-local SecurityCamera = {
+local Monitor = {
     tileSize = 48,
     active   = false,
     x        = 0,
@@ -35,8 +35,8 @@ local function randomRefocusDelay()
 end
 
 local function startRefocus()
-    SecurityCamera.refocusTimer  = 0
-    SecurityCamera.refocusActive = true
+    Monitor.refocusTimer  = 0
+    Monitor.refocusActive = true
 end
 
 ------------------------------------------------------------
@@ -44,38 +44,38 @@ end
 ------------------------------------------------------------
 -- tx, ty: tile coordinates
 -- dir: 1 (left wall, looking right) or -1 (right wall, looking left)
-function SecurityCamera.spawn(tx, ty, dir)
-    SecurityCamera.x = tx * SecurityCamera.tileSize
-    SecurityCamera.y = ty * SecurityCamera.tileSize
+function Monitor.spawn(tx, ty, dir)
+    Monitor.x = tx * Monitor.tileSize
+    Monitor.y = ty * Monitor.tileSize
 
-    SecurityCamera.angle = 0
-    SecurityCamera.time  = 0
+    Monitor.angle = 0
+    Monitor.time  = 0
 
-    SecurityCamera.dir   = dir or 1
+    Monitor.dir   = dir or 1
 
-    SecurityCamera.pupilScale    = 1
-    SecurityCamera.refocusTimer  = 0
-    SecurityCamera.refocusActive = false
-    SecurityCamera.nextRefocus   = randomRefocusDelay()
+    Monitor.pupilScale    = 1
+    Monitor.refocusTimer  = 0
+    Monitor.refocusActive = false
+    Monitor.nextRefocus   = randomRefocusDelay()
 
-    SecurityCamera.active = true
+    Monitor.active = true
 end
 
 ------------------------------------------------------------
 -- CLEAR
 ------------------------------------------------------------
-function SecurityCamera.clear()
-    SecurityCamera.active = false
+function Monitor.clear()
+    Monitor.active = false
 end
 
 ------------------------------------------------------------
 -- UPDATE
 ------------------------------------------------------------
-function SecurityCamera.update(dt)
-    if not SecurityCamera.active then return end
+function Monitor.update(dt)
+    if not Monitor.active then return end
     if not player then return end
 
-    SecurityCamera.time = SecurityCamera.time + dt
+    Monitor.time = Monitor.time + dt
 
     ----------------------------------------------------------------
     -- TARGET TRACKING (no dir-flip here; we handle mirroring in draw)
@@ -83,59 +83,59 @@ function SecurityCamera.update(dt)
     local px = player.x + player.w / 2
     local py = player.y + player.h / 2
 
-    local cx = SecurityCamera.x + SecurityCamera.tileSize / 2
-    local cy = SecurityCamera.y + SecurityCamera.tileSize / 2
+    local cx = Monitor.x + Monitor.tileSize / 2
+    local cy = Monitor.y + Monitor.tileSize / 2
 
     local dx = px - cx
     local dy = py - cy
 
 	local targetAngle
-	if SecurityCamera.dir == 1 then
-		-- mounted on left wall, camera faces right
-		targetAngle = math.atan2(dy, dx)
-	else
-		-- mounted on right wall, camera faces left (mirror X)
-		targetAngle = math.atan2(dy, -dx)
-	end
+        if Monitor.dir == 1 then
+                -- mounted on left wall, camera faces right
+                targetAngle = math.atan2(dy, dx)
+        else
+                -- mounted on right wall, camera faces left (mirror X)
+                targetAngle = math.atan2(dy, -dx)
+        end
 
-    SecurityCamera.angle = SecurityCamera.angle + (targetAngle - SecurityCamera.angle) * 0.18
+    Monitor.angle = Monitor.angle + (targetAngle - Monitor.angle) * 0.18
 
     ----------------------------------------------------------------
     -- PREMIUM REFOCUS ANIMATION
     ----------------------------------------------------------------
     -- Trigger extra refocus when the player dies
-    if player.dead and not SecurityCamera.refocusActive then
+    if player.dead and not Monitor.refocusActive then
         startRefocus()
     end
 
     -- Idle randomized refocus timing
-    if not SecurityCamera.refocusActive then
-        SecurityCamera.nextRefocus = SecurityCamera.nextRefocus - dt
-        if SecurityCamera.nextRefocus <= 0 then
+    if not Monitor.refocusActive then
+        Monitor.nextRefocus = Monitor.nextRefocus - dt
+        if Monitor.nextRefocus <= 0 then
             startRefocus()
-            SecurityCamera.nextRefocus = randomRefocusDelay()
+            Monitor.nextRefocus = randomRefocusDelay()
         end
     end
 
     -- Animation curve (fast pinch → smooth relax)
-    if SecurityCamera.refocusActive then
-        SecurityCamera.refocusTimer = SecurityCamera.refocusTimer + dt
+    if Monitor.refocusActive then
+        Monitor.refocusTimer = Monitor.refocusTimer + dt
 
-        local t = SecurityCamera.refocusTimer
+        local t = Monitor.refocusTimer
 
         if t < 0.08 then
             -- Fast contraction (linear)
-            SecurityCamera.pupilScale = 1 - t / 0.08 * 0.35  -- down to ~0.65
+            Monitor.pupilScale = 1 - t / 0.08 * 0.35  -- down to ~0.65
         else
             -- Smooth recovery
             local k = (t - 0.08) / 0.22  -- ~220ms recover
             k = math.min(k, 1)
-            SecurityCamera.pupilScale = 0.65 + (1 - 0.65) * (k * k * (3 - 2*k))
+            Monitor.pupilScale = 0.65 + (1 - 0.65) * (k * k * (3 - 2*k))
         end
 
         if t >= 0.30 then
-            SecurityCamera.refocusActive = false
-            SecurityCamera.pupilScale = 1
+            Monitor.refocusActive = false
+            Monitor.pupilScale = 1
         end
     end
 end
@@ -145,17 +145,17 @@ end
 ------------------------------------------------------------
 local visualOffset = 5
 
-function SecurityCamera.draw(style)
-    if not SecurityCamera.active then return end
+function Monitor.draw(style)
+    if not Monitor.active then return end
 
     local S = style
-    local x = SecurityCamera.x
-    local y = SecurityCamera.y
-    local w = SecurityCamera.tileSize
-    local h = SecurityCamera.tileSize
-    local angle = SecurityCamera.angle
-    local t = SecurityCamera.time
-    local dir = SecurityCamera.dir or 1  -- 1 or -1
+    local x = Monitor.x
+    local y = Monitor.y
+    local w = Monitor.tileSize
+    local h = Monitor.tileSize
+    local angle = Monitor.angle
+    local t = Monitor.time
+    local dir = Monitor.dir or 1  -- 1 or -1
 
     ----------------------------------------------------------------
     -- UNIFORM BLINK
@@ -296,17 +296,17 @@ function SecurityCamera.draw(style)
     love.graphics.circle("fill", lx, ly, 12)
 
 	-- Tracking pupil (scaled + correctly mirrored horizontally)
-	local pupilDist = 4 * SecurityCamera.pupilScale
+        local pupilDist = 4 * Monitor.pupilScale
 
 	local dx = math.cos(angle) * pupilDist * dir   -- mirror horizontally (once)
 	local dy = math.sin(angle) * pupilDist         -- do not mirror Y
 
 	local pupilX = lx + dx
 	local pupilY = ly + dy
-	local pupilR = 5 * SecurityCamera.pupilScale
+        local pupilR = 5 * Monitor.pupilScale
 
 	love.graphics.setColor(1,1,1)
 	love.graphics.circle("fill", pupilX, pupilY, pupilR)
 end
 
-return SecurityCamera
+return Monitor
