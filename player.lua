@@ -147,12 +147,13 @@ local function queueSleepBubbles()
         local jitterX = (math.random() - 0.5) * 2.5
         local jitterY = (math.random() - 0.5) * 2.5
 
-        local vx = (14 + i * 4 + math.random() * 4) * 0.5
-        local vy = -(22 + i * 5 + math.random() * 6) * 0.5
+        local arcScale = 1 + i * 0.12
+        local vx = (16 + math.random() * 3) * 0.5 * arcScale
+        local vy = -(24 + math.random() * 4) * 0.5 * arcScale
         local size = 5 + i * 1.3
         local life = 1.35 + i * 0.08 + math.random() * 0.12
 
-        local delay = i * 0.38 + math.random() * 0.1
+        local delay = i * 0.52 + math.random() * 0.16
 
         table.insert(p.sleepBubbleQueue, {
             timer = delay,
@@ -657,14 +658,14 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     if p.sleeping then
         if not wasSleeping then
-            p.sleepBubbleTimer = 0.8 + math.random() * 0.6
+            p.sleepBubbleTimer = 1.0 + math.random() * 0.8
         else
             p.sleepBubbleTimer = p.sleepBubbleTimer - dt
         end
 
         if p.sleepBubbleTimer <= 0 then
             queueSleepBubbles()
-            p.sleepBubbleTimer = 2.2 + math.random() * 1.4
+            p.sleepBubbleTimer = 2.6 + math.random() * 1.6
         end
 
         updateSleepBubbleQueue(dt)
