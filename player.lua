@@ -304,7 +304,7 @@ function Player.update(dt, Level)
     if p.pushingCube then
         targetSpeed = clamp(targetSpeed, -CUBE_PUSH_MAX, CUBE_PUSH_MAX)
         local diff = targetSpeed - p.vx
-        p.vx = p.vx + diff * dt * 7.0
+        p.vx = p.vx + diff * dt * 10.0
     else
         local accelerating = math.abs(targetSpeed) > 0
         local accel = accelerating
@@ -587,7 +587,7 @@ function Player.update(dt, Level)
                 p.pushingCube = true
                 p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
                 p.pushingCubeRef = c
-                p.pushingCubeGap = 2.0
+                p.pushingCubeGap = 1.2
             else
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
                     p.y = cy1 - p.h
@@ -637,7 +637,7 @@ function Player.update(dt, Level)
                 p.x = targetX
             end
 
-            local followBlend = 0.65
+            local followBlend = 0.8
             p.vx = p.vx * (1 - followBlend) + c.vx * followBlend
         end
     end
