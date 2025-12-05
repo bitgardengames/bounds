@@ -23,8 +23,10 @@ local FRICTION = 4
 local PUSH_FRICTION_SCALE = 0.10
 
 local OUTLINE = 4
-local COLOR_FILL = {0.92, 0.92, 0.95}
-local COLOR_OUTLINE = {0,0,0}
+local Theme = require("theme")
+
+local COLOR_FILL = Theme.cube.fill
+local COLOR_OUTLINE = Theme.cube.outline
 local COLLISION_FOOT_OFFSET = 2
 
 --------------------------------------------------------------

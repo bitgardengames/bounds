@@ -4,6 +4,7 @@
 --  SOLIDS = gameplay platforms (light, inset visually)
 --------------------------------------------------------------
 
+local Theme = require("theme")
 local Decorations = require("decorations")
 
 local Level = {}
@@ -12,15 +13,7 @@ local Level = {}
 -- CONFIG
 --------------------------------------------------------------
 
-Level.colors = {
-    background = {69/255, 89/255, 105/255},
-
-    outer = {32/255, 38/255, 45/255},    -- Frame walls
-	--outer = {22/255, 26/255, 32/255},   -- #161A20
-    solid = {164/255, 171/255, 172/255}, -- Platforms
-
-    grid  = {45/255, 66/255, 86/255, 0.15}, -- 0.2
-}
+Level.colors = Theme.level
 
 local OUTLINE_WIDTH   = 4
 local TILE_CORNER_R   = 6
@@ -291,7 +284,7 @@ local function drawBlobs(blobs, color, inset)
         local sx = (w - inset * 2) / w
         local sy = (h - inset * 2) / h
 
-        love.graphics.setColor(0,0,0,1)
+        love.graphics.setColor(Theme.outline)
         for _, o in ipairs(OUTLINE_OFFSETS) do
             love.graphics.draw(cv, ox + o[1], oy + o[2], 0, sx, sy)
         end
@@ -376,7 +369,7 @@ function Level.draw(camX, camY)
 		local ox = ts * 1
 		local oy = ts * 1
 
-		love.graphics.setColor(0,0,0,1)
+                love.graphics.setColor(Theme.outline)
 		love.graphics.setLineWidth(4)
 
 		-- outline *inside* the inner play area

@@ -2,6 +2,7 @@
 -- PLAYER MODULE (movement, collisions, deformation, drawing)
 --------------------------------------------------------------
 
+local Theme = require("theme")
 local Particles = require("particles")
 local Blink = require("blink")
 local Idle = require("idle")
@@ -681,10 +682,7 @@ end
 -- DRAWING
 --------------------------------------------------------------
 
-local colors = {
-    fill    = {236/255, 247/255, 255/255},
-    outline = {0,0,0}
-}
+local colors = Theme.player
 
 function Player.draw()
     local breathe = Idle.getScale()
@@ -815,7 +813,7 @@ function Player.draw()
         love.graphics.pop()
     end
 
-    love.graphics.setColor(0,0,0)
+    love.graphics.setColor(colors.outline)
     local eyeOffsetX = baseEyeOffsetX
     local eyeOffsetY = baseEyeOffsetY + cb*r*0.10
     if p.sleeping then

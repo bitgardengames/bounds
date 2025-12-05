@@ -2,6 +2,8 @@
 -- PRESSURE PLATE — SIDE VIEW (supports cubes + player)
 --------------------------------------------------------------
 
+local Theme = require("theme")
+
 local Plate = {}
 
 --------------------------------------------------------------
@@ -149,7 +151,7 @@ function Plate.draw()
     ----------------------------------------------------------
     -- BUTTON (draw first)
     ----------------------------------------------------------
-    love.graphics.setColor(0,0,0)
+    love.graphics.setColor(Theme.pressurePlate.outline)
     love.graphics.rectangle(
         "fill",
         btnX - OUTLINE,
@@ -159,7 +161,7 @@ function Plate.draw()
         6,6
     )
 
-    love.graphics.setColor(0.94, 0.33, 0.33) -- cute red button
+    love.graphics.setColor(Theme.pressurePlate.button) -- cute red button
     love.graphics.rectangle(
         "fill",
         btnX,
@@ -169,7 +171,7 @@ function Plate.draw()
         6,6
     )
 
-    love.graphics.setColor(1,0.8,0.8,0.3)
+    love.graphics.setColor(Theme.pressurePlate.buttonGlow)
     love.graphics.rectangle(
         "fill",
         btnX + 5,
@@ -182,7 +184,7 @@ function Plate.draw()
     ----------------------------------------------------------
     -- BASE (draw second)
     ----------------------------------------------------------
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(Theme.pressurePlate.outline)
     love.graphics.rectangle(
         "fill",
         x - OUTLINE,
@@ -192,7 +194,7 @@ function Plate.draw()
         4,4
     )
 
-    love.graphics.setColor(0.20, 0.20, 0.22)
+    love.graphics.setColor(Theme.pressurePlate.base)
     love.graphics.rectangle(
         "fill",
         x,
