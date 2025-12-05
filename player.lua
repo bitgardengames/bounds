@@ -577,10 +577,13 @@ function Player.update(dt, Level)
         local overlapX = math.min(px2, cx2) - math.max(px1, cx1)
         local overlapY = math.min(py2, cy2) - math.max(py1, cy1)
         local nearContact = overlapX > -margin and overlapY > -margin
+        local aboveCube = py2 <= cy1 + margin
+        local belowCube = py1 >= cy2 - margin
+        local sideAligned = not aboveCube and not belowCube
 
         if nearContact then
             if overlapX > 0 and overlapY > 0 then
-                if overlapX < overlapY then
+                if overlapX < overlapY and sideAligned then
                     if (p.x + p.w / 2) < (c.x + c.w / 2) then
                         p.x = cx1 - p.w
                         p.vx = math.min(p.vx, 0)
@@ -611,7 +614,7 @@ function Player.update(dt, Level)
                 end
             end
 
-            if not p.pushingCube then
+            if not p.pushingCube and sideAligned then
                 p.pushingCube = true
                 p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
                 p.pushingCubeRef = c
