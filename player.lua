@@ -134,30 +134,63 @@ local function approach(a, b, dt, speed)
     end
 end
 
-local function spawnSleepBubbles()
+local function queueSleepBubbles()
     local breathe = Idle.getScale()
     local r = p.radius * breathe
 
     local headX = p.x + p.w * 0.5 + r * 0.55
     local headY = p.y + p.h - r - 4 - r * 0.65
 
+    p.sleepBubbleQueue = {}
+
     for i = 0, 2 do
         local jitterX = (math.random() - 0.5) * 2.5
         local jitterY = (math.random() - 0.5) * 2.5
 
-        local vx = (14 + i * 4 + math.random() * 4)
-        local vy = -(22 + i * 5 + math.random() * 6)
+        local vx = (14 + i * 4 + math.random() * 4) * 0.5
+        local vy = -(22 + i * 5 + math.random() * 6) * 0.5
         local size = 5 + i * 1.3
         local life = 1.35 + i * 0.08 + math.random() * 0.12
 
-        Particles.sleepBubble(
-            headX + i * 5 + jitterX,
-            headY - i * 6 + jitterY,
-            vx,
-            vy,
-            size,
-            life
-        )
+        local delay = i * 0.38 + math.random() * 0.1
+
+        table.insert(p.sleepBubbleQueue, {
+            timer = delay,
+            x = headX + i * 5 + jitterX,
+            y = headY - i * 6 + jitterY,
+            vx = vx,
+            vy = vy,
+            size = size,
+            life = life,
+        })
+    end
+end
+
+local function updateSleepBubbleQueue(dt)
+    local queue = p.sleepBubbleQueue
+    if not queue then return end
+
+    for i = #queue, 1, -1 do
+        local bubble = queue[i]
+        bubble.timer = bubble.timer - dt
+
+        if bubble.timer <= 0 then
+            Particles.sleepBubble(
+                bubble.x,
+                bubble.y,
+                bubble.vx,
+                bubble.vy,
+                bubble.size,
+                bubble.life
+            )
+
+            queue[i] = queue[#queue]
+            queue[#queue] = nil
+        end
+    end
+
+    if #queue == 0 then
+        p.sleepBubbleQueue = nil
     end
 end
 
@@ -630,11 +663,14 @@ function Player.update(dt, Level)
         end
 
         if p.sleepBubbleTimer <= 0 then
-            spawnSleepBubbles()
+            queueSleepBubbles()
             p.sleepBubbleTimer = 2.2 + math.random() * 1.4
         end
+
+        updateSleepBubbleQueue(dt)
     else
         p.sleepBubbleTimer = 0
+        p.sleepBubbleQueue = nil
     end
 
     return p
