@@ -3,6 +3,102 @@ local O = 4
 local thick = pipeFill + O*2
 
 return function(Decorations)
+	local function drawPipeCurve(x, y, w, h, rotate)
+		local S = Decorations.style
+		local pipeFill = 4
+		local O = 4
+		local thick = pipeFill + O*2
+		local R = w/2
+
+		love.graphics.push()
+		love.graphics.translate(x + w/2, y + h/2)
+		love.graphics.rotate(rotate)
+		love.graphics.translate(-w/2, -h/2)
+
+		love.graphics.setColor(S.outline)
+		love.graphics.setLineWidth(thick)
+		love.graphics.arc("line", "open",
+			w, h,
+			R,
+			math.pi,
+			math.pi*1.5
+		)
+
+		love.graphics.setColor(S.pipe)
+		love.graphics.setLineWidth(pipeFill)
+		love.graphics.arc("line", "open",
+			w, h,
+			R,
+			math.pi,
+			math.pi*1.5
+		)
+
+		love.graphics.pop()
+	end
+
+	local function drawDoubleCurve(x, y, w, h, rotate)
+		local S = Decorations.style
+		local pipeFill = 4
+		local O = 4
+
+		local thick = pipeFill + O*2      -- 12px
+		local totalW = O + pipeFill + O + pipeFill + O   -- 20px for 2 pipes
+		local startX = x + (w - totalW) / 2               -- center bundle
+
+		-- Each pipe arc uses the tile radius
+		local R = w/2
+
+		love.graphics.push()
+		love.graphics.translate(x + w/2, y + h/2)
+		love.graphics.rotate(rotate)
+		love.graphics.translate(-w/2, -h/2)
+
+		----------------------------------------------------------------
+		-- LEFT PIPE ARC
+		----------------------------------------------------------------
+		love.graphics.setColor(S.outline)
+		love.graphics.setLineWidth(thick)
+		love.graphics.arc("line", "open",
+			startX + O + pipeFill/2, h,   -- arc center X
+			R,
+			math.pi,
+			math.pi * 1.5
+		)
+
+		love.graphics.setColor(S.pipe)
+		love.graphics.setLineWidth(pipeFill)
+		love.graphics.arc("line", "open",
+			startX + O + pipeFill/2,
+			h,
+			R,
+			math.pi,
+			math.pi * 1.5
+		)
+
+		----------------------------------------------------------------
+		-- RIGHT PIPE ARC
+		----------------------------------------------------------------
+		love.graphics.setColor(S.outline)
+		love.graphics.setLineWidth(thick)
+		love.graphics.arc("line", "open",
+			startX + O + pipeFill + O + pipeFill/2, h,
+			R,
+			math.pi,
+			math.pi * 1.5
+		)
+
+		love.graphics.setColor(S.pipe)
+		love.graphics.setLineWidth(pipeFill)
+		love.graphics.arc("line", "open",
+			startX + O + pipeFill + O + pipeFill/2, h,
+			R,
+			math.pi,
+			math.pi * 1.5
+		)
+
+		love.graphics.pop()
+	end
+
     Decorations.register("conduit_h", {
         w = 1, h = 1,
 
@@ -236,39 +332,6 @@ return function(Decorations)
 			)
 		end
 	})
-
-    local function drawPipeCurve(x, y, w, h, rotate)
-        local S = Decorations.style
-        local pipeFill = 4
-        local O = 4
-        local thick = pipeFill + O*2
-        local R = w/2
-
-        love.graphics.push()
-        love.graphics.translate(x + w/2, y + h/2)
-        love.graphics.rotate(rotate)
-        love.graphics.translate(-w/2, -h/2)
-
-        love.graphics.setColor(S.outline)
-        love.graphics.setLineWidth(thick)
-        love.graphics.arc("line", "open",
-            w, h,
-            R,
-            math.pi,
-            math.pi*1.5
-        )
-
-        love.graphics.setColor(S.pipe)
-        love.graphics.setLineWidth(pipeFill)
-        love.graphics.arc("line", "open",
-            w, h,
-            R,
-            math.pi,
-            math.pi*1.5
-        )
-
-        love.graphics.pop()
-    end
 
     Decorations.register("conduit_curve_tr", {
         w = 1, h = 1,
@@ -526,6 +589,121 @@ return function(Decorations)
 				joinFill,
 				joinH - O*2
 			)
+		end
+	})
+
+	Decorations.register("conduit_v_double_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 4
+			local O = 4
+
+			------------------------------------------------------
+			-- DOUBLE PIPE GEOMETRY (same as conduit_v_double)
+			------------------------------------------------------
+			local totalW = O + pipeFill + O + pipeFill + O      -- 20px
+			local startX = x + (w - totalW) / 2
+
+			-- FULL HEIGHT vertical pipes
+			-- LEFT OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", startX, y, O, h)
+
+			-- LEFT PIPE
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			-- MIDDLE OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill,
+				y,
+				O,
+				h
+			)
+
+			-- RIGHT PIPE
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			-- RIGHT OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + totalW - O,
+				y,
+				O,
+				h
+			)
+
+			------------------------------------------------------
+			-- COUPLING BAND (horizontal band across both pipes)
+			------------------------------------------------------
+			local joinH   = 14          -- wider vertical-wise for visibility
+			local joinFill = joinH - O*2
+			local joinW   = totalW + 4  -- slightly wider than the bundle
+			local jx = x + (w - joinW) / 2
+			local jy = y + h/2 - joinH/2
+
+			-- outline block
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx, jy,
+				joinW, joinH
+			)
+
+			-- inner metal fill
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinW - O*2,
+				joinFill
+			)
+		end
+	})
+
+	Decorations.register("conduit_curve_tr_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			drawDoubleCurve(x, y, w, h, 0)
+		end
+	})
+
+	Decorations.register("conduit_curve_tl_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			drawDoubleCurve(x, y, w, h, math.pi * 0.5)
+		end
+	})
+
+	Decorations.register("conduit_curve_bl_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			drawDoubleCurve(x, y, w, h, math.pi)
+		end
+	})
+
+	Decorations.register("conduit_curve_br_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			drawDoubleCurve(x, y, w, h, math.pi * 1.5)
 		end
 	})
 end
