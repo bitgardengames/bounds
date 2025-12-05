@@ -136,7 +136,7 @@ function Plate.draw()
     ----------------------------------------------------------
     -- BASE POSITION
     ----------------------------------------------------------
-    local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 5
+    local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
 
     ----------------------------------------------------------
     -- BUTTON SHRINK (instead of sliding)
