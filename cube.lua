@@ -6,6 +6,7 @@
 
 local level = require("level")
 local Particles = require("particles")
+local Theme = require("theme")
 
 local Cube = { list = {} }
 
@@ -23,7 +24,6 @@ local FRICTION = 3.2
 local PUSH_FRICTION_SCALE = 0.06
 
 local OUTLINE = 4
-local Theme = require("theme")
 
 local COLOR_FILL = Theme.cube.fill
 local COLOR_OUTLINE = Theme.cube.outline
@@ -285,6 +285,9 @@ end
 --------------------------------------------------------------
 
 local visualOffset = 4
+local boltSize = 4
+local boltInset = 5  -- distance from edges
+local boltRadius = 3
 
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
@@ -315,7 +318,7 @@ function Cube.draw()
             h,
             6,6
         )
-    end
+	end
 end
 
 return Cube

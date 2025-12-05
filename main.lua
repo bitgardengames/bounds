@@ -275,8 +275,8 @@ function love.draw()
     Monitor.draw(Decorations.style)
     Saw.draw()
     Door.draw()
-    Cube.draw()
     Plate.draw()
+    Cube.draw()
 
 	Player.draw()
 

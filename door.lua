@@ -7,6 +7,8 @@
 -- • Panel inset clean + consistent outlines
 ------------------------------------------------------------
 
+local Theme = require("theme")
+
 local Door = {
     x = 0, y = 0,
     w = 72,
@@ -24,8 +26,8 @@ local FRAME       = 4
 local PANEL_INSET = 4
 local SEAM_HALF   = 2      -- <-- NEW: each panel stops 2px from center
 
-local frameColor = {68/255, 83/255, 97/255, 1}
-local panelColor = {0.80, 0.84, 0.86, 1}
+local COLOR_FRAME = Theme.door.frame
+local COLOR_DOOR = Theme.door.doorFill
 
 ------------------------------------------------------------
 -- EASING
@@ -87,7 +89,7 @@ function Door.draw()
     --------------------------------------------------------
     -- 3. FRAME
     --------------------------------------------------------
-    love.graphics.setColor(frameColor)
+    love.graphics.setColor(COLOR_FRAME)
 
     -- top
     love.graphics.rectangle("fill", x, y, w, FRAME)
@@ -145,7 +147,7 @@ function Door.draw()
         )
 
         -- FILL
-        love.graphics.setColor(panelColor)
+        love.graphics.setColor(COLOR_DOOR)
         love.graphics.rectangle("fill",
             fillX,
             panelTop,
@@ -171,7 +173,7 @@ function Door.draw()
         )
 
         -- FILL
-        love.graphics.setColor(panelColor)
+        love.graphics.setColor(COLOR_DOOR)
         love.graphics.rectangle("fill",
             fillX,
             panelTop,
