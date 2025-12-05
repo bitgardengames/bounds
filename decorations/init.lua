@@ -8,7 +8,8 @@ local list = {}
 Decorations.list = list
 
 Decorations.style = {
-    dark = {0.1, 0.1, 0.1, 1},
+    --dark = {0.1, 0.1, 0.1, 1},
+    dark = {32/255, 38/255, 45/255, 1},
     outline = {45/255, 66/255, 86/255, 1},
     panel = {0.90, 0.90, 0.93, 1},
     background = {69/255, 89/255, 105/255},

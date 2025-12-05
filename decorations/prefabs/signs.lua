@@ -5,7 +5,7 @@ return function(Decorations)
 
         init = function(inst)
             inst.data.text = inst.data.text or ""
-            inst.data.font = love.graphics.newFont("fonts/Nunito-Bold.ttf", 22)
+            inst.data.font = love.graphics.newFont("fonts/Nunito-Bold.ttf", 24)
         end,
 
         draw = function(x, y, w, h, inst)
@@ -17,9 +17,9 @@ return function(Decorations)
             ----------------------------------------------------------
             -- CONSTANT SIGN GEOMETRY
             ----------------------------------------------------------
-            local inset = 8         -- shrink 8px on all sides
+            local inset = 4         -- shrink 8px on all sides
             local outline = 4
-            local radius = 8
+            local radius = 6
 
             -- Final box size after inset
             local boxW = w - inset * 2
@@ -68,8 +68,102 @@ return function(Decorations)
             ----------------------------------------------------------
             -- DRAW: TEXT
             ----------------------------------------------------------
-            love.graphics.setColor(S.dark)
+            love.graphics.setColor({0.1, 0.1, 0.1, 1})
             love.graphics.print(text, textX, textY)
         end
     })
+
+	Decorations.register("hazard_triangle", {
+		w = 1,
+		h = 1,
+
+		draw = function(x, y, w, h)
+			local outline = 4
+			local radius  = 10
+
+			local cx = x + w/2
+			local cy = y + h/2
+
+			-- Triangle points
+			local top    = {cx, y + 8}
+			local left   = {x + 8, y + h - 8}
+			local right  = {x + w - 8, y + h - 8}
+
+			----------------------------------------------------------
+			-- OUTLINE
+			----------------------------------------------------------
+			love.graphics.setColor(0,0,0,1)
+			love.graphics.setLineWidth(outline)
+			love.graphics.setLineJoin("bevel") -- rounded-ish on triangles
+			love.graphics.polygon("fill",
+				top[1], top[2],
+				left[1], left[2],
+				right[1], right[2]
+			)
+
+			----------------------------------------------------------
+			-- FILL
+			----------------------------------------------------------
+			love.graphics.setColor(0.87, 0.82, 0.53)
+			love.graphics.polygon("fill",
+				top[1],     top[2]     + outline,
+				left[1] + outline*0.6, left[2] - outline,
+				right[1]- outline*0.6, right[2] - outline
+			)
+		end
+	})
+
+	Decorations.register("hazard_electric", {
+		w = 1,
+		h = 1,
+
+		draw = function(x, y, w, h)
+			local outline = 4
+
+			local cx = x + w/2
+			local cy = y + h/2
+
+			----------------------------------------------------------
+			-- BACKING TRIANGLE (same as hazard_triangle)
+			----------------------------------------------------------
+			local top    = {cx, y + 8}
+			local left   = {x + 8, y + h - 8}
+			local right  = {x + w - 8, y + h - 8}
+
+			-- outline
+			love.graphics.setColor(0,0,0,1)
+			love.graphics.polygon("fill",
+				top[1], top[2],
+				left[1], left[2],
+				right[1], right[2]
+			)
+
+			-- fill
+			love.graphics.setColor(0.87, 0.82, 0.53)
+			love.graphics.polygon("fill",
+				top[1], top[2] + outline,
+				left[1] + outline*0.6, left[2] - outline,
+				right[1] - outline*0.6, right[2] - outline
+			)
+
+			----------------------------------------------------------
+			-- ROUNDED BOLT ICON
+			----------------------------------------------------------
+			love.graphics.setColor(0,0,0,1)
+
+			-- bolt path (rounded zig-zag)
+			local bolt = {
+				cx - 6, cy - 10,
+				cx - 2, cy - 2,
+				cx - 10, cy - 2,
+				cx + 2, cy + 10,
+				cx - 2, cy + 2,
+				cx + 10, cy + 2
+			}
+
+			love.graphics.setLineWidth(outline)
+			love.graphics.setLineJoin("bevel")
+			love.graphics.line(bolt)
+		end
+	})
 end

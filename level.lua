@@ -1,6 +1,7 @@
 --------------------------------------------------------------
---  NEW LEVEL MODULE — table-driven tilemap → canvas blobs
---  FIXED MARGIN ALIGNMENT VERSION
+--  LEVEL MODULE — supports separate FRAME + SOLIDS layers
+--  FRAME = outer chamber walls (dark)
+--  SOLIDS = gameplay platforms (light, inset visually)
 --------------------------------------------------------------
 
 local Decorations = require("decorations")
@@ -12,16 +13,15 @@ local Level = {}
 --------------------------------------------------------------
 
 Level.colors = {
-    --background = {82/255, 101/255, 114/255},
     background = {69/255, 89/255, 105/255},
-    solid = {164/255, 171/255, 172/255},
-	--grid = {68/255, 83/255, 97/255, 0.2},
-	grid = {45/255, 66/255, 86/255, 0.2},
+
+    outer = {32/255, 38/255, 45/255},    -- Frame walls
+    solid = {164/255, 171/255, 172/255}, -- Platforms
+
+    grid  = {45/255, 66/255, 86/255, 0.2},
 }
 
 local OUTLINE_WIDTH   = 4
-local SHADOW_OFFSET_X = 3
-local SHADOW_OFFSET_Y = 3
 local TILE_CORNER_R   = 6
 
 --------------------------------------------------------------
@@ -31,10 +31,14 @@ local TILE_CORNER_R   = 6
 Level.tileSize    = 48
 Level.width       = 0
 Level.height      = 0
+
 Level.layers      = {}
+Level.frameLayer  = nil
 Level.solidLayer  = nil
-Level.solidGrid   = nil
-Level.solidBlobs  = {} -- { canvas, x, y, w, h, margin }
+
+Level.solidGrid   = nil     -- Combined tile grid (Frame + Solids)
+Level.frameBlobs  = {}
+Level.solidBlobs  = {}
 Level.gridCanvas  = nil
 
 local OUTLINE_OFFSETS = {
@@ -60,7 +64,7 @@ local function newGrid(w, h, value)
 end
 
 --------------------------------------------------------------
--- BUILD TILES FROM RECT TABLES
+-- TILEMAP BUILDING
 --------------------------------------------------------------
 
 local function buildTilesFromRects(layer, width, height)
@@ -84,10 +88,13 @@ local function buildTilesFromRects(layer, width, height)
     return tiles
 end
 
+--------------------------------------------------------------
+-- GRID VISUALIZATION CANVAS
+--------------------------------------------------------------
+
 local function buildGridCanvas(width, height, tileSize)
     local gw = width * tileSize
     local gh = height * tileSize
-
     local canvas = love.graphics.newCanvas(gw, gh)
 
     love.graphics.push()
@@ -111,16 +118,11 @@ local function buildGridCanvas(width, height, tileSize)
 end
 
 --------------------------------------------------------------
--- GROUP CONNECTED TILES INTO BLOBS
+-- BLOB BUILDER
 --------------------------------------------------------------
 
-local function buildSolidBlobs()
-    local tiles = Level.solidGrid
-    local w     = Level.width
-    local h     = Level.height
-    local ts    = Level.tileSize
-
-    local visited = newGrid(w, h, false)
+local function buildBlobsFromTiles(tiles, width, height, tileSize)
+    local visited = newGrid(width, height, false)
     local blobs   = {}
 
     local dirs = {
@@ -128,13 +130,10 @@ local function buildSolidBlobs()
         { 0,  1}, { 0,-1},
     }
 
-    for ty = 1, h do
-        for tx = 1, w do
+    for ty = 1, height do
+        for tx = 1, width do
             if tiles[ty][tx] and not visited[ty][tx] then
 
-                ------------------------------------------------------
-                -- FLOOD-FILL THIS PLATFORM BLOB
-                ------------------------------------------------------
                 local queue = { {tx, ty} }
                 local qi = 1
                 visited[ty][tx] = true
@@ -146,7 +145,6 @@ local function buildSolidBlobs()
                 while qi <= #queue do
                     local cx, cy = queue[qi][1], queue[qi][2]
                     qi = qi + 1
-
                     table.insert(cells, {cx, cy})
 
                     if cx < minX then minX = cx end
@@ -156,7 +154,7 @@ local function buildSolidBlobs()
 
                     for _, d in ipairs(dirs) do
                         local nx, ny = cx + d[1], cy + d[2]
-                        if nx>=1 and nx<=w and ny>=1 and ny<=h then
+                        if nx>=1 and nx<=width and ny>=1 and ny<=height then
                             if tiles[ny][nx] and not visited[ny][nx] then
                                 visited[ny][nx] = true
                                 queue[#queue+1] = {nx, ny}
@@ -165,53 +163,38 @@ local function buildSolidBlobs()
                     end
                 end
 
-                ------------------------------------------------------
-                -- CREATE CANVAS **WITH NO PADDING**
-                ------------------------------------------------------
-                local blobW = (maxX - minX + 1) * ts
-                local blobH = (maxY - minY + 1) * ts
+                local blobW = (maxX - minX + 1) * tileSize
+                local blobH = (maxY - minY + 1) * tileSize
 
-                -- ✔ EXACT TILE SPACE — no extra margins
                 local canvas = love.graphics.newCanvas(blobW, blobH)
-
                 love.graphics.push()
                 love.graphics.setCanvas(canvas)
                 love.graphics.clear(0,0,0,0)
-
                 love.graphics.setColor(1,1,1,1)
                 love.graphics.setBlendMode("alpha", "premultiplied")
 
-                ------------------------------------------------------
-                -- DRAW TILE FILL AT EXACT (0,0)-BASED POSITIONS
-                ------------------------------------------------------
                 for _, c in ipairs(cells) do
-                    local cx, cy = c[1], c[2]
-                    local px = (cx - minX) * ts
-                    local py = (cy - minY) * ts
-
-                    love.graphics.rectangle("fill", px, py, ts, ts)
+                    local px = (c[1] - minX) * tileSize
+                    local py = (c[2] - minY) * tileSize
+                    love.graphics.rectangle("fill", px, py, tileSize, tileSize)
                 end
 
                 love.graphics.setBlendMode("alpha")
                 love.graphics.setCanvas()
                 love.graphics.pop()
 
-                ------------------------------------------------------
-                -- STORE BLOB
-                ------------------------------------------------------
                 table.insert(blobs, {
                     canvas = canvas,
-                    x      = (minX - 1) * ts,   -- perfect world alignment
-                    y      = (minY - 1) * ts,
+                    x      = (minX - 1) * tileSize,
+                    y      = (minY - 1) * tileSize,
                     w      = blobW,
                     h      = blobH,
-                    margin = 0,                 -- ✔ no padding anymore
                 })
             end
         end
     end
 
-    Level.solidBlobs = blobs
+    return blobs
 end
 
 --------------------------------------------------------------
@@ -225,53 +208,99 @@ function Level.isSolidTile(tx, ty)
     return Level.solidGrid[ty][tx] == true
 end
 
-function Level.tileAt(tx, ty)
-    return Level.isSolidTile(tx, ty) and "#" or "."
-end
-
-function Level.isSolidWorld(x, y)
-    local ts = Level.tileSize
-    local tx = math.floor(x / ts) + 1
-    local ty = math.floor(y / ts) + 1
-    return Level.isSolidTile(tx, ty)
-end
-
 --------------------------------------------------------------
 -- LOAD
 --------------------------------------------------------------
 
 function Level.load(data)
-    Level.tileSize = data.tileSize or 32
+    Level.tileSize = data.tileSize or 48
     Level.width    = data.width
     Level.height   = data.height
     Level.layers   = {}
 
     Level.solidLayer = nil
-    Level.solidGrid  = nil
+    Level.frameLayer = nil
+
+    Level.solidGrid  = newGrid(Level.width, Level.height, false)
     Level.solidBlobs = {}
-    Level.gridCanvas = nil
+    Level.frameBlobs = {}
 
     for _, src in ipairs(data.layers or {}) do
         local layer = {
             name  = src.name or "Layer",
             kind  = src.kind or "rectlayer",
             solid = src.solid or false,
+            frame = src.frame or false,
             rects = src.rects or {},
         }
 
         layer.tiles = buildTilesFromRects(layer, Level.width, Level.height)
         table.insert(Level.layers, layer)
 
-        if layer.solid then
+        if layer.solid and layer.frame then
+            Level.frameLayer = layer
+        elseif layer.solid then
             Level.solidLayer = layer
-            Level.solidGrid  = layer.tiles
         end
     end
 
-    assert(Level.solidGrid, "No solid layer configured in leveldata")
+    assert(Level.solidLayer, "No Solids layer in leveldata")
 
-    buildSolidBlobs()
+    for y = 1, Level.height do
+        for x = 1, Level.width do
+            if Level.solidLayer.tiles[y][x] then Level.solidGrid[y][x] = true end
+            if Level.frameLayer and Level.frameLayer.tiles[y][x] then
+                Level.solidGrid[y][x] = true
+            end
+        end
+    end
+
+    Level.solidBlobs = buildBlobsFromTiles(
+        Level.solidLayer.tiles, Level.width, Level.height, Level.tileSize
+    )
+
+    if Level.frameLayer then
+        Level.frameBlobs = buildBlobsFromTiles(
+            Level.frameLayer.tiles, Level.width, Level.height, Level.tileSize
+        )
+    end
+
     Level.gridCanvas = buildGridCanvas(Level.width, Level.height, Level.tileSize)
+end
+
+--------------------------------------------------------------
+-- DRAW HELPERS
+--------------------------------------------------------------
+
+local function drawBlobs(blobs, color, inset)
+    inset = inset or 0 -- per-layer inset
+
+    for _, blob in ipairs(blobs) do
+        local cv = blob.canvas
+        local x  = blob.x
+        local y  = blob.y
+        local w  = blob.w
+        local h  = blob.h
+
+        ------------------------------------------------------
+        -- OUTLINE
+        ------------------------------------------------------
+        local ox = x + inset
+        local oy = y + inset
+        local sx = (w - inset * 2) / w
+        local sy = (h - inset * 2) / h
+
+        love.graphics.setColor(0,0,0,1)
+        for _, o in ipairs(OUTLINE_OFFSETS) do
+            love.graphics.draw(cv, ox + o[1], oy + o[2], 0, sx, sy)
+        end
+
+        ------------------------------------------------------
+        -- FILL
+        ------------------------------------------------------
+        love.graphics.setColor(color)
+        love.graphics.draw(cv, ox, oy, 0, sx, sy)
+    end
 end
 
 --------------------------------------------------------------
@@ -285,63 +314,20 @@ function Level.draw(camX, camY)
     love.graphics.push()
     love.graphics.translate(-camX, -camY)
 
-    ----------------------------------------------------------
-    -- GRID
-    ----------------------------------------------------------
-    local ts = Level.tileSize
-    local gw = Level.width  * ts
-    local gh = Level.height * ts
-
     if Level.gridCanvas then
         love.graphics.setColor(Level.colors.grid)
         love.graphics.draw(Level.gridCanvas, 0, 0)
-    else
-        love.graphics.setColor(Level.colors.grid)
-
-        for x = 0, gw, ts do
-            love.graphics.rectangle("fill", x - 2, 0, 4, gh)
-        end
-
-        for y = 0, gh, ts do
-            love.graphics.rectangle("fill", 0, y - 2, gw, 4)
-        end
     end
 
-	-- DECORATIONS (draw behind platforms)
-	Decorations.draw()
+    Decorations.draw()
 
-    ----------------------------------------------------------
-    -- PLATFORM BLOBS
-    ----------------------------------------------------------
-    local solid = Level.colors.solid
-    local r = OUTLINE_WIDTH
-
-    for _, blob in ipairs(Level.solidBlobs) do
-        local cv = blob.canvas
-        local x  = blob.x         -- now EXACT tile alignment
-        local y  = blob.y
-
-        ------------------------------------------------------
-        -- SHADOW (draw first)
-        ------------------------------------------------------
-        --love.graphics.setColor(0, 0, 0, 0.30)
-        --love.graphics.draw(cv, x + SHADOW_OFFSET_X, y + SHADOW_OFFSET_Y)
-
-        ------------------------------------------------------
-        -- OUTLINE (8-directional copies)
-        ------------------------------------------------------
-        love.graphics.setColor(0,0,0,1)
-
-        for _, o in ipairs(OUTLINE_OFFSETS) do
-            love.graphics.draw(cv, x + o[1], y + o[2])
-        end
-
-        ------------------------------------------------------
-        -- FILL (actual platform)
-        ------------------------------------------------------
-        love.graphics.setColor(solid)
-        love.graphics.draw(cv, x, y)
+    -- FRAME (no inset)
+    if Level.frameLayer then
+        drawBlobs(Level.frameBlobs, Level.colors.outer, 0)
     end
+
+    -- SOLIDS (inset by 2px per side)
+    drawBlobs(Level.solidBlobs, Level.colors.solid, 4)
 
     love.graphics.pop()
 end
