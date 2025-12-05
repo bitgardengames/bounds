@@ -10,7 +10,7 @@
 local Door = {
     x = 0, y = 0,
     w = 72,
-    h = 90,
+    h = 92,
     open = false,
     t = 0,
     speed = 6,
@@ -41,7 +41,7 @@ function Door.spawn(tx, ty, tile)
     Door.w = tile * 1.5
     Door.x = tx * tile - (Door.w - tile) * 0.5
     Door.h = tile * 2 - 6
-    Door.y = ty * tile + 2
+    Door.y = ty * tile + 4
     Door.t = 0
     Door.open = false
 end
