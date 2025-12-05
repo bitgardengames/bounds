@@ -157,8 +157,8 @@ local function queueSleepBubbles()
 
         table.insert(p.sleepBubbleQueue, {
             timer = delay,
-            x = headX + i * 5 + jitterX,
-            y = headY - i * 6 + jitterY,
+            x = headX + jitterX,
+            y = headY + jitterY,
             vx = vx,
             vy = vy,
             size = size,
