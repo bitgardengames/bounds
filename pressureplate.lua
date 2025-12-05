@@ -68,14 +68,18 @@ end
 local PRESS_TOLERANCE = 2
 
 local function pressBounds(x, y)
-    local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
-    local buttonTop = baseTop - BUTTON_H
+    -- NOTE: Gameplay coordinates treat x,y as the TILE's top-left corner, but
+    -- the visual button art sits in the lower half of the tile. That means the
+    -- player's and cube's feet (which rest near the top of the tile) never
+    -- intersected the old narrow band placed down near the artwork. Instead of
+    -- tying collision to the art, just use the whole tile footprint so touching
+    -- the plate visually and mechanically line up.
 
-    local px1 = x + (TILE - BUTTON_W) * 0.5
-    local px2 = px1 + BUTTON_W
+    local px1 = x
+    local px2 = x + TILE
 
-    local bandTop = buttonTop - PRESS_TOLERANCE
-    local bandBottom = baseTop + BASE_H + PRESS_TOLERANCE
+    local bandTop = y - PRESS_TOLERANCE
+    local bandBottom = y + TILE + PRESS_TOLERANCE
 
     return px1, px2, bandTop, bandBottom
 end
