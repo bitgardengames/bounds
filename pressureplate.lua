@@ -65,7 +65,7 @@ end
 -- HELPER: check pressure from one object (player or cube)
 --------------------------------------------------------------
 
-local function objectPressing(obj, plateX, plateY, baseTop)
+local function objectPressing(obj, plateX, plateY)
     local ox, oy = obj.x, obj.y
     local ow, oh = obj.w, obj.h
 
@@ -74,15 +74,15 @@ local function objectPressing(obj, plateX, plateY, baseTop)
     local footX2 = ox + ow
     local footY  = oy + oh
 
-    -- plate horizontal bounds
+    -- plate horizontal bounds (full tile width)
     local px1 = plateX
     local px2 = plateX + TILE
 
-    -- button top area
-    local buttonTop = baseTop - BUTTON_H
-
+    -- Allow a generous vertical band that matches the tile height so
+    -- both the player and cube bottoms register even with their small
+    -- collision offsets.
     local touchingX = (footX2 >= px1 and footX1 <= px2)
-    local touchingY = (footY >= buttonTop and footY <= baseTop + BASE_H)
+    local touchingY = (footY >= plateY and footY <= plateY + TILE)
 
     return touchingX and touchingY
 end
@@ -94,20 +94,17 @@ end
 function Plate.update(dt, player, cubes)
     if not Plate.active then return end
 
-    -- calculate shared baseTop
-    local baseTop = Plate.y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP
-
     ----------------------------------------------------------
     -- PLAYER PRESSING?
     ----------------------------------------------------------
-    local pressed = objectPressing(player, Plate.x, Plate.y, baseTop)
+    local pressed = objectPressing(player, Plate.x, Plate.y)
 
     ----------------------------------------------------------
     -- ANY CUBE PRESSING?
     ----------------------------------------------------------
     if cubes then
         for _, c in ipairs(cubes) do
-            if objectPressing(c, Plate.x, Plate.y, baseTop) then
+            if objectPressing(c, Plate.x, Plate.y) then
                 pressed = true
                 break
             end
