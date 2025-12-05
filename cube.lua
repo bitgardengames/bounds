@@ -25,6 +25,7 @@ local PUSH_FRICTION_SCALE = 0.10
 local OUTLINE = 4
 local COLOR_FILL = {0.92, 0.92, 0.95}
 local COLOR_OUTLINE = {0,0,0}
+local COLLISION_FOOT_OFFSET = 2
 
 --------------------------------------------------------------
 -- SPAWN
@@ -79,7 +80,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     ----------------------------------------------------------
     if c.vy > 0 then
         -- falling downward, probe just BELOW the cube
-        local footY = c.y + h
+        local footY = c.y + h - COLLISION_FOOT_OFFSET
         local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
         local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
 
@@ -89,7 +90,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
 
             -- snap cube bottom to the top of the tile
             local tileY = math.floor(footY / TILE) * TILE
-            c.y = tileY - h
+            c.y = tileY - h + COLLISION_FOOT_OFFSET
         end
 
     elseif c.vy < 0 then
@@ -108,7 +109,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     -- SUPPORT PROBE (keeps cube grounded while resting)
     ----------------------------------------------------------
     if c.vy == 0 then
-        local footY = c.y + h
+        local footY = c.y + h - COLLISION_FOOT_OFFSET
         local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
         local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
 
@@ -123,7 +124,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     if c.vx > 0 then
         local rightX = c.x + w
         local hitT = tileAtPixel(rightX + 1, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(rightX + 1, c.y + h - 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(rightX + 1, c.y + h - 2 - COLLISION_FOOT_OFFSET, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -133,7 +134,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     elseif c.vx < 0 then
         local leftX = c.x
         local hitT = tileAtPixel(leftX, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(leftX, c.y + h - 2, TILE, grid, width, height)
+        local hitB = tileAtPixel(leftX, c.y + h - 2 - COLLISION_FOOT_OFFSET, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0

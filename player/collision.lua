@@ -2,7 +2,7 @@ local Particles = require("particles")
 
 local Collision = {}
 
-local PLATFORM_OFFSET = 0
+local FOOT_OFFSET = 2
 
 local function tileAt(Level, tx, ty)
     local grid = Level.solidGrid
@@ -22,7 +22,7 @@ function Collision.tryGroundSnap(p, Level)
     if p.vy < 0 or p.onGround then return end
 
     local epsilon = 2
-    local footY   = p.y + p.h
+    local footY   = p.y + p.h - FOOT_OFFSET
     local below   = math.floor(footY / TILE) + 1
 
     local lx = math.floor((p.x + 1)       / TILE) + 1
@@ -30,7 +30,7 @@ function Collision.tryGroundSnap(p, Level)
 
     for tx = lx, rx do
         if tileAt(Level, tx, below) then
-            local snapY = (below - 1) * TILE - p.h - PLATFORM_OFFSET
+            local snapY = (below - 1) * TILE - p.h + FOOT_OFFSET
             if footY - snapY <= epsilon then
                 p.y = snapY
                 p.vy = 0
@@ -48,7 +48,7 @@ function Collision.moveHorizontal(p, Level, amount)
     local collided = false
 
     local topTile    = math.floor(p.y / TILE) + 1
-    local bottomTile = math.floor((p.y + p.h - 1) / TILE) + 1
+    local bottomTile = math.floor((p.y + p.h - 1 - FOOT_OFFSET) / TILE) + 1
 
     if amount > 0 then
         -- moving right
@@ -117,7 +117,7 @@ function Collision.moveVertical(p, Level, amount)
         ------------------------------------------------------
         -- Moving down
         ------------------------------------------------------
-        local bottomEdge = p.y + p.h
+        local bottomEdge = p.y + p.h - FOOT_OFFSET
         local startTile  = math.floor(bottomEdge / TILE) + 1
         local endTile    = math.floor((bottomEdge + amount) / TILE) + 1
         local targetY    = p.y + amount
@@ -126,7 +126,7 @@ function Collision.moveVertical(p, Level, amount)
             for tx = lx, rx do
                 if tileAt(Level, tx, ty) then
                     collided = true
-                    targetY = (ty - 1) * TILE - p.h - PLATFORM_OFFSET
+                    targetY = (ty - 1) * TILE - p.h + FOOT_OFFSET
                     break
                 end
             end
