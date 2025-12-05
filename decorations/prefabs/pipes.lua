@@ -3,7 +3,7 @@ local O = 4
 local thick = pipeFill + O*2
 
 return function(Decorations)
-    Decorations.register("pipe_h", {
+    Decorations.register("conduit_h", {
         w = 1, h = 1,
 
         draw = function(x, y, w, h)
@@ -27,7 +27,7 @@ return function(Decorations)
         end,
     })
 
-    Decorations.register("pipe_v", {
+    Decorations.register("conduit_v", {
         w = 1, h = 1,
 
         draw = function(x, y, w, h)
@@ -51,7 +51,7 @@ return function(Decorations)
         end,
     })
 
-    Decorations.register("pipe_junctionbox", {
+    Decorations.register("conduit_junctionbox", {
         w = 1,
         h = 1,
 
@@ -119,7 +119,7 @@ return function(Decorations)
         end,
     })
 
-	Decorations.register("pipe_h_join", {
+	Decorations.register("conduit_h_join", {
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
@@ -131,7 +131,7 @@ return function(Decorations)
 			local cy = y + h/2 - thick/2        -- center Y
 
 			----------------------------------------------------------------
-			-- BASE CONDUIT (same as pipe_h)
+			-- BASE CONDUIT (same as conduit_h)
 			----------------------------------------------------------------
 			love.graphics.setColor(S.outline)
 			love.graphics.rectangle("fill", x, cy, w, thick)
@@ -176,7 +176,7 @@ return function(Decorations)
 		end
 	})
 
-	Decorations.register("pipe_v_join", {
+	Decorations.register("conduit_v_join", {
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
@@ -188,7 +188,7 @@ return function(Decorations)
 			local cx = x + w/2 - thick/2        -- center X
 
 			----------------------------------------------------------------
-			-- BASE CONDUIT (same as pipe_v)
+			-- BASE CONDUIT (same as conduit_v)
 			----------------------------------------------------------------
 			love.graphics.setColor(S.outline)
 			love.graphics.rectangle("fill",
@@ -270,28 +270,28 @@ return function(Decorations)
         love.graphics.pop()
     end
 
-    Decorations.register("pipe_curve_tr", {
+    Decorations.register("conduit_curve_tr", {
         w = 1, h = 1,
         draw = function(x,y,w,h)
             drawPipeCurve(x,y,w,h, 0)
         end,
     })
 
-    Decorations.register("pipe_curve_tl", {
+    Decorations.register("conduit_curve_tl", {
         w = 1, h = 1,
         draw = function(x,y,w,h)
             drawPipeCurve(x,y,w,h, math.pi*0.5)
         end,
     })
 
-    Decorations.register("pipe_curve_bl", {
+    Decorations.register("conduit_curve_bl", {
         w = 1, h = 1,
         draw = function(x,y,w,h)
             drawPipeCurve(x,y,w,h, math.pi)
         end,
     })
 
-    Decorations.register("pipe_curve_br", {
+    Decorations.register("conduit_curve_br", {
         w = 1, h = 1,
         draw = function(x,y,w,h)
             drawPipeCurve(x,y,w,h, math.pi*1.5)
