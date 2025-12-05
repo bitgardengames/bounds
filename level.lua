@@ -18,7 +18,7 @@ Level.colors = {
     outer = {32/255, 38/255, 45/255},    -- Frame walls
     solid = {164/255, 171/255, 172/255}, -- Platforms
 
-    grid  = {45/255, 66/255, 86/255, 0.5}, -- 0.2
+    grid  = {45/255, 66/255, 86/255, 0.2}, -- 0.2
 }
 
 local OUTLINE_WIDTH   = 4
@@ -314,6 +314,47 @@ function Level.draw(camX, camY)
     love.graphics.push()
     love.graphics.translate(-camX, -camY)
 
+	-- OUTER FRAME BACKDROP (exactly 4px outward)
+	do
+		local ts = Level.tileSize
+		local w  = Level.width  * ts
+		local h  = Level.height * ts
+
+		love.graphics.setColor(Level.colors.outer)
+
+		-- Expand by 4px on all sides
+		local pad = 4
+		love.graphics.rectangle(
+			"fill",
+			-pad,
+			-pad,
+			w + pad*2,
+			h + pad*2
+		)
+	end
+
+	-- INNER PLAY AREA BACKDROP (reduced & shifted)
+	do
+		local ts = Level.tileSize
+
+		-- shrink by 2 tiles horizontally + 2 tiles vertically
+		local w = Level.width  * ts - ts * 2   -- minus 2 tiles width
+		local h = Level.height * ts - ts * 2   -- minus 2 tiles height
+
+		-- move right 1 tile, down 1 tile
+		local ox = ts * 1
+		local oy = ts * 1
+
+		love.graphics.setColor(Level.colors.background)
+		love.graphics.rectangle(
+			"fill",
+			ox,
+			oy,
+			w,
+			h
+		)
+	end
+
     if Level.gridCanvas then
         love.graphics.setColor(Level.colors.grid)
         love.graphics.draw(Level.gridCanvas, 0, 0)
@@ -321,13 +362,25 @@ function Level.draw(camX, camY)
 
     Decorations.draw()
 
-    -- FRAME (no inset)
-    if Level.frameLayer then
-        drawBlobs(Level.frameBlobs, Level.colors.outer, -4)
-    end
-
     -- SOLIDS (inset by 2px per side)
     drawBlobs(Level.solidBlobs, Level.colors.solid, 2)
+
+	-- INNER BLACK OUTLINE (aligned to inner play-area backdrop)
+	do
+		local ts = Level.tileSize
+
+		-- same values used for the play-area backdrop
+		local w = Level.width  * ts - ts * 2
+		local h = Level.height * ts - ts * 2
+		local ox = ts * 1
+		local oy = ts * 1
+
+		love.graphics.setColor(0,0,0,1)
+		love.graphics.setLineWidth(4)
+
+		-- outline *inside* the inner play area
+		love.graphics.rectangle("line", ox, oy, w, h)
+	end
 
     love.graphics.pop()
 end
