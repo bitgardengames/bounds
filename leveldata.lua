@@ -13,7 +13,7 @@ local LevelData = {
             layers = {
 
                 --------------------------------------------------------------
-                -- NEW FRAME LAYER (outer chamber walls)
+                -- FRAME LAYER (outer chamber walls)
                 --------------------------------------------------------------
                 {
                     name  = "Frame",
@@ -40,7 +40,7 @@ local LevelData = {
                         -- Vents
                         {type="vent",       tx=12, ty=5},
                         {type="vent",       tx=27, ty=13},
-                        {type="vent",       tx=14, ty=16},
+                        {type="vent",       tx=5, ty=18},
 
                         {type="vent_round", tx=20, ty=6},
                         {type="vent_round", tx=7,  ty=12},
@@ -56,9 +56,30 @@ local LevelData = {
                         {type="panel_tall", tx=28, ty=5},
                         {type="panel_tall", tx=34, ty=16},
 
+                        -- Conduit
+                        {type="conduit_v",          tx=27, ty=21},
+                        {type="conduit_curve_tr",   tx=27, ty=20},
+                        {type="conduit_h_join",     tx=28, ty=20},
+                        {type="conduit_h",          tx=29, ty=20},
+                        {type="conduit_h_join",     tx=30, ty=20},
+                        {type="conduit_junctionbox",tx=31, ty=20},
+                        {type="conduit_h_join",     tx=32, ty=20},
+                        {type="conduit_h",          tx=33, ty=20},
+                        {type="conduit_h",          tx=34, ty=20},
+                        {type="conduit_h_join",     tx=35, ty=20},
+
+						{type="conduit_v_double_join",       tx=13, ty=21},
+						{type="conduit_v_double",       tx=13, ty=20},
+						{type="conduit_v_double",  tx=13, ty=19},
+						{type="conduit_v_double",       tx=13, ty=18},
+						{type="conduit_v_double_join",       tx=13, ty=17},
+						{type="conduit_curve_tr_double",tx=13, ty=16},
+						{type="conduit_h_double_join",       tx=14, ty=16},
+						{type="conduit_h_double",       tx=15, ty=16},
+
                         -- Fans
                         {type="fan",       tx=15, ty=8},
-                        {type="fan_large", tx=23, ty=15},
+                        {type="fan_large", tx=15, ty=15},
                         {type="fan_3",     tx=26, ty=8},
 
                         -- Pipes (big)
@@ -87,25 +108,7 @@ local LevelData = {
                         {type="pipe_big_curve_bl", tx=2, ty=20},
                         {type="pipe_big_h",        tx=1, ty=15},
                         {type="pipe_big_h",        tx=1, ty=20},
-
-                        -- Conduit
-                        {type="conduit_v",          tx=27, ty=21},
-                        {type="conduit_curve_tr",   tx=27, ty=20},
-                        {type="conduit_h_join",     tx=28, ty=20},
-                        {type="conduit_h",          tx=29, ty=20},
-                        {type="conduit_h_join",     tx=30, ty=20},
-                        {type="conduit_junctionbox",tx=31, ty=20},
-                        {type="conduit_h_join",     tx=32, ty=20},
-                        {type="conduit_h",          tx=33, ty=20},
-                        {type="conduit_h",          tx=34, ty=20},
-                        {type="conduit_h_join",     tx=35, ty=20},
-
-						--[[{type="conduit_v_double",       tx=14, ty=20},
-						{type="conduit_curve_tr_double",tx=14, ty=21},
-						{type="conduit_h_double",       tx=15, ty=21},
-						{type="conduit_h_double_join",       tx=16, ty=21},
-						{type="conduit_curve_bl_double",       tx=16, ty=21},]]
-
+						
                         -- Sign
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
                     },
@@ -156,8 +159,8 @@ local LevelData = {
                 },
 
                 monitors = {
-                    {tx = 38, ty = 5, dir = -1},
-					--{tx = 1, ty = 2},
+                    --{tx = 38, ty = 5, dir = -1},
+					{tx = 1, ty = 2},
                 },
             },
         },
