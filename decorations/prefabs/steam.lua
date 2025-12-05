@@ -62,7 +62,7 @@ return function(Decorations)
             love.graphics.setColor(S.outline)
             love.graphics.rectangle("fill", x, cy, w, thick)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
 
             local ventW = w * 0.80
@@ -75,7 +75,7 @@ return function(Decorations)
             love.graphics.rectangle("fill", vx - 4, vy - 4,
                 ventW + 8, ventH + 8, r + 3, r + 3)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill", vx, vy,
                 ventW, ventH, r, r)
 

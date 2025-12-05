@@ -17,7 +17,7 @@ return function(Decorations)
             love.graphics.setColor(S.outline)
             love.graphics.rectangle("fill", x, cy, w, thick)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill",
                 x,
                 cy + O,
@@ -41,7 +41,7 @@ return function(Decorations)
             love.graphics.setColor(S.outline)
             love.graphics.rectangle("fill", cx, y, thick, h)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill",
                 cx + O,
                 y,
@@ -78,7 +78,7 @@ return function(Decorations)
                 radius, radius
             )
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle(
                 "fill",
                 x + O,
@@ -136,7 +136,7 @@ return function(Decorations)
 			love.graphics.setColor(S.outline)
 			love.graphics.rectangle("fill", x, cy, w, thick)
 
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				x,
 				cy + O,
@@ -166,7 +166,7 @@ return function(Decorations)
 			)
 
 			-- Inner metal fill
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,
@@ -198,7 +198,7 @@ return function(Decorations)
 				h
 			)
 
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				cx + O,
 				y,
@@ -227,7 +227,7 @@ return function(Decorations)
 			)
 
 			-- Inner fill
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,
@@ -258,7 +258,7 @@ return function(Decorations)
             math.pi*1.5
         )
 
-        love.graphics.setColor(S.metal)
+        love.graphics.setColor(S.pipe)
         love.graphics.setLineWidth(pipeFill)
         love.graphics.arc("line", "open",
             w, h,
@@ -312,7 +312,7 @@ return function(Decorations)
             love.graphics.setColor(S.outline)
             love.graphics.rectangle("fill", x, cy, w, thick)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill",
                 x,
                 cy + O,
@@ -336,7 +336,7 @@ return function(Decorations)
             love.graphics.setColor(S.outline)
             love.graphics.rectangle("fill", cx, y, thick, h)
 
-            love.graphics.setColor(S.metal)
+            love.graphics.setColor(S.pipe)
             love.graphics.rectangle("fill",
                 cx + O,
                 y,
@@ -368,7 +368,7 @@ return function(Decorations)
             math.pi * 1.5
         )
 
-        love.graphics.setColor(S.metal)
+        love.graphics.setColor(S.pipe)
         love.graphics.setLineWidth(pipeFill)
         love.graphics.arc("line", "open",
             w, h,
@@ -433,7 +433,7 @@ return function(Decorations)
 			------------------------------------------------------------------
 			-- FILL LAYER
 			------------------------------------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 
 			-- Vertical fill (same as cross)
 			love.graphics.rectangle("fill", cx + O, y, pipeFill, h)
@@ -478,7 +478,7 @@ return function(Decorations)
 			-----------------------------------------
 			-- FILL
 			-----------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 
 			-- Vertical fill
 			love.graphics.rectangle("fill",
@@ -531,7 +531,7 @@ return function(Decorations)
 			-----------------------------------------
 			-- FILL
 			-----------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 
 			-- Horizontal fill
 			love.graphics.rectangle("fill",
@@ -586,7 +586,7 @@ return function(Decorations)
 			-----------------------------------------
 			-- FILL
 			-----------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 
 			-- Horizontal fill
 			love.graphics.rectangle("fill",
@@ -623,7 +623,7 @@ return function(Decorations)
 			love.graphics.rectangle("fill", x, cy, w, thick)
 			love.graphics.rectangle("fill", cx, y, thick, h)
 
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill", x, cy + O, w, pipeFill)
 			love.graphics.rectangle("fill", cx + O, y, pipeFill, h)
 		end
@@ -647,7 +647,7 @@ return function(Decorations)
 			love.graphics.setColor(S.outline)
 			love.graphics.rectangle("fill", x, cy, w, thick)
 
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				x,
 				cy + O,
@@ -686,7 +686,7 @@ return function(Decorations)
 			----------------------------------------------------------
 			-- INNER METAL FILL (also oversized)
 			----------------------------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,
@@ -719,7 +719,7 @@ return function(Decorations)
 				h
 			)
 
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				cx + O,
 				y,
@@ -758,7 +758,7 @@ return function(Decorations)
 			----------------------------------------------------------
 			-- INNER METAL FILL
 			----------------------------------------------------------
-			love.graphics.setColor(S.metal)
+			love.graphics.setColor(S.pipe)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,
