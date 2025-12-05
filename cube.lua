@@ -27,7 +27,7 @@ local OUTLINE = 4
 
 local COLOR_FILL = Theme.cube.fill
 local COLOR_OUTLINE = Theme.cube.outline
-local COLLISION_FOOT_OFFSET = 2
+local COLLISION_FOOT_OFFSET = 0
 
 --------------------------------------------------------------
 -- SPAWN
@@ -44,6 +44,7 @@ function Cube.spawn(x, y)
         grounded = false,
         weight = 1,
         visualOffset = 4,
+        visualVelocity = 0,
         pushDustTimer = 0,
     })
 end
@@ -92,7 +93,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
 
             -- snap cube bottom to the top of the tile
             local tileY = math.floor(footY / TILE) * TILE
-            c.y = tileY - h + COLLISION_FOOT_OFFSET
+            c.y = tileY - h
         end
 
     elseif c.vy < 0 then
@@ -237,6 +238,27 @@ local function applyFriction(c, dt, beingPushed)
 end
 
 --------------------------------------------------------------
+-- VISUAL OFFSET (SOFT LANDING)
+--------------------------------------------------------------
+
+local function updateVisualOffset(c, dt, targetOffset)
+    local stiffness = c.grounded and 42 or 28
+    local damping = 10
+
+    local offset = c.visualOffset or targetOffset
+    local velocity = c.visualVelocity or 0
+
+    local delta = targetOffset - offset
+    velocity = velocity + delta * stiffness * dt
+    velocity = velocity * math.max(0, 1 - damping * dt)
+
+    offset = math.max(0, offset + velocity * dt)
+
+    c.visualOffset = offset
+    c.visualVelocity = velocity
+end
+
+--------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
 
@@ -247,6 +269,7 @@ function Cube.update(dt, player)
     local height = level.height or 0
 
     for _, c in ipairs(Cube.list) do
+        local wasGrounded = c.grounded
 
         ------------------------------------------------------
         -- GRAVITY
@@ -265,7 +288,7 @@ function Cube.update(dt, player)
         applyFriction(c, dt, pushing)
 
         local targetOffset = c.grounded and 4 or 2
-        c.visualOffset = c.visualOffset + (targetOffset - c.visualOffset) * dt * 10
+        local landingVy = c.vy
 
         ------------------------------------------------------
         -- APPLY MOTION
@@ -277,6 +300,13 @@ function Cube.update(dt, player)
         -- COLLISIONS
         ------------------------------------------------------
         resolveTileCollision(c, tileSize, grid, width, height)
+
+        if not wasGrounded and c.grounded then
+            local impactBoost = math.min(math.abs(landingVy) * 0.02, 12)
+            c.visualVelocity = (c.visualVelocity or 0) + impactBoost
+        end
+
+        updateVisualOffset(c, dt, targetOffset)
     end
 end
 
