@@ -583,7 +583,9 @@ function Player.update(dt, Level)
 
         if nearContact then
             if overlapX > 0 and overlapY > 0 then
-                if overlapX < overlapY and sideAligned then
+                local landingOnCube = aboveCube and p.vy >= 0
+
+                if overlapX < overlapY and sideAligned and not landingOnCube then
                     if (p.x + p.w / 2) < (c.x + c.w / 2) then
                         p.x = cx1 - p.w
                         p.vx = math.min(p.vx, 0)
