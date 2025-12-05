@@ -144,7 +144,7 @@ end
 ------------------------------------------------------------
 -- DRAW
 ------------------------------------------------------------
-local visualOffset = 5
+local visualOffset = 2
 
 function Monitor.draw()
     if not Monitor.active then return end
@@ -189,7 +189,7 @@ function Monitor.draw()
     if dir == 1 then
         armX = plateX + armGap
     else
-        armX = plateX - armGap - armW
+        armX = plateX - armGap - armW + 4
     end
     local armY = y + h/2 - armH/2
 
