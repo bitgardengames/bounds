@@ -16,11 +16,11 @@ local Cube = { list = {} }
 local CUBE_SIZE = 32
 local GRAVITY = 1800
 local MAX_FALL_SPEED = 900
-local PUSH_ACCEL = 520     -- slower acceleration for a heftier feel
-local CUBE_PUSH_MAX = 120  -- caps speed while being pushed
-local PUSH_STICTION = 16   -- extra resistance before the cube budges
-local FRICTION = 4
-local PUSH_FRICTION_SCALE = 0.10
+local PUSH_ACCEL = 820     -- quicker blend toward top push speed
+local CUBE_PUSH_MAX = 132  -- caps speed while being pushed
+local PUSH_STICTION = 8    -- extra resistance before the cube budges
+local FRICTION = 3.2
+local PUSH_FRICTION_SCALE = 0.06
 
 local OUTLINE = 4
 local Theme = require("theme")
@@ -178,10 +178,15 @@ local function applyPush(c, player, dt)
         -- Start with a little "stiction" so the block feels hefty before moving
         local resistance = PUSH_STICTION
         if math.abs(c.vx) < resistance then
-            c.vx = c.vx + dir * math.min(resistance, CUBE_PUSH_MAX) * dt
+            c.vx = c.vx + dir * math.min(resistance, CUBE_PUSH_MAX) * dt * 1.2
         end
 
-        c.vx = c.vx + (target - c.vx) * dt * (PUSH_ACCEL / 45)
+        local pushBlend = math.min(1, dt * (PUSH_ACCEL / 28))
+        c.vx = c.vx + (target - c.vx) * pushBlend
+
+        if math.abs(target - c.vx) < 2 then
+            c.vx = target
+        end
 
         if c.grounded and math.abs(c.vx) > 24 then
             c.pushDustTimer = (c.pushDustTimer or 0) - dt
