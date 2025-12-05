@@ -3,6 +3,7 @@
 -- Horizontal + Vertical mounts with perfect wall alignment
 --------------------------------------------------------------
 
+local Theme = require("theme")
 local Saw = { list = {} }
 local Player = require("player")
 
@@ -23,10 +24,11 @@ local TRACK_LENGTH      = 160
 local TRAVEL_PADDING    = 26
 
 -- Colors
-local COLOR_BACK      = {0, 0, 0}
-local COLOR_FILL      = {0, 0, 0}
-local COLOR_RIM       = {0, 0, 0}
-local COLOR_RIM_LIGHT = {0, 0, 0}
+local sawColors = Theme.saw
+local COLOR_BACK      = sawColors.track
+local COLOR_FILL      = sawColors.bladeFill
+local COLOR_RIM       = sawColors.rim
+local COLOR_RIM_LIGHT = sawColors.bladeHighlight
 
 --------------------------------------------------------------
 -- SAW GEOMETRY HELPERS
@@ -337,15 +339,15 @@ function Saw.draw()
         love.graphics.push()
         love.graphics.translate(s.x, s.y)
 
-        love.graphics.setColor(0.85, 0.80, 0.75, 1)
+        love.graphics.setColor(COLOR_FILL)
         for _, t in ipairs(tris) do
             love.graphics.polygon("fill", t)
         end
 
-        love.graphics.setColor(1,1,1,0.10)
+        love.graphics.setColor(COLOR_RIM_LIGHT)
         love.graphics.circle("fill", 0, 0, s.r * 0.55)
 
-        love.graphics.setColor(0,0,0)
+        love.graphics.setColor(COLOR_RIM)
         love.graphics.setLineWidth(OUTLINE)
         love.graphics.polygon("line", rot)
         love.graphics.circle("fill", 0, 0, s.r * 0.25)
