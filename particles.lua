@@ -204,8 +204,10 @@ function Particles.draw()
         elseif p.sleepBubble then
             local progress = math.min(1, math.max(0, 1 - t))
 
-            local grow = smoothstep(math.min(progress / 0.18, 1))
-            local fadeOutStart = 0.68
+            local bloom = smoothstep(math.min(progress / 0.2, 1))
+            local settle = progress > 0.32 and smoothstep(math.min((progress - 0.32) / 0.24, 1)) or 0
+
+            local fadeOutStart = 0.7
             local fade
             if progress < fadeOutStart then
                 fade = smoothstep(progress / fadeOutStart)
@@ -219,7 +221,10 @@ function Particles.draw()
                 shrink = 1 - smoothstep((progress - shrinkStart) / (1 - shrinkStart))
             end
 
-            local size = p.r * grow * shrink
+            local startScale = 0.35
+            local bloomScale = 1.25
+            local settleScale = bloomScale - 0.08 * settle
+            local size = p.r * (startScale + (settleScale - startScale) * bloom) * shrink
 
             love.graphics.setColor(
                 p.color[1], p.color[2], p.color[3],
