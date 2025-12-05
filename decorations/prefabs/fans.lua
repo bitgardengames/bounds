@@ -1,3 +1,6 @@
+local Theme = require("theme")
+local S = Theme.decorations
+
 return function(Decorations)
         Decorations.register("fan", {
                 w = 1,
@@ -15,7 +18,6 @@ return function(Decorations)
                 end,
 
                 draw = function(x, y, w, h, inst)
-                        local S = Decorations.style
                         local d = inst.data or {}
 
                         -- Center of the tile in pixel coords
@@ -164,7 +166,6 @@ return function(Decorations)
         end,
 
         draw = function(x, y, w, h, inst)
-            local S  = Decorations.style
             local cx = x + w/2
             local cy = y + h/2
             local d  = inst.data
@@ -262,15 +263,14 @@ return function(Decorations)
 			inst.data = d
 		end,
 
-		update = function(inst, dt)
-			local d = inst.data
-			if d.active == false then return end
-			d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
-		end,
+                update = function(inst, dt)
+                        local d = inst.data
+                        if d.active == false then return end
+                        d.angle = (d.angle + dt * d.speed) % (math.pi * 2)
+                end,
 
-		draw = function(x, y, w, h, inst)
-			local S = Decorations.style
-			local d = inst.data
+                draw = function(x, y, w, h, inst)
+                        local d = inst.data
 
 			----------------------------------------------------------
 			-- PIXEL DIMENSIONS

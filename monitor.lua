@@ -5,6 +5,7 @@
 ------------------------------------------------------------
 
 local Player = require("player")  -- direct access to player
+local Theme = require("theme")
 
 local Monitor = {
     tileSize = 48,
@@ -145,10 +146,10 @@ end
 ------------------------------------------------------------
 local visualOffset = 5
 
-function Monitor.draw(style)
+function Monitor.draw()
     if not Monitor.active then return end
 
-    local S = style
+    local S = Theme.decorations
     local x = Monitor.x
     local y = Monitor.y
     local w = Monitor.tileSize

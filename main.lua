@@ -272,7 +272,7 @@ function love.draw()
     ----------------------------------------------------------
     local camX, camY = 0, 0
     Level.draw(camX, camY)
-    Monitor.draw(Decorations.style)
+    Monitor.draw()
     Saw.draw()
     Door.draw()
     Plate.draw()

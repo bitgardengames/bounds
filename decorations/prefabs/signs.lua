@@ -1,3 +1,6 @@
+local Theme = require("theme")
+local S = Theme.decorations
+
 return function(Decorations)
     Decorations.register("sign", {
         w = 2,   -- now explicitly 2 tiles wide
@@ -9,7 +12,6 @@ return function(Decorations)
         end,
 
         draw = function(x, y, w, h, inst)
-            local S = Decorations.style
             local text = inst.data.text or "SIGN"
             local font = inst.data.font
             love.graphics.setFont(font)
@@ -41,7 +43,7 @@ return function(Decorations)
             ----------------------------------------------------------
             -- DRAW: OUTLINE
             ----------------------------------------------------------
-            love.graphics.setColor(S.dark)
+            love.graphics.setColor(S.signShadow)
             love.graphics.rectangle(
                 "fill",
                 boxX - outline,
@@ -68,7 +70,7 @@ return function(Decorations)
             ----------------------------------------------------------
             -- DRAW: TEXT
             ----------------------------------------------------------
-            love.graphics.setColor({0.1, 0.1, 0.1, 1})
+            love.graphics.setColor(S.signText)
             love.graphics.print(text, textX, textY)
         end
     })

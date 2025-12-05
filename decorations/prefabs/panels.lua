@@ -1,11 +1,12 @@
+local Theme = require("theme")
+local S = Theme.decorations
+
 return function(Decorations)
     Decorations.register("panel", {
         w = 1.5,
         h = 1,
 
         draw = function(x, y, w, h)
-            local S = Decorations.style
-
             love.graphics.setColor(S.background)
             love.graphics.rectangle("fill", x-4, y-4, w+8, h+8, 6, 6)
 
@@ -24,8 +25,6 @@ return function(Decorations)
         h = 2,
 
         draw = function(x, y, w, h)
-            local S = Decorations.style
-
             love.graphics.setColor(S.background)
             love.graphics.rectangle("fill", x + 2, y + 2, w - 4, h - 4)
         end,
