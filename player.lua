@@ -109,6 +109,7 @@ local p = {
     sleepBubbleTimer = 0,
 
     prevY = 0,
+    prevX = 0,
 }
 
 --------------------------------------------------------------
@@ -202,6 +203,7 @@ end
 
 function Player.update(dt, Level)
     p.prevY = p.y
+    p.prevX = p.x
 
     ----------------------------------------------------------
     -- Death / respawn block
@@ -562,11 +564,14 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     local wasPushingCube = p.pushingCube
 
-    p.pushingCube = false
-    p.pushingCubeDir = 0
-    p.pushingCubeRef = nil
-    p.pushingCubeGap = 0
-    for _, c in ipairs(Cube.list) do
+    local function startPushingCube(c)
+        p.pushingCube = true
+        p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
+        p.pushingCubeRef = c
+        p.pushingCubeGap = 1.2
+    end
+
+    local function resolveCubeCollision(c)
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
 
@@ -581,48 +586,63 @@ function Player.update(dt, Level)
         local belowCube = py1 >= cy2 - margin
         local sideAligned = not aboveCube and not belowCube
 
-        if nearContact then
-            if overlapX > 0 and overlapY > 0 then
-                local landingOnCube = aboveCube and p.vy >= 0
+        local fromAbove = (p.prevY + p.h) <= cy1 + margin and p.vy >= 0
+        local fromBelow = p.prevY >= cy2 - margin and p.vy <= 0
 
-                if overlapX < overlapY and sideAligned and not landingOnCube then
-                    if (p.x + p.w / 2) < (c.x + c.w / 2) then
-                        p.x = cx1 - p.w
-                        p.vx = math.min(p.vx, 0)
-                    else
-                        p.x = cx2
-                        p.vx = math.max(p.vx, 0)
-                    end
+        if overlapX > 0 and overlapY > 0 then
+            if fromAbove or (overlapY <= overlapX and not sideAligned) then
+                p.y = cy1 - p.h
+                p.vy = 0
+                p.onGround = true
+                p.contactBottom = math.max(p.contactBottom, 0.7)
+                p.springVertVel = p.springVertVel - 160
+                return
+            elseif fromBelow then
+                p.y = cy2
+                p.vy = 0
 
-                    p.pushingCube = true
-                    p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
-                    p.pushingCubeRef = c
-                    p.pushingCubeGap = 1.2
+                p.contactTop = math.max(p.contactTop, 0.6)
+                p.springVertVel = p.springVertVel + 80
+                return
+            elseif overlapX < overlapY then
+                if (p.x + p.w / 2) < (c.x + c.w / 2) then
+                    p.x = cx1 - p.w
+                    p.vx = math.min(p.vx, 0)
                 else
-                    if (p.y + p.h / 2) < (c.y + c.h / 2) then
-                        p.y = cy1 - p.h
-                        p.onGround = true
-
-                        p.contactBottom = math.max(p.contactBottom, 0.7)
-                        p.springVertVel = p.springVertVel - 160
-                    else
-                        p.y = cy2
-
-                        p.contactTop = math.max(p.contactTop, 0.6)
-                        p.springVertVel = p.springVertVel + 80
-                    end
-
-                    p.vy = 0
+                    p.x = cx2
+                    p.vx = math.max(p.vx, 0)
                 end
-            end
 
-            if not p.pushingCube and sideAligned then
-                p.pushingCube = true
-                p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
-                p.pushingCubeRef = c
-                p.pushingCubeGap = 1.2
+                startPushingCube(c)
+                return
+            else
+                if (p.y + p.h / 2) < (c.y + c.h / 2) then
+                    p.y = cy1 - p.h
+                    p.onGround = true
+                    p.contactBottom = math.max(p.contactBottom, 0.7)
+                    p.springVertVel = p.springVertVel - 160
+                else
+                    p.y = cy2
+                    p.contactTop = math.max(p.contactTop, 0.6)
+                    p.springVertVel = p.springVertVel + 80
+                end
+
+                p.vy = 0
+                return
             end
         end
+
+        if nearContact and sideAligned then
+            startPushingCube(c)
+        end
+    end
+
+    p.pushingCube = false
+    p.pushingCubeDir = 0
+    p.pushingCubeRef = nil
+    p.pushingCubeGap = 0
+    for _, c in ipairs(Cube.list) do
+        resolveCubeCollision(c)
     end
 
     if p.pushingCube or wasPushingCube then
