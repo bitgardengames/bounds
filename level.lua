@@ -18,7 +18,7 @@ Level.colors = {
     outer = {32/255, 38/255, 45/255},    -- Frame walls
     solid = {164/255, 171/255, 172/255}, -- Platforms
 
-    grid  = {45/255, 66/255, 86/255, 0.2},
+    grid  = {45/255, 66/255, 86/255, 0.5}, -- 0.2
 }
 
 local OUTLINE_WIDTH   = 4
@@ -323,11 +323,11 @@ function Level.draw(camX, camY)
 
     -- FRAME (no inset)
     if Level.frameLayer then
-        drawBlobs(Level.frameBlobs, Level.colors.outer, 0)
+        drawBlobs(Level.frameBlobs, Level.colors.outer, -2)
     end
 
     -- SOLIDS (inset by 2px per side)
-    drawBlobs(Level.solidBlobs, Level.colors.solid, 4)
+    drawBlobs(Level.solidBlobs, Level.colors.solid, 2)
 
     love.graphics.pop()
 end

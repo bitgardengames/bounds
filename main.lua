@@ -168,7 +168,6 @@ end
 
 function love.load()
     Blink.init()
-
     Player.init(Level)
     loadChamber(currentChamber)
 end

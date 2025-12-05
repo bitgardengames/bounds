@@ -153,7 +153,7 @@ local function queueSleepBubbles()
         local size = 5 + i * 1.3
         local life = 1.35 + i * 0.08 + math.random() * 0.12
 
-        local delay = i * 0.68 + math.random() * 0.18
+        local delay = i * 0.86 + math.random() * 0.1
 
         table.insert(p.sleepBubbleQueue, {
             timer = delay,
