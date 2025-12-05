@@ -297,4 +297,235 @@ return function(Decorations)
             drawPipeCurve(x,y,w,h, math.pi*1.5)
         end,
     })
+
+	Decorations.register("conduit_h_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 4
+			local O = 4
+
+			-- Total width of two pipes + 3 outlines
+			local totalW = O + pipeFill + O + pipeFill + O   -- 20px
+			local startX = x + (w - totalW) / 2              -- center horizontally
+
+			-- Vertical alignment same as single conduit
+			local thick = pipeFill + O*2                     -- 12px tall pipe band
+			local cy = y + h/2 - thick/2
+
+			--------------------------------------------------------------
+			-- LEFT OUTLINE
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX,
+				cy,
+				O,
+				thick
+			)
+
+			--------------------------------------------------------------
+			-- PIPE 1 (left)
+			--------------------------------------------------------------
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O,
+				cy + O,
+				pipeFill,
+				pipeFill
+			)
+
+			--------------------------------------------------------------
+			-- MIDDLE OUTLINE (shared divider)
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill,
+				cy,
+				O,
+				thick
+			)
+
+			--------------------------------------------------------------
+			-- PIPE 2 (right)
+			--------------------------------------------------------------
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O,
+				cy + O,
+				pipeFill,
+				pipeFill
+			)
+
+			--------------------------------------------------------------
+			-- RIGHT OUTLINE
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O + pipeFill,
+				cy,
+				O,
+				thick
+			)
+		end,
+	})
+
+	Decorations.register("conduit_v_double", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 4
+			local O = 4
+
+			local totalW = O + pipeFill + O + pipeFill + O   -- 20px wide
+			local startX = x + (w - totalW) / 2
+
+			local thick = pipeFill + O*2                     -- 12px tall (vertical is long)
+			local cy = y                                     -- vertical pipe spans full tile
+
+			--------------------------------------------------------------
+			-- LEFT OUTLINE
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX,
+				y,
+				O,
+				h
+			)
+
+			--------------------------------------------------------------
+			-- PIPE 1
+			--------------------------------------------------------------
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			--------------------------------------------------------------
+			-- MIDDLE OUTLINE
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill,
+				y,
+				O,
+				h
+			)
+
+			--------------------------------------------------------------
+			-- PIPE 2
+			--------------------------------------------------------------
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O,
+				y,
+				pipeFill,
+				h
+			)
+
+			--------------------------------------------------------------
+			-- RIGHT OUTLINE
+			--------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O + pipeFill,
+				y,
+				O,
+				h
+			)
+		end,
+	})
+
+	Decorations.register("conduit_h_double_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local S = Decorations.style
+
+			local pipeFill = 4
+			local O = 4
+
+			------------------------------------------------------
+			-- DOUBLE PIPE GEOMETRY (same as conduit_h_double)
+			------------------------------------------------------
+			local totalW = O + pipeFill + O + pipeFill + O      -- 20px total
+			local startX = x + (w - totalW) / 2
+
+			local thick = pipeFill + O*2                         -- 12px tall pipe band
+			local cy = y + h/2 - thick/2
+
+			-- LEFT OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", startX, cy, O, thick)
+
+			-- LEFT PIPE
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O,
+				cy + O,
+				pipeFill,
+				pipeFill
+			)
+
+			-- MIDDLE OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill,
+				cy,
+				O,
+				thick
+			)
+
+			-- RIGHT PIPE
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				startX + O + pipeFill + O,
+				cy + O,
+				pipeFill,
+				pipeFill
+			)
+
+			-- RIGHT OUTLINE
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				startX + totalW - O,
+				cy,
+				O,
+				thick
+			)
+
+			------------------------------------------------------
+			-- COUPLING BAND (centered horizontally)
+			------------------------------------------------------
+			local joinW   = 14         -- wider band to cover both pipes
+			local joinFill = joinW - O*2
+			local joinH   = thick + 8  -- taller than pipe band
+			local jx = x + w/2 - joinW/2
+			local jy = y + h/2 - joinH/2
+
+			-- outer outline band
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx, jy,
+				joinW, joinH
+			)
+
+			-- inner metal fill
+			love.graphics.setColor(S.pipe)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinFill,
+				joinH - O*2
+			)
+		end
+	})
 end

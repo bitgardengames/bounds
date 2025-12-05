@@ -100,6 +100,9 @@ local LevelData = {
                         {type="conduit_h",          tx=34, ty=20},
                         {type="conduit_h_join",     tx=35, ty=20},
 
+						{type="conduit_v_double",     tx=14, ty=21},
+						{type="conduit_v_double",     tx=14, ty=20},
+
                         -- Sign
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
                     },
