@@ -560,6 +560,8 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- CUBE collision push logic
     ----------------------------------------------------------
+    local wasPushingCube = p.pushingCube
+
     p.pushingCube = false
     p.pushingCubeDir = 0
     p.pushingCubeRef = nil
@@ -571,43 +573,54 @@ function Player.update(dt, Level)
         local cx1, cy1 = c.x, c.y
         local cx2, cy2 = c.x + c.w, c.y + c.h
 
-        if px2 > cx1 and px1 < cx2 and py2 > cy1 and py1 < cy2 then
-            local overlapX = math.min(px2, cx2) - math.max(px1, cx1)
-            local overlapY = math.min(py2, cy2) - math.max(py1, cy1)
+        local margin = 1.6
+        local overlapX = math.min(px2, cx2) - math.max(px1, cx1)
+        local overlapY = math.min(py2, cy2) - math.max(py1, cy1)
+        local nearContact = overlapX > -margin and overlapY > -margin
 
-            if overlapX < overlapY then
-                if (p.x + p.w / 2) < (c.x + c.w / 2) then
-                    p.x = cx1 - p.w
-                    p.vx = math.min(p.vx, 0)
+        if nearContact then
+            if overlapX > 0 and overlapY > 0 then
+                if overlapX < overlapY then
+                    if (p.x + p.w / 2) < (c.x + c.w / 2) then
+                        p.x = cx1 - p.w
+                        p.vx = math.min(p.vx, 0)
+                    else
+                        p.x = cx2
+                        p.vx = math.max(p.vx, 0)
+                    end
+
+                    p.pushingCube = true
+                    p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
+                    p.pushingCubeRef = c
+                    p.pushingCubeGap = 1.2
                 else
-                    p.x = cx2
-                    p.vx = math.max(p.vx, 0)
-                end
+                    if (p.y + p.h / 2) < (c.y + c.h / 2) then
+                        p.y = cy1 - p.h
+                        p.onGround = true
 
+                        p.contactBottom = math.max(p.contactBottom, 0.7)
+                        p.springVertVel = p.springVertVel - 160
+                    else
+                        p.y = cy2
+
+                        p.contactTop = math.max(p.contactTop, 0.6)
+                        p.springVertVel = p.springVertVel + 80
+                    end
+
+                    p.vy = 0
+                end
+            end
+
+            if not p.pushingCube then
                 p.pushingCube = true
                 p.pushingCubeDir = (p.x + p.w / 2) < (c.x + c.w / 2) and 1 or -1
                 p.pushingCubeRef = c
                 p.pushingCubeGap = 1.2
-            else
-                if (p.y + p.h / 2) < (c.y + c.h / 2) then
-                    p.y = cy1 - p.h
-                    p.onGround = true
-
-                    p.contactBottom = math.max(p.contactBottom, 0.7)
-                    p.springVertVel = p.springVertVel - 160
-                else
-                    p.y = cy2
-
-                    p.contactTop = math.max(p.contactTop, 0.6)
-                    p.springVertVel = p.springVertVel + 80
-                end
-
-                p.vy = 0
             end
         end
     end
 
-    if p.pushingCube then
+    if p.pushingCube or wasPushingCube then
         local pushDir = p.pushingCubeDir
 
         if p.onGround then
@@ -637,7 +650,7 @@ function Player.update(dt, Level)
                 p.x = targetX
             end
 
-            local followBlend = 0.8
+            local followBlend = 1.0
             p.vx = p.vx * (1 - followBlend) + c.vx * followBlend
         end
     end
