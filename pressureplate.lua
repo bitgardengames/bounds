@@ -65,22 +65,22 @@ end
 -- HELPER: check pressure from one object (player or cube)
 --------------------------------------------------------------
 
-local PRESS_TOLERANCE = 2
+local PRESS_TOLERANCE   = 2
+local PRESS_HEIGHT      = BUTTON_H + BASE_H
+local PRESS_FLOOR_OFFSET = 2
 
 local function pressBounds(x, y)
-    -- Gameplay coordinates treat x,y as the TILE's top-left corner, while the
-    -- visual plate sits near the bottom of the tile. Keep the footprint wide
-    -- enough to match the button body + base, but avoid stretching the band so
-    -- high that a jump grazes it. This keeps “I jumped over it but still
-    -- pressed it” moments from happening.
+    -- Gameplay coordinates treat x,y as the TILE's top-left corner. The visual
+    -- art sits lower in the tile, but the collision band should hug the floor
+    -- so the player’s feet can actually reach it. Anchor the band near the
+    -- tile surface and keep it compact so a mid-air jump doesn't accidentally
+    -- trigger the plate.
 
     local px1 = x
     local px2 = x + TILE
 
-    -- Visually grounded band: cover the button body and base only.
-    local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
-    local bandTop = baseTop - BUTTON_H - PRESS_TOLERANCE
-    local bandBottom = baseTop + BASE_H + PRESS_TOLERANCE
+    local bandTop    = y + PRESS_FLOOR_OFFSET - PRESS_TOLERANCE
+    local bandBottom = bandTop + PRESS_HEIGHT + PRESS_TOLERANCE * 2
 
     return px1, px2, bandTop, bandBottom
 end
