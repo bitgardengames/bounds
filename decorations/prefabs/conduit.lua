@@ -1,10 +1,12 @@
+local Theme = require("theme")
+local S = Theme.decorations
+
 local pipeFill = 16
 local O = 4
 local thick = pipeFill + O*2
 
 return function(Decorations)
 	local function drawPipeCurve(x, y, w, h, rotate)
-		local S = Decorations.style
 		local pipeFill = 4
 		local O = 4
 		local thick = pipeFill + O*2
@@ -37,7 +39,6 @@ return function(Decorations)
 	end
 
 	local function drawDoubleCurve(x, y, w, h, rotate)
-		local S = Decorations.style
 		local pipeFill = 4
 		local O = 4
 
@@ -103,7 +104,6 @@ return function(Decorations)
         w = 1, h = 1,
 
         draw = function(x, y, w, h)
-            local S = Decorations.style
             local pipeFill = 4
             local O = 4
 
@@ -127,7 +127,6 @@ return function(Decorations)
         w = 1, h = 1,
 
         draw = function(x, y, w, h)
-            local S = Decorations.style
             local pipeFill = 4
             local O = 4
 
@@ -156,7 +155,6 @@ return function(Decorations)
         end,
 
         draw = function(x, y, w, h, inst)
-            local S = Decorations.style
             local active = inst and inst.data and inst.data.active
 
             local O = 4
@@ -219,7 +217,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 			local pipeFill = 4
 			local O = 4
 
@@ -276,7 +273,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 			local pipeFill = 4
 			local O = 4
 
@@ -365,7 +361,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 
 			local pipeFill = 4
 			local O = 4
@@ -439,7 +434,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 
 			local pipeFill = 4
 			local O = 4
@@ -511,7 +505,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 
 			local pipeFill = 4
 			local O = 4
@@ -596,7 +589,6 @@ return function(Decorations)
 		w = 1, h = 1,
 
 		draw = function(x, y, w, h)
-			local S = Decorations.style
 
 			local pipeFill = 4
 			local O = 4

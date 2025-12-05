@@ -18,6 +18,8 @@ Theme.decorations = {
     grill = {72 / 255, 91 / 255, 104 / 255, 1},
     fanFill = {0.88, 0.88, 0.92, 1},
     pipe = {70 / 255, 82 / 255, 96 / 255, 1},
+    signShadow = {0, 0, 0, 0.3},
+    signText = {0.1, 0.1, 0.1, 1},
 }
 
 Theme.player = {

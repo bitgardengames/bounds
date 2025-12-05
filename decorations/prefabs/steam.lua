@@ -1,3 +1,6 @@
+local Theme = require("theme")
+local S = Theme.decorations
+
 return function(Decorations)
     local Particles = Decorations.Particles
 
@@ -52,7 +55,6 @@ return function(Decorations)
         end,
 
         draw = function(x, y, w, h)
-            local S = Decorations.style
 
             local pipeFill = 16
             local O = 4
