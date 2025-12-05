@@ -105,6 +105,7 @@ local p = {
     sleeping  = false,
     sleepEyeT = 0,
     sleepingTransition = false,
+    sleepBubbleTimer = 0,
 
     prevY = 0,
 }
@@ -130,6 +131,33 @@ end
 local function approach(a, b, dt, speed)
     if a < b then return math.min(a + speed * dt, b)
     else          return math.max(a - speed * dt, b)
+    end
+end
+
+local function spawnSleepBubbles()
+    local breathe = Idle.getScale()
+    local r = p.radius * breathe
+
+    local headX = p.x + p.w * 0.5 + r * 0.55
+    local headY = p.y + p.h - r - 4 - r * 0.65
+
+    for i = 0, 2 do
+        local jitterX = (math.random() - 0.5) * 2.5
+        local jitterY = (math.random() - 0.5) * 2.5
+
+        local vx = (14 + i * 4 + math.random() * 4)
+        local vy = -(22 + i * 5 + math.random() * 6)
+        local size = 5 + i * 1.3
+        local life = 1.35 + i * 0.08 + math.random() * 0.12
+
+        Particles.sleepBubble(
+            headX + i * 5 + jitterX,
+            headY - i * 6 + jitterY,
+            vx,
+            vy,
+            size,
+            life
+        )
     end
 end
 
@@ -579,6 +607,8 @@ function Player.update(dt, Level)
         end
     end
 
+    local wasSleeping = p.sleeping
+
     ----------------------------------------------------------
     -- SLEEP SYSTEM (idle timer + transition)
     ----------------------------------------------------------
@@ -588,6 +618,24 @@ function Player.update(dt, Level)
     -- SLEEPY BLINK (Pixar-grade)
     ----------------------------------------------------------
     Sleep.updateBlink(p, dt)
+
+    ----------------------------------------------------------
+    -- ZZZ BUBBLES (soft, occasional trio)
+    ----------------------------------------------------------
+    if p.sleeping then
+        if not wasSleeping then
+            p.sleepBubbleTimer = 0.8 + math.random() * 0.6
+        else
+            p.sleepBubbleTimer = p.sleepBubbleTimer - dt
+        end
+
+        if p.sleepBubbleTimer <= 0 then
+            spawnSleepBubbles()
+            p.sleepBubbleTimer = 2.2 + math.random() * 1.4
+        end
+    else
+        p.sleepBubbleTimer = 0
+    end
 
     return p
 end

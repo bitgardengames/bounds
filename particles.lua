@@ -7,6 +7,10 @@ local particles = {}
 
 local Particles = {}
 
+local function smoothstep(t)
+    return t * t * (3 - 2 * t)
+end
+
 --------------------------------------------------------------
 -- Simple API
 -- Particles.spawn(x, y, vx, vy, radius, lifetime, color)
@@ -134,6 +138,25 @@ function Particles.steam(x, y, vx, vy, radius, life, color)
 end
 
 --------------------------------------------------------------
+-- SLEEP BUBBLES (soft grow + fade, gentle drift)
+--------------------------------------------------------------
+function Particles.sleepBubble(x, y, vx, vy, radius, life, color)
+    color = color or {0.85, 0.95, 1.0, 1}
+
+    table.insert(particles, {
+        x = x, y = y,
+        vx = vx or 18,
+        vy = vy or -28,
+        r  = radius or 5.5,
+        life    = life or 1.45,
+        maxLife = life or 1.45,
+        color   = color,
+        gravity = -20,
+        sleepBubble = true,
+    })
+end
+
+--------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
 function Particles.update(dt)
@@ -175,6 +198,32 @@ function Particles.draw()
             love.graphics.setColor(
                 p.color[1], p.color[2], p.color[3],
                 (p.color[4] or 1) * alpha
+            )
+
+            love.graphics.circle("fill", p.x, p.y, size)
+        elseif p.sleepBubble then
+            local progress = math.min(1, math.max(0, 1 - t))
+
+            local grow = smoothstep(math.min(progress / 0.18, 1))
+            local fadeOutStart = 0.68
+            local fade
+            if progress < fadeOutStart then
+                fade = smoothstep(progress / fadeOutStart)
+            else
+                fade = 1 - smoothstep((progress - fadeOutStart) / (1 - fadeOutStart))
+            end
+
+            local shrinkStart = 0.72
+            local shrink = 1
+            if progress > shrinkStart then
+                shrink = 1 - smoothstep((progress - shrinkStart) / (1 - shrinkStart))
+            end
+
+            local size = p.r * grow * shrink
+
+            love.graphics.setColor(
+                p.color[1], p.color[2], p.color[3],
+                (p.color[4] or 1) * fade
             )
 
             love.graphics.circle("fill", p.x, p.y, size)
