@@ -323,7 +323,7 @@ function Level.draw(camX, camY)
 
     -- FRAME (no inset)
     if Level.frameLayer then
-        drawBlobs(Level.frameBlobs, Level.colors.outer, -2)
+        drawBlobs(Level.frameBlobs, Level.colors.outer, -4)
     end
 
     -- SOLIDS (inset by 2px per side)
