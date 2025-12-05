@@ -144,16 +144,16 @@ local function queueSleepBubbles()
     p.sleepBubbleQueue = {}
 
     for i = 0, 2 do
-        local jitterX = (math.random() - 0.5) * 2.5
-        local jitterY = (math.random() - 0.5) * 2.5
+        local jitterX = (math.random() - 0.5) * 1.2
+        local jitterY = (math.random() - 0.5) * 1.2
 
-        local arcScale = 1 + i * 0.12
-        local vx = (16 + math.random() * 3) * 0.5 * arcScale
-        local vy = -(24 + math.random() * 4) * 0.5 * arcScale
-        local size = 5 + i * 1.3
-        local life = 1.35 + i * 0.08 + math.random() * 0.12
+        local arcScale = 1 + i * 0.1
+        local vx = (17 + math.random() * 1.2) * 0.55 * arcScale
+        local vy = -(25 + math.random() * 1.2) * 0.55 * arcScale
+        local size = 4.6 + i * 1.1
+        local life = 1.4 + i * 0.06 + math.random() * 0.05
 
-        local delay = i * 0.86 + math.random() * 0.1
+        local delay = i * 0.9
 
         table.insert(p.sleepBubbleQueue, {
             timer = delay,
