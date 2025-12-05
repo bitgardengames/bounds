@@ -159,8 +159,8 @@ local LevelData = {
                 },
 
                 monitors = {
-                    --{tx = 38, ty = 5, dir = -1},
-					{tx = 1, ty = 2},
+                    {tx = 38, ty = 5, dir = -1},
+					--{tx = 1, ty = 2},
                 },
             },
         },

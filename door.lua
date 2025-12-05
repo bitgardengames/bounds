@@ -1,10 +1,8 @@
--- door.lua
 ------------------------------------------------------------
--- Bounds Door (1.5 tiles wide, ~2 tiles tall)
--- • Double sliding panels meet with a perfect 4px seam
--- • Panels retract outward when opening
--- • Premium eased animation (Hermite smoothstep)
--- • Panel inset clean + consistent outlines
+-- Rounded-top Bounds Door
+-- • Perfect semicircle top (radius = doorWidth/2)
+-- • Clean 4px arch outline matching world construction
+-- • Sliding door panels unchanged
 ------------------------------------------------------------
 
 local Theme = require("theme")
@@ -21,13 +19,13 @@ local Door = {
 ------------------------------------------------------------
 -- CONSTANTS
 ------------------------------------------------------------
-local OUTLINE     = 4
-local FRAME       = 4
+local OUTLINE     = 4     -- global outline thickness
+local FRAME       = 4     -- side frame thickness
 local PANEL_INSET = 4
-local SEAM_HALF   = 2      -- <-- NEW: each panel stops 2px from center
+local SEAM_HALF   = 2
 
 local COLOR_FRAME = Theme.door.frame
-local COLOR_DOOR = Theme.door.doorFill
+local COLOR_DOOR  = Theme.door.doorFill
 
 ------------------------------------------------------------
 -- EASING
@@ -42,8 +40,10 @@ end
 function Door.spawn(tx, ty, tile)
     Door.w = tile * 1.5
     Door.x = tx * tile - (Door.w - tile) * 0.5
+
     Door.h = tile * 2 - 6
     Door.y = ty * tile + 4
+
     Door.t = 0
     Door.open = false
 end
@@ -64,55 +64,160 @@ function Door.update(dt)
 end
 
 ------------------------------------------------------------
+-- PERFECT SEMICIRCLE + RECT COMBINATION
+------------------------------------------------------------
+local function drawRoundedCap(x, y, w, h, inset, color)
+    -- inset shrinks the boundary to create layered outlines
+    local ox = inset
+    local oy = inset
+    local rw = w - inset * 2
+    local rh = h - inset * 2
+
+    -- Perfect semicircle radius = half the width
+    local R  = rw / 2
+    local cx = x + w / 2
+
+    -- bottom of arch shape
+    local arcBottom = y + oy + R
+
+    love.graphics.setColor(color)
+
+    ------------------------------------------------------------
+    -- TOP SEMICIRCLE
+    ------------------------------------------------------------
+    love.graphics.arc(
+        "fill",
+        cx, arcBottom,
+        R,
+        math.pi, math.pi * 2
+    )
+
+    ------------------------------------------------------------
+    -- RECT BELOW THE ARCH
+    ------------------------------------------------------------
+    local rectY = arcBottom
+    local rectH = (y + h - inset) - rectY
+
+    if rectH > 0 then
+        love.graphics.rectangle(
+            "fill",
+            x + ox,
+            rectY,
+            rw,
+            rectH
+        )
+    end
+end
+
+----------------------------------------------------------------
+-- INNER OUTLINE FILL (shadow layer + arch)
+----------------------------------------------------------------
+local function drawInnerOutline(x, y, w, h)
+    local inset = 4   -- inner rim inset (visual black rim)
+
+    local arcRadius = (w * 0.5) - inset
+    local arcCX = x + w * 0.5
+    local arcCY = y + arcRadius + 4   -- same vertical anchor as stencil
+
+    love.graphics.setColor(0,0,0,1)
+
+    ------------------------------------------------------------
+    -- TOP ARCH (matches stencil geometry)
+    ------------------------------------------------------------
+    love.graphics.arc(
+        "fill",
+        arcCX,
+        arcCY,
+        arcRadius,
+        math.pi, math.pi * 2
+    )
+
+    ------------------------------------------------------------
+    -- BODY BELOW ARCH (matches stencil start)
+    ------------------------------------------------------------
+    local rectY = arcCY
+    local rectH = (y + h) - rectY
+
+    love.graphics.rectangle(
+        "fill",
+        x + inset,
+        rectY,
+        w - inset * 2,
+        rectH
+    )
+end
+
+----------------------------------------------------------------
+-- STENCIL SHAPE — slightly inset from the inner black outline
+-- Ensures the entire black rim stays visible.
+----------------------------------------------------------------
+local function drawStencilShape(x, y, w, h)
+    -- MUST MATCH inner-outline inset exactly
+    local inset = 8
+
+    local arcRadius = (w * 0.5) - inset
+    local arcCX = x + w * 0.5
+    local arcCY = y + arcRadius + 8
+
+    -- top semicircle
+    love.graphics.arc(
+        "fill",
+        arcCX,
+        arcCY,
+        arcRadius,
+        math.pi, math.pi * 2
+    )
+
+    -- rect below arch
+    local rectY = arcCY
+    local rectH = (y + h) - rectY
+
+    love.graphics.rectangle(
+        "fill",
+        x + inset,
+        rectY,
+        w - inset * 2,
+        rectH
+    )
+end
+
+------------------------------------------------------------
 -- DRAW
 ------------------------------------------------------------
 function Door.draw()
-    local x, y   = Door.x, Door.y
-    local w, h   = Door.w, Door.h
-    local e      = ease(math.max(0, math.min(Door.t, 1)))
+    local x, y = Door.x, Door.y
+    local w, h = Door.w, Door.h
+    local e = ease(math.max(0, math.min(Door.t, 1)))
 
-    --------------------------------------------------------
-    -- 1. OUTER OUTLINE
-    --------------------------------------------------------
-    love.graphics.setColor(0,0,0,1)
-    love.graphics.rectangle("fill",
-        x - OUTLINE, y - OUTLINE,
-        w + OUTLINE*2, h + OUTLINE*2
+    ------------------------------------------------------------
+    -- 1. FRAME & ARCH (same visuals as before)
+    ------------------------------------------------------------
+    -- Outer black outline (full semicircle + body)
+    drawRoundedCap(
+        x - OUTLINE,
+        y - OUTLINE,
+        w + OUTLINE * 2,
+        h + OUTLINE * 2,
+        0,
+        {0, 0, 0, 1}
     )
 
-    --------------------------------------------------------
-    -- 2. CAVITY
-    --------------------------------------------------------
-    love.graphics.setColor(0,0,0,1)
-    love.graphics.rectangle("fill", x, y, w, h)
-
-    --------------------------------------------------------
-    -- 3. FRAME
-    --------------------------------------------------------
-    love.graphics.setColor(COLOR_FRAME)
-
-    -- top
-    love.graphics.rectangle("fill", x, y, w, FRAME)
-
-    -- left
-    love.graphics.rectangle("fill",
-        x,
-        y + FRAME,
-        FRAME,
-        h - FRAME
+    -- Frame fill (4px inset)
+    drawRoundedCap(
+        x - OUTLINE,
+        y - OUTLINE,
+        w + OUTLINE * 2,
+        h + OUTLINE * 2,
+        OUTLINE,
+        COLOR_FRAME
     )
 
-    -- right
-    love.graphics.rectangle("fill",
-        x + w - FRAME,
-        y + FRAME,
-        FRAME,
-        h - FRAME
-    )
+    -- Inner shadow / rim shape (your recessed outline)
+    drawInnerOutline(x, y, w, h)
 
-    --------------------------------------------------------
-    -- 4. PANEL GEOMETRY
-    --------------------------------------------------------
+    ------------------------------------------------------------
+    -- 2. PANEL GEOMETRY (compute BEFORE stencil / early-out cleanly)
+    ------------------------------------------------------------
     local panelTop     = y + FRAME + PANEL_INSET
     local panelHeight  = h - FRAME - PANEL_INSET
 
@@ -120,33 +225,45 @@ function Door.draw()
     local innerRight   = x + w - FRAME - PANEL_INSET
     local innerWidth   = innerRight - innerLeft
 
-    -- maximum closed width per panel
-    local maxPanelWidth = innerWidth * 0.5 - SEAM_HALF   -- <-- NEW
-
-    -- eased width (retract outward when opening)
+    local maxPanelWidth = innerWidth * 0.5 - SEAM_HALF
     local panelWidth = maxPanelWidth * (1 - e)
 
-    if panelWidth <= 0.5 then return end
+    -- If fully open: no panels, no stencil, nothing else to do
+    if panelWidth <= 0.5 then
+        return
+    end
 
-    local cx = (innerLeft + innerRight) * 0.5
+    ------------------------------------------------------------
+    -- 3. STENCIL: clip ONLY the panels to the doorway shape
+    ------------------------------------------------------------
+	love.graphics.stencil(function()
+		-- Use the exact same geometry as the visual inner outline
+		-- but WITHOUT drawing it normally.
+		drawStencilShape(x, y, w, h)
+	end, "replace", 1)
 
-    --------------------------------------------------------
+	-- Only draw where stencil > 0 (inside the inner outline)
+	love.graphics.setStencilTest("greater", 0)
+
+    ------------------------------------------------------------
+    -- 4. DOOR PANELS (same visuals, now properly clipped)
+    ------------------------------------------------------------
+
     -- LEFT PANEL
-    --------------------------------------------------------
     do
         local fillX = innerLeft
         local fillW = panelWidth
 
-        -- OUTLINE (extends outward)
-        love.graphics.setColor(0,0,0,1)
+        -- Outline
+        love.graphics.setColor(0, 0, 0, 1)
         love.graphics.rectangle("fill",
             fillX - OUTLINE,
             panelTop - OUTLINE,
             fillW + OUTLINE,
-            panelHeight + OUTLINE*2
+            panelHeight + OUTLINE * 2
         )
 
-        -- FILL
+        -- Fill
         love.graphics.setColor(COLOR_DOOR)
         love.graphics.rectangle("fill",
             fillX,
@@ -156,23 +273,21 @@ function Door.draw()
         )
     end
 
-    --------------------------------------------------------
     -- RIGHT PANEL
-    --------------------------------------------------------
     do
         local fillW = panelWidth
         local fillX = innerRight - fillW
 
-        -- OUTLINE (extends outward)
-        love.graphics.setColor(0,0,0,1)
+        -- Outline
+        love.graphics.setColor(0, 0, 0, 1)
         love.graphics.rectangle("fill",
             fillX,
             panelTop - OUTLINE,
             fillW + OUTLINE,
-            panelHeight + OUTLINE*2
+            panelHeight + OUTLINE * 2
         )
 
-        -- FILL
+        -- Fill
         love.graphics.setColor(COLOR_DOOR)
         love.graphics.rectangle("fill",
             fillX,
@@ -181,6 +296,11 @@ function Door.draw()
             panelHeight
         )
     end
+
+    ------------------------------------------------------------
+    -- 5. TURN STENCIL OFF SO THE REST OF THE WORLD IS NORMAL
+    ------------------------------------------------------------
+    love.graphics.setStencilTest()
 end
 
 return Door
