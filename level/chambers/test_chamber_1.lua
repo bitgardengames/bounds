@@ -27,6 +27,7 @@ local chamber = {
             name  = "Decor",
             kind  = "decor",
             objects = {
+				{type="sign", tx=4, ty = 5, data = {text = "CH-02"}},
                 {type="vent",       tx=12, ty=5},
                 {type="vent",       tx=27, ty=13},
                 {type="vent",       tx=5,  ty=18},
@@ -93,8 +94,6 @@ local chamber = {
                 {type="pipe_big_h",        tx=1, ty=15},
                 {type="pipe_big_h",        tx=1, ty=20},
                 {type="pipe_cap", tx=2, ty=18},
-
-                {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
             },
         },
 
