@@ -130,6 +130,10 @@ local chamber = {
         monitors = {
             {tx = 38, ty = 5, dir = -1},
         },
+
+        dropTubes = {
+            {tx = 12, ty = 3, segments = 3},
+        },
     },
 
     contextZones = {
