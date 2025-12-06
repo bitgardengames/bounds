@@ -168,7 +168,6 @@ local LevelData = {
 
 				laserEmitters = {
 					{tx = 4, ty = 6, dir = "right"},
-					{tx = 10, ty = 8, dir = "down"},
 				},
 
 				laserReceivers = {
