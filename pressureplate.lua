@@ -71,16 +71,17 @@ local PRESS_FLOOR_OFFSET = 2
 
 local function pressBounds(x, y)
     -- Gameplay coordinates treat x,y as the TILE's top-left corner. The visual
-    -- art sits lower in the tile, but the collision band should hug the floor
-    -- so the player’s feet can actually reach it. Anchor the band near the
-    -- tile surface and keep it compact so a mid-air jump doesn't accidentally
-    -- trigger the plate.
+    -- art sits lower in the tile, but the collision band should hug the floor,
+    -- not float near the tile's top. Anchor the band at the tile's floor so a
+    -- walking player or a resting cube naturally overlaps it, while keeping
+    -- the vertical span compact enough that jumping mid-air won't trigger it.
 
     local px1 = x
     local px2 = x + TILE
 
-    local bandTop    = y + PRESS_FLOOR_OFFSET - PRESS_TOLERANCE
-    local bandBottom = bandTop + PRESS_HEIGHT + PRESS_TOLERANCE * 2
+    local floorY     = y + TILE
+    local bandBottom = floorY + PRESS_FLOOR_OFFSET + PRESS_TOLERANCE
+    local bandTop    = bandBottom - PRESS_HEIGHT - PRESS_TOLERANCE * 2
 
     return px1, px2, bandTop, bandBottom
 end
