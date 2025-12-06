@@ -3,6 +3,8 @@ local chamber = {
     width  = 40,
     height = 23,
 
+	doorCriteria = {},
+
     layers = {
 
         ------------------------------------------------------
@@ -101,6 +103,7 @@ local chamber = {
                 trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
                 speed = 0.15,
                 active = false,      -- always moving
+				loop = true,
 				target = "plate_1",
             },
         },
