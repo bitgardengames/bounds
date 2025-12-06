@@ -36,7 +36,6 @@ Level.solidBlobs  = {}
 Level.gridCanvas  = nil
 Level.gridCanvas  = nil
 Level.decorCanvas = nil   -- <-- NEW
-Level.decorationsDirty = true
 
 local OUTLINE_OFFSETS = {
     {-OUTLINE_WIDTH, 0}, {OUTLINE_WIDTH, 0},
@@ -44,16 +43,6 @@ local OUTLINE_OFFSETS = {
     {-OUTLINE_WIDTH, -OUTLINE_WIDTH}, {-OUTLINE_WIDTH, OUTLINE_WIDTH},
     { OUTLINE_WIDTH, -OUTLINE_WIDTH}, { OUTLINE_WIDTH, OUTLINE_WIDTH},
 }
-
---------------------------------------------------------------
--- STATE HELPERS
---------------------------------------------------------------
-
-local function markDecorationsDirty()
-    Level.decorationsDirty = true
-end
-
-Level.markDecorationsDirty = markDecorationsDirty
 
 --------------------------------------------------------------
 -- UTILS
@@ -244,8 +233,6 @@ function Level.load(data)
     Level.solidBlobs = {}
     Level.frameBlobs = {}
 
-    Level.decorationsDirty = true
-
     for _, src in ipairs(data.layers or {}) do
         local layer = {
             name  = src.name or "Layer",
@@ -292,9 +279,6 @@ function Level.load(data)
     local gw = Level.width  * Level.tileSize
     local gh = Level.height * Level.tileSize
     Level.decorCanvas = love.graphics.newCanvas(gw, gh, {msaa = 8})
-
-    Decorations.setChangedCallback(markDecorationsDirty)
-    markDecorationsDirty()
 end
 
 --------------------------------------------------------------
@@ -329,36 +313,6 @@ local function drawBlobs(blobs, color, inset)
         ------------------------------------------------------
         love.graphics.setColor(color)
         love.graphics.draw(cv, ox, oy, 0, sx, sy)
-    end
-end
-
---------------------------------------------------------------
--- DECORATIONS CACHING
---------------------------------------------------------------
-
-local function redrawDecorationsCanvas()
-    if not Level.decorCanvas then return end
-
-    local r, g, b, a = love.graphics.getColor()
-
-    love.graphics.push()
-    love.graphics.origin()
-    love.graphics.setCanvas(Level.decorCanvas)
-    love.graphics.clear(0, 0, 0, 0)
-
-    Decorations.draw()
-
-    love.graphics.setCanvas()
-    love.graphics.pop()
-
-    love.graphics.setColor(r, g, b, a)
-
-    Level.decorationsDirty = false
-end
-
-local function ensureDecorationsReady()
-    if Level.decorationsDirty then
-        redrawDecorationsCanvas()
     end
 end
 
@@ -423,15 +377,23 @@ function Level.draw(camX, camY)
     -- DECORATIONS + SIMPLE SHADOW
     ----------------------------------------------------------------
     if Level.decorCanvas then
-        ensureDecorationsReady()
+        -- 1) Render decorations into their own canvas
+        love.graphics.setCanvas(Level.decorCanvas)
+        love.graphics.clear(0, 0, 0, 0)
 
-        -- 1) Draw shadow (offset, tinted)
+        -- NOTE: we don't touch transforms; Level.draw already applied
+        -- the camera translate before this call.
+        Decorations.draw()
+
+        love.graphics.setCanvas()
+
+        -- 2) Draw shadow (offset, tinted)
         love.graphics.setColor(0, 0, 0, 0.18)  -- shadow opacity
         local shadowOffsetX = 4
         local shadowOffsetY = 6
         love.graphics.draw(Level.decorCanvas, shadowOffsetX, shadowOffsetY)
 
-        -- 2) Draw actual decorations
+        -- 3) Draw actual decorations
         love.graphics.setColor(1, 1, 1, 1)
         love.graphics.draw(Level.decorCanvas, 0, 0)
     else
