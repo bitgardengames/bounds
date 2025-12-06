@@ -110,6 +110,15 @@ local p = {
 
     prevY = 0,
     prevX = 0,
+
+    -- Smoothed morph targets (for premium, jitter-free easing)
+    morphBottom = 0,
+    morphTop    = 0,
+    morphLeft   = 0,
+    morphRight  = 0,
+    morphVert   = 0,
+    morphHorz   = 0,
+    morphPre    = 0,
 }
 
 --------------------------------------------------------------
@@ -169,6 +178,21 @@ local function queueSleepBubbles()
     end
 end
 
+local function smoothMorphs(dt)
+    local slowRate   = 12   -- for contact squish easing
+    local springRate = 18   -- for spring-based deformation
+
+    p.morphBottom = approach(p.morphBottom, p.contactBottom, dt, slowRate)
+    p.morphTop    = approach(p.morphTop,    p.contactTop,    dt, slowRate)
+    p.morphLeft   = approach(p.morphLeft,   p.contactLeft,   dt, slowRate)
+    p.morphRight  = approach(p.morphRight,  p.contactRight,  dt, slowRate)
+
+    p.morphVert = approach(p.morphVert, p.springVert, dt, springRate)
+    p.morphHorz = approach(p.morphHorz, p.springHorz, dt, springRate)
+
+    p.morphPre = approach(p.morphPre, p.preJumpSquish, dt, springRate)
+end
+
 local function updateSleepBubbleQueue(dt)
     local queue = p.sleepBubbleQueue
     if not queue then return end
@@ -217,6 +241,8 @@ function Player.update(dt, Level)
         p.contactLeft   = approach(p.contactLeft,   0, dt, 8)
         p.contactRight  = approach(p.contactRight,  0, dt, 8)
 
+        smoothMorphs(dt)
+
         if p.respawnTimer <= 0 then
             p.x = p.spawnX
             p.y = p.spawnY
@@ -237,6 +263,14 @@ function Player.update(dt, Level)
             p.contactRight = 0
             p.onGround = false
             p.dead = false
+
+            p.morphBottom = 0
+            p.morphTop = 0
+            p.morphLeft = 0
+            p.morphRight = 0
+            p.morphVert = 0
+            p.morphHorz = 0
+            p.morphPre = 0
 
             p.pushingCube = false
             p.pushingCubeDir = 0
@@ -713,6 +747,8 @@ function Player.update(dt, Level)
         p.sleepBubbleQueue = nil
     end
 
+    smoothMorphs(dt)
+
     return p
 end
 
@@ -735,13 +771,13 @@ function Player.draw()
     local idleLean = p.sleeping and 0 or Idle.getLeanOffset()
     local lean = vxNorm * 0.10 + idleLean
 
-    local cb = p.contactBottom
-    local ct = p.contactTop
-    local cl = p.contactLeft
-    local cr = p.contactRight
+    local cb = p.morphBottom
+    local ct = p.morphTop
+    local cl = p.morphLeft
+    local cr = p.morphRight
 
-    local sv = p.springVert
-    local sh = p.springHorz
+    local sv = p.morphVert
+    local sh = p.morphHorz
 
     cb = cb + clamp(-sv,0,0.60)
     ct = ct + (breathe - 1) * 1.2
@@ -753,7 +789,7 @@ function Player.draw()
 		cb = cb + 0.18 -- sunk deeper into floor
 	end
 
-    local pre = p.preJumpSquish
+    local pre = p.morphPre
 
     if p.sleeping then
         cb = cb + 0.04 -- slight extra squish into the floor while sleeping
@@ -927,6 +963,13 @@ function Player.setSpawn(x, y)
     p.contactTop    = 0
     p.contactLeft   = 0
     p.contactRight  = 0
+    p.morphBottom = 0
+    p.morphTop    = 0
+    p.morphLeft   = 0
+    p.morphRight  = 0
+    p.morphVert   = 0
+    p.morphHorz   = 0
+    p.morphPre    = 0
 end
 
 return Player
