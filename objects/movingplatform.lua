@@ -26,10 +26,32 @@ local function smoothstep(t)
 end
 
 --------------------------------------------------------------
+-- EASING: ONLY SLOW NEAR ENDPOINTS
+--------------------------------------------------------------
+-- Platforms previously used smoothstep across the full [0,1]
+-- range, which means if you stopped mid-track and restarted,
+-- you'd jump back in at the fastest part of the curve. This
+-- helper only eases at the first/last 10% of motion so speed
+-- remains consistent elsewhere.
+local function endpointEase(t)
+    local EASE_PORTION = 0.1
+
+    if t < EASE_PORTION then
+        local localT = t / EASE_PORTION
+        return smoothstep(localT) * EASE_PORTION
+    elseif t > (1 - EASE_PORTION) then
+        local localT = (t - (1 - EASE_PORTION)) / EASE_PORTION
+        return (1 - EASE_PORTION) + smoothstep(localT) * EASE_PORTION
+    else
+        return t
+    end
+end
+
+--------------------------------------------------------------
 -- SPAWN
 --------------------------------------------------------------
 local function applyPosition(p)
-    local eased = smoothstep(p.t)
+    local eased = endpointEase(p.t)
 
     --------------------------------------------------------------
     -- NEW: Horizontal tracks shave 4px from each end
