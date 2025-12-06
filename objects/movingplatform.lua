@@ -19,7 +19,7 @@ local PLATFORM_H = 8
 local COLOR_FILL    = Theme.level.solid
 local COLOR_OUTLINE = Theme.outline
 local COLOR_FOOT    = (Theme.decorations and Theme.decorations.metal) or COLOR_FILL
-local ENDPOINT_PAUSE = 0.25
+local ENDPOINT_PAUSE = 1.5
 
 local function smoothstep(t)
     return t * t * (3 - 2 * t)

@@ -3,13 +3,6 @@ local chamber = {
     width  = 40,
     height = 23,
 
-    ----------------------------------------------------------
-    -- DOOR opens when ALL plates are down
-    ----------------------------------------------------------
-    doorCriteria = {
-        plates = { mode = "all", ids = { "plate_1" } },
-    },
-
     layers = {
 
         ------------------------------------------------------
@@ -72,7 +65,7 @@ local chamber = {
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------
-        door = { tx = 37, ty = 11 },
+        door = { tx = 37, ty = 11, open = true},
 
         ------------------------------------------------------
         -- Cube on the starting ground floor
@@ -92,6 +85,10 @@ local chamber = {
             { tx = 6, ty = 12, id = "plate_1" },
         },
 
+        dropTubes = {
+            {tx = 3, ty = 1, segments = 2},
+        },
+
         ------------------------------------------------------
         -- MOVING PLATFORMS
         -- Horizontal platform traverses the 6-tile gap
@@ -103,7 +100,8 @@ local chamber = {
                 dir = "horizontal",
                 trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
                 speed = 0.15,
-                active = true,      -- always moving
+                active = false,      -- always moving
+				target = "plate_1",
             },
         },
     },
