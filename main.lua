@@ -140,6 +140,8 @@ local function spawnObjects(chamber)
             length = saw.length,
             sineAmp = saw.sineAmp,
             sineFreq = saw.sineFreq,
+            active = saw.active,
+            target = saw.target,
         })
     end
 
