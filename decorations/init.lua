@@ -6,6 +6,7 @@ local Decorations = {}
 local registry = {}
 local list = {}
 local updatable = {}
+local onChanged = nil
 
 Decorations.list = list
 Decorations.style = Theme.decorations
@@ -25,6 +26,16 @@ end
 function Decorations.register(name, prefab)
     assert(prefab.draw, "Prefab '" .. name .. "' must include a draw function.")
     registry[name] = prefab
+end
+
+function Decorations.setChangedCallback(cb)
+    onChanged = cb
+end
+
+local function notifyChanged()
+    if onChanged then
+        onChanged()
+    end
 end
 
 function Decorations.spawn(entry, tileSize)
@@ -55,6 +66,8 @@ function Decorations.spawn(entry, tileSize)
 
     table.insert(list, inst)
 
+    notifyChanged()
+
     if prefab.update then
         updatable[#updatable + 1] = inst
     end
@@ -69,6 +82,8 @@ end
 function Decorations.clear()
     for i = #list, 1, -1 do list[i] = nil end
     for i = #updatable, 1, -1 do updatable[i] = nil end
+
+    notifyChanged()
 end
 
 function Decorations.draw()
@@ -92,10 +107,21 @@ function Decorations.update(dt)
 end
 
 function Decorations.setJunctionBoxesActive(active)
+    local changed = false
+
     for _, inst in ipairs(list) do
         if inst.type == "conduit_junctionbox" then
-            inst.data.active = not not active
+            local newActive = not not active
+
+            if inst.data.active ~= newActive then
+                inst.data.active = newActive
+                changed = true
+            end
         end
+    end
+
+    if changed then
+        notifyChanged()
     end
 end
 
