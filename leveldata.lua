@@ -114,16 +114,6 @@ local LevelData = {
 
                         -- Sign
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
-
-						-- Platform track
-						{type="platform_track_left", tx=10, ty=13},
-						{type="platform_track_h", tx=11, ty=13},
-						{type="platform_track_h", tx=12, ty=13},
-						{type="platform_track_right", tx=13, ty=13},
-
-						{type="platform_track_top", tx=20, ty=12},
-						{type="platform_track_v", tx=20, ty=13},
-						{type="platform_track_bottom", tx=20, ty=14},
                     },
                 },
 
@@ -175,25 +165,6 @@ local LevelData = {
                     {tx = 38, ty = 5, dir = -1},
 					--{tx = 1, ty = 2},
                 },
-
-				movingPlatforms = {
-					{
-						tx = 10, ty = 13,
-						dir = "horizontal",
-						trackTiles = 4,   -- instead of: length = 180
-						speed = 0.3,       -- parametric speed (0..1 per second)
-						active = true,     -- always moving
-					},
-
-					{
-						tx = 20, ty = 12,
-						dir = "vertical",
-						trackTiles = 3,   -- instead of: length = 140
-						speed = 0.3,
-						active = false,    -- waits for activation
-						target = "plate_1",
-					},
-				},
             },
 
 			contextZones = {
