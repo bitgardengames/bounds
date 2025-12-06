@@ -22,6 +22,7 @@ local Monitor = require("objects.monitor")
 local ContextZones = require("contextzones")
 local LaserEmitter = require("objects.laseremitter")
 local LaserReceiver = require("objects.laserreceiver")
+local DropTube = require("objects.droptube")
 
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
@@ -90,6 +91,7 @@ local function clearActors()
     MovingPlatform.clear()
     LaserEmitter.clear()
     LaserReceiver.clear()
+    DropTube.clear()
 end
 
 local function spawnDecorations(chamber)
@@ -162,6 +164,15 @@ local function spawnObjects(chamber)
     LaserReceiver.clear()
     for index, receiver in ipairs(objects.laserReceivers or {}) do
         LaserReceiver.spawn(receiver.tx, receiver.ty, receiver.dir, receiver.id)
+    end
+
+    DropTube.clear()
+    DropTube.tileSize = TILE_SIZE
+    for index, tube in ipairs(objects.dropTubes or {}) do
+        DropTube.spawn(tube.tx, tube.ty, {
+            id       = tube.id or string.format("droptube_%d", index),
+            segments = tube.segments or tube.length,
+        })
     end
 
     if objects.movingPlatforms then
@@ -253,6 +264,7 @@ function love.update(dt)
     MovingPlatform.update(dt)
     LaserEmitter.update(dt)
     LaserReceiver.update(dt, LaserEmitter.list)
+    DropTube.update(dt)
     Particles.update(dt)
     Decorations.update(dt)
 
@@ -337,6 +349,7 @@ function love.draw()
     Monitor.draw()
     LaserEmitter.draw()
     LaserReceiver.draw()
+    DropTube.draw()
     Saw.draw()
     Door.draw()
     Plate.draw()
