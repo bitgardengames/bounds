@@ -34,6 +34,8 @@ Level.solidGrid   = nil     -- Combined tile grid (Frame + Solids)
 Level.frameBlobs  = {}
 Level.solidBlobs  = {}
 Level.gridCanvas  = nil
+Level.gridCanvas  = nil
+Level.decorCanvas = nil   -- <-- NEW
 
 local OUTLINE_OFFSETS = {
     {-OUTLINE_WIDTH, 0}, {OUTLINE_WIDTH, 0},
@@ -260,6 +262,11 @@ function Level.load(data)
     end
 
     Level.gridCanvas = buildGridCanvas(Level.width, Level.height, Level.tileSize)
+
+    -- Decorations canvas (same size as play area)
+    local gw = Level.width  * Level.tileSize
+    local gh = Level.height * Level.tileSize
+    Level.decorCanvas = love.graphics.newCanvas(gw, gh, {msaa = 8})
 end
 
 --------------------------------------------------------------
@@ -354,7 +361,33 @@ function Level.draw(camX, camY)
         love.graphics.draw(Level.gridCanvas, 0, 0)
     end
 
-    Decorations.draw()
+    ----------------------------------------------------------------
+    -- DECORATIONS + SIMPLE SHADOW
+    ----------------------------------------------------------------
+    if Level.decorCanvas then
+        -- 1) Render decorations into their own canvas
+        love.graphics.setCanvas(Level.decorCanvas)
+        love.graphics.clear(0, 0, 0, 0)
+
+        -- NOTE: we don't touch transforms; Level.draw already applied
+        -- the camera translate before this call.
+        Decorations.draw()
+
+        love.graphics.setCanvas()
+
+        -- 2) Draw shadow (offset, tinted)
+        love.graphics.setColor(0, 0, 0, 0.18)  -- shadow opacity
+        local shadowOffsetX = 4
+        local shadowOffsetY = 6
+        love.graphics.draw(Level.decorCanvas, shadowOffsetX, shadowOffsetY)
+
+        -- 3) Draw actual decorations
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(Level.decorCanvas, 0, 0)
+    else
+        -- Fallback: no canvas available, just draw normally
+        Decorations.draw()
+    end
 
     -- SOLIDS (inset by 2px per side)
     drawBlobs(Level.solidBlobs, Level.colors.solid, 2)

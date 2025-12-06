@@ -4,7 +4,7 @@ local ContextZones = {
     active = nil,
 }
 
-local DEBUG_CONTEXT = true   -- toggle visibility
+local DEBUG_CONTEXT = false   -- toggle visibility
 local debugFont = love.graphics.newFont(12)
 
 -- TILE SIZE is injected at chamber load time

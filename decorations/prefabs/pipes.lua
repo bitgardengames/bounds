@@ -754,4 +754,80 @@ return function(Decorations)
 			)
 		end
 	})
+
+    Decorations.register("pipe_pump", {
+        w = 2,
+        h = 1,
+
+        init = function(inst)
+            inst.data.t = 0
+        end,
+
+        update = function(inst, dt)
+            inst.data.t = inst.data.t + dt
+        end,
+
+        draw = function(x, y, w, h, inst)
+            local t = inst.data.t
+
+            -- Frame
+            love.graphics.setColor(S.outline)
+            love.graphics.rectangle("fill", x, y, w, h, 6, 6)
+
+            love.graphics.setColor(S.metal)
+            love.graphics.rectangle("fill", x+4, y+4, w-8, h-8, 5, 5)
+
+            -- Pistons
+            local cx1 = x + w*0.33
+            local cx2 = x + w*0.66
+            local cy  = y + h*0.50
+
+            local amp = 6
+            local p1 = math.sin(t*3)      * amp
+            local p2 = math.sin(t*3+math.pi) * amp
+
+            love.graphics.setColor(S.pipe)
+            love.graphics.circle("fill", cx1, cy + p1, 10)
+            love.graphics.circle("fill", cx2, cy + p2, 10)
+
+            -- Caps
+            love.graphics.setColor(S.outline)
+            love.graphics.circle("line", cx1, cy + p1, 10)
+            love.graphics.circle("line", cx2, cy + p2, 10)
+        end,
+    })
+
+    Decorations.register("pipe_cap", {
+        w = 1,
+        h = 1,
+
+        draw = function(x, y, w, h)
+            -- original base radius (fit within 48×48)
+            local baseR = w * 0.45        -- ≈ 21.6px
+
+            -- new reduced radius (subtract 7px)
+            local r = baseR - 10
+
+            local cx = x + w/2
+            local cy = y + h/2
+
+            -- Outer ring (outline)
+            love.graphics.setColor(S.outline)
+            love.graphics.circle("fill", cx, cy, r + 4)
+
+            -- Pipe fill
+            love.graphics.setColor(S.pipe)
+            love.graphics.circle("fill", cx, cy, r)
+
+            -- Bolt ring (auto adjusted inward)
+            love.graphics.setColor(S.outline)
+            local bolts = 6
+            for i = 1, bolts do
+                local ang = (i / bolts) * math.pi * 2
+                local bx = cx + math.cos(ang) * (r - 4)
+                local by = cy + math.sin(ang) * (r - 4)
+                love.graphics.circle("fill", bx, by, 2.3)
+            end
+        end
+    })
 end
