@@ -28,7 +28,7 @@ local OUTLINE = 4
 
 local COLOR_FILL = Theme.cube.fill
 local COLOR_OUTLINE = Theme.cube.outline
-local COLLISION_FOOT_OFFSET = 0
+local RESTING_FOOT_OFFSET = 2
 local PLATFORM_SINK = 2
 
 --------------------------------------------------------------
@@ -89,8 +89,8 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     -- VERTICAL COLLISION
     ----------------------------------------------------------
     if c.vy > 0 then
-        -- falling downward, probe just BELOW the cube
-        local footY = c.y + h - COLLISION_FOOT_OFFSET
+        -- falling downward, probe just BELOW the cube (adjusted for resting offset)
+        local footY = c.y + h - RESTING_FOOT_OFFSET
         local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
         local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
 
@@ -100,7 +100,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
 
             -- snap cube bottom to the top of the tile
             local tileY = math.floor(footY / TILE) * TILE
-            c.y = tileY - h
+            c.y = tileY - h + RESTING_FOOT_OFFSET
         end
 
     elseif c.vy < 0 then
@@ -119,7 +119,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     -- SUPPORT PROBE (keeps cube grounded while resting)
     ----------------------------------------------------------
     if c.vy == 0 then
-        local footY = c.y + h - COLLISION_FOOT_OFFSET
+        local footY = c.y + h - RESTING_FOOT_OFFSET
         local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
         local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
 
@@ -134,7 +134,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     if c.vx > 0 then
         local rightX = c.x + w
         local hitT = tileAtPixel(rightX + 1, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(rightX + 1, c.y + h - 2 - COLLISION_FOOT_OFFSET, TILE, grid, width, height)
+        local hitB = tileAtPixel(rightX + 1, c.y + h - 2 - RESTING_FOOT_OFFSET, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -144,7 +144,7 @@ local function resolveTileCollision(c, TILE, grid, width, height)
     elseif c.vx < 0 then
         local leftX = c.x
         local hitT = tileAtPixel(leftX, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(leftX, c.y + h - 2 - COLLISION_FOOT_OFFSET, TILE, grid, width, height)
+        local hitB = tileAtPixel(leftX, c.y + h - 2 - RESTING_FOOT_OFFSET, TILE, grid, width, height)
 
         if hitT or hitB then
             c.vx = 0
@@ -158,7 +158,7 @@ local function resolvePlatformCollision(c)
 
     for _, platform in ipairs(MovingPlatform.list) do
         local cx1, cy1 = c.x, c.y
-        local cx2, cy2 = c.x + c.w, c.y + c.h
+        local cx2, cy2 = c.x + c.w, c.y + c.h - RESTING_FOOT_OFFSET
 
         local px1, py1 = platform.x, platform.y
         local px2, py2 = platform.x + platform.w, platform.y + platform.h
@@ -168,12 +168,13 @@ local function resolvePlatformCollision(c)
         local alignedHorizontally = overlapX > -margin
 
         local prevY = c.prevY or c.y
-        local fromAbove = (prevY + c.h) <= py1 + margin and c.vy >= 0
+        local prevFoot = (prevY + c.h - RESTING_FOOT_OFFSET)
+        local fromAbove = prevFoot <= py1 + margin and c.vy >= 0
         local fromBelow = prevY >= py2 - margin and c.vy <= 0
 
         if overlapX > 0 and overlapY > 0 then
-            if fromAbove or (overlapY <= overlapX and (c.y + c.h) <= py1 + overlapY) then
-                c.y = py1 - c.h + PLATFORM_SINK
+            if fromAbove or (overlapY <= overlapX and (c.y + c.h - RESTING_FOOT_OFFSET) <= py1 + overlapY) then
+                c.y = py1 - c.h + PLATFORM_SINK + RESTING_FOOT_OFFSET
                 c.vy = math.min(c.vy, platform.vy or 0)
                 c.grounded = true
                 c.x = c.x + (platform.dx or 0)
@@ -193,7 +194,7 @@ local function resolvePlatformCollision(c)
             local gap = py1 - cy2 + PLATFORM_SINK
 
             if gap >= -(margin + PLATFORM_SINK) and gap <= margin + 2 and c.vy >= 0 then
-                c.y = py1 - c.h + PLATFORM_SINK
+                c.y = py1 - c.h + PLATFORM_SINK + RESTING_FOOT_OFFSET
                 c.vy = math.min(c.vy, platform.vy or 0)
                 c.grounded = true
                 c.x = c.x + (platform.dx or 0)
