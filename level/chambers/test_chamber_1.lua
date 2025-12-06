@@ -132,14 +132,6 @@ local chamber = {
         monitors = {
             {tx = 38, ty = 5, dir = -1},
         },
-
-        laserEmitters = {
-            {tx = 4, ty = 6, dir = "right"},
-        },
-
-        laserReceivers = {
-            {tx = 20, ty = 6, dir = "left", id = "receiver_1"},
-        },
     },
 
     contextZones = {
