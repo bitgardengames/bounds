@@ -5,6 +5,7 @@ local Decorations = {}
 
 local registry = {}
 local list = {}
+local updatable = {}
 
 Decorations.list = list
 Decorations.style = Theme.decorations
@@ -53,6 +54,10 @@ function Decorations.spawn(entry, tileSize)
     end
 
     table.insert(list, inst)
+
+    if prefab.update then
+        updatable[#updatable + 1] = inst
+    end
 end
 
 function Decorations.spawnLayer(layer, tileSize)
@@ -62,9 +67,8 @@ function Decorations.spawnLayer(layer, tileSize)
 end
 
 function Decorations.clear()
-    for i = #list, 1, -1 do
-        list[i] = nil
-    end
+    for i = #list, 1, -1 do list[i] = nil end
+    for i = #updatable, 1, -1 do updatable[i] = nil end
 end
 
 function Decorations.draw()
@@ -77,7 +81,9 @@ function Decorations.draw()
 end
 
 function Decorations.update(dt)
-    for _, inst in ipairs(list) do
+    if #updatable == 0 then return end
+
+    for _, inst in ipairs(updatable) do
         local prefab = registry[inst.type]
         if prefab and prefab.update then
             prefab.update(inst, dt)

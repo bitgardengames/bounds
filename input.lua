@@ -140,8 +140,8 @@ end
 --------------------------------------------------------------
 
 function Input.postUpdate()
-    Input.pressed  = {}
-    Input.released = {}
+    for key in pairs(Input.pressed) do Input.pressed[key] = nil end
+    for key in pairs(Input.released) do Input.released[key] = nil end
 end
 
 --------------------------------------------------------------
