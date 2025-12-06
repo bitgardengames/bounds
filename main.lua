@@ -150,11 +150,10 @@ local function spawnObjects(chamber)
 				mp.ty * TILE_SIZE,
 				{
 					dir         = mp.dir or "horizontal",
-					length      = mp.length or 160,
-					speed       = mp.speed or 60,
+					trackTiles  = mp.trackTiles or 2,
+					speed       = mp.speed or 0.3,
 					active      = mp.active,       -- true OR false
 					target      = mp.target,       -- string ID for plates
-					phaseOffset = mp.phaseOffset,
 				}
 			)
 		end

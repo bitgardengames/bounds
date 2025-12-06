@@ -159,7 +159,7 @@ local LevelData = {
                 door        = {tx = 36, ty = 20},
 
                 plates = {
-                    {tx = 27, ty = 21},
+                    {tx = 27, ty = 21, id = "plate_1"},
                 },
 
                 cubes = {
@@ -175,18 +175,18 @@ local LevelData = {
 					{
 						tx = 10, ty = 15,
 						dir = "horizontal",
-						length = 180,
-						speed = 70,
-						active = true,        -- moves constantly
+						trackTiles = 4,   -- instead of: length = 180
+						speed = 0.3,       -- parametric speed (0..1 per second)
+						active = true,     -- always moving
 					},
 
 					{
 						tx = 20, ty = 12,
 						dir = "vertical",
-						length = 140,
-						speed = 60,
-						active = false,       -- waits for plate
-						target = "plate_1",   -- ties into pressure plate ID
+						trackTiles = 3,   -- instead of: length = 140
+						speed = 0.3,
+						active = false,    -- waits for activation
+						target = "plate_1",
 					},
 				},
             },

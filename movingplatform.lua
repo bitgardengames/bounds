@@ -1,12 +1,8 @@
 --------------------------------------------------------------
--- MOVING PLATFORM — mockup module for Bounds
--- • Small ½-tile platform
--- • Moves along a linear track (horizontal or vertical)
--- • Either always moving OR movement is state-gated by activator
--- • You decorate the rails using your Decorations layer
+-- MOVING PLATFORM — now top-aligned + padded horizontal track
 --------------------------------------------------------------
 
-local level = require("level")
+local Level = require("level")
 local Theme = require("theme")
 
 local MovingPlatform = { list = {} }
@@ -14,69 +10,80 @@ local MovingPlatform = { list = {} }
 --------------------------------------------------------------
 -- CONFIG
 --------------------------------------------------------------
-
 local OUTLINE = 4
-local TILE = 48 -- updated at load
-local PLATFORM_W = TILE
-local PLATFORM_H = 12
+local TILE    = 48
+
+local PLATFORM_H = 8
 
 local COLOR_FILL    = Theme.level.solid
-local COLOR_FOOT    = Theme.decorations.metal
 local COLOR_OUTLINE = Theme.outline
+local COLOR_FOOT    = (Theme.decorations and Theme.decorations.metal) or COLOR_FILL
+
+local function smoothstep(t)
+    return t * t * (3 - 2 * t)
+end
 
 --------------------------------------------------------------
 -- SPAWN
 --------------------------------------------------------------
--- opts:
---   dir = "horizontal" or "vertical"
---   length = travel distance in pixels
---   speed = movement speed (pixels/sec)
---   active = true/false (if false, waits for activation)
---   target = string or object reference (pressure plate ID)
---   phaseOffset = optional start offset (for constant movers)
---
--- Example:
--- MovingPlatform.spawn(tx*TILE, ty*TILE, {
---     dir = "horizontal",
---     length = 160,
---     speed = 70,
---     active = false,
---     target = "plate_1",
--- })
---------------------------------------------------------------
-
 function MovingPlatform.spawn(x, y, opts)
     opts = opts or {}
+    TILE = Level.tileSize or TILE
+
+    local w = TILE
+    local h = PLATFORM_H
+
+    ----------------------------------------------------------
+    -- TRACK LENGTH FROM TILES
+    ----------------------------------------------------------
+    local trackTiles = opts.trackTiles
+    local travelPx
+
+    if trackTiles and trackTiles > 0 then
+        travelPx = (trackTiles - 1) * TILE
+    else
+        travelPx = opts.length or (2 * TILE)
+    end
+
+    ----------------------------------------------------------
+    -- PLATFORM IS NOW TOP-ALIGNED IN TILE SPACE
+    ----------------------------------------------------------
+    -- Instead of centering: anchorCY = y + TILE/2
+    -- We position the platform so its top touches top of tile.
+    -- tile top Y = y
+    -- platform height = h
+    -- so center is: y + TILE - h/2
+    ----------------------------------------------------------
+    local anchorCX = x + TILE / 2
+    local anchorCY = y + h
 
     table.insert(MovingPlatform.list, {
-        anchorX = x,
-        anchorY = y,
-        x = x,
-        y = y,
+        anchorCX = anchorCX,
+        anchorCY = anchorCY,
 
-        dir = opts.dir or "horizontal",
-        length = opts.length or 120,
-        speed = opts.speed or 60,
-        progress = opts.phaseOffset or 0,
+        cx = anchorCX,
+        cy = anchorCY,
+
+        x = anchorCX - w / 2,
+        y = anchorCY - h / 2,
+        w = w,
+        h = h,
+
+        dir       = opts.dir or "horizontal",
+        t         = 0,
         direction = 1,
+        speed     = opts.speed or 0.4,
+        travel    = travelPx,
 
-        always = (opts.active ~= false and opts.target == nil),
+        always  = (opts.active ~= false and opts.target == nil),
         waiting = (opts.active == false),
-        target = opts.target,
-
-        w = PLATFORM_W,
-        h = PLATFORM_H,
+        target  = opts.target,
     })
 end
 
-
 --------------------------------------------------------------
--- ACTIVATION HOOK
+-- ACTIVATION
 --------------------------------------------------------------
--- Call externally when a pressure plate toggles.
--- Example: MovingPlatform.activate("plate_1")
---------------------------------------------------------------
-
 function MovingPlatform.activate(id)
     for _, p in ipairs(MovingPlatform.list) do
         if p.target == id then
@@ -93,55 +100,68 @@ function MovingPlatform.deactivate(id)
     end
 end
 
-
 --------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
-
 function MovingPlatform.update(dt)
-    TILE = level.tileSize or TILE
+    TILE = Level.tileSize or TILE
 
     for _, p in ipairs(MovingPlatform.list) do
-
-        -- If it requires activation but hasn't been activated yet
         if p.target and p.waiting then
             goto continue
         end
 
-        -- If always moving or activated, advance the progress
-        p.progress = p.progress + p.speed * dt * p.direction
+        ------------------------------------------------------
+        -- Parametric motion t ∈ [0,1]
+        ------------------------------------------------------
+        p.t = p.t + p.speed * dt * p.direction
 
-        -- Bounce at edges
-        if p.progress > p.length then
-            p.progress = p.length
+        if p.t > 1 then
+            p.t = 1
             p.direction = -1
-        elseif p.progress < 0 then
-            p.progress = 0
+        elseif p.t < 0 then
+            p.t = 0
             p.direction = 1
         end
 
-        -- Apply track direction
+        local eased = smoothstep(p.t)
+
+        ------------------------------------------------------
+        -- NEW: Horizontal tracks shave 4px from each end
+        ------------------------------------------------------
+        local offset
         if p.dir == "horizontal" then
-            p.x = p.anchorX + p.progress
-            p.y = p.anchorY
+            local effective = p.travel - 8   -- shorten total by 8px
+            if effective < 0 then effective = 0 end
+            offset = eased * effective
         else
-            p.x = p.anchorX
-            p.y = p.anchorY + p.progress
+            offset = eased * p.travel
         end
+
+        ------------------------------------------------------
+        -- Apply to center
+        ------------------------------------------------------
+        if p.dir == "horizontal" then
+            p.cx = p.anchorCX + offset + 4   -- shift start by 4px
+            p.cy = p.anchorCY
+        else
+            p.cx = p.anchorCX
+            p.cy = p.anchorCY + offset
+        end
+
+        p.x = p.cx - p.w / 2
+        p.y = p.cy - p.h / 2
 
         ::continue::
     end
 end
 
-
 --------------------------------------------------------------
 -- DRAW
 --------------------------------------------------------------
-
 function MovingPlatform.draw()
     for _, p in ipairs(MovingPlatform.list) do
-
-        -- OUTLINE
+        -- BODY OUTLINE
         love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.rectangle(
             "fill",
@@ -152,7 +172,7 @@ function MovingPlatform.draw()
             6, 6
         )
 
-        -- FILL
+        -- BODY FILL
         love.graphics.setColor(COLOR_FILL)
         love.graphics.rectangle(
             "fill",
@@ -163,17 +183,14 @@ function MovingPlatform.draw()
             6, 6
         )
 
-        ------------------------------------------------------------------
-        -- NEW: Small 12px-wide bottom block with 4px outline
-        ------------------------------------------------------------------
-        local footW = 18
+        -- FOOT
+        local footW = 12
         local footH = 4
-        local footRadius = 3
+        local r     = 3
 
-        local footX = p.x + p.w/2 - footW/2
-        local footY = p.y + p.h + 4 -- sits directly under the platform
+        local footX = p.cx - footW / 2
+        local footY = p.y + p.h + 4
 
-        -- Outline
         love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.rectangle(
             "fill",
@@ -181,10 +198,9 @@ function MovingPlatform.draw()
             footY - OUTLINE,
             footW + OUTLINE * 2,
             footH + OUTLINE * 2,
-            footRadius, footRadius
+            r, r
         )
 
-        -- Fill
         love.graphics.setColor(COLOR_FOOT)
         love.graphics.rectangle(
             "fill",
@@ -192,11 +208,10 @@ function MovingPlatform.draw()
             footY,
             footW,
             footH,
-            footRadius, footRadius
+            r, r
         )
     end
 end
-
 
 --------------------------------------------------------------
 -- CLEAR
