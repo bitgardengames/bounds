@@ -20,6 +20,8 @@ local MovingPlatform = require("movingplatform")
 local Decorations = require("decorations")
 local Monitor = require("monitor")
 local ContextZones = require("contextzones")
+local LaserEmitter = require("laseremitter")
+local LaserReceiver = require("laserreceiver")
 
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
@@ -85,7 +87,9 @@ local function clearActors()
     Plate.clear()
     Monitor.clear()
     Exit.clear()
-	MovingPlatform.clear()
+    MovingPlatform.clear()
+    LaserEmitter.clear()
+    LaserReceiver.clear()
 end
 
 local function spawnDecorations(chamber)
@@ -150,30 +154,40 @@ local function spawnObjects(chamber)
         })
     end
 
-	if objects.movingPlatforms then
-		for _, mp in ipairs(objects.movingPlatforms) do
-			MovingPlatform.spawn(
-				mp.tx * TILE_SIZE,
-				mp.ty * TILE_SIZE,
-				{
-					dir         = mp.dir or "horizontal",
-					trackTiles  = mp.trackTiles or 2,
-					speed       = mp.speed or 0.3,
-					active      = mp.active,       -- true OR false
-					target      = mp.target,       -- string ID for plates
-				}
-			)
-		end
-	end
+    LaserEmitter.clear()
+    for _, emitter in ipairs(objects.laserEmitters or {}) do
+        LaserEmitter.spawn(emitter.tx, emitter.ty, emitter.dir)
+    end
 
-	Monitor.clear()
-        Monitor.tileSize = TILE_SIZE
+    LaserReceiver.clear()
+    for index, receiver in ipairs(objects.laserReceivers or {}) do
+        LaserReceiver.spawn(receiver.tx, receiver.ty, receiver.dir, receiver.id)
+    end
 
-        for index, monitor in ipairs(objects.monitors or {}) do
-                Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1, {
-                        id = monitor.id or string.format("monitor_%d", index),
-                })
+    if objects.movingPlatforms then
+        for _, mp in ipairs(objects.movingPlatforms) do
+            MovingPlatform.spawn(
+                mp.tx * TILE_SIZE,
+                mp.ty * TILE_SIZE,
+                {
+                    dir         = mp.dir or "horizontal",
+                    trackTiles  = mp.trackTiles or 2,
+                    speed       = mp.speed or 0.3,
+                    active      = mp.active,       -- true OR false
+                    target      = mp.target,       -- string ID for plates
+                }
+            )
         end
+    end
+
+    Monitor.clear()
+    Monitor.tileSize = TILE_SIZE
+
+    for index, monitor in ipairs(objects.monitors or {}) do
+        Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1, {
+            id = monitor.id or string.format("monitor_%d", index),
+        })
+    end
 end
 
 local function spawnContextZones(chamber)
@@ -237,6 +251,8 @@ function love.update(dt)
     Door.update(dt)
     Monitor.update(dt)
     MovingPlatform.update(dt)
+    LaserEmitter.update(dt)
+    LaserReceiver.update(dt, LaserEmitter.list)
     Particles.update(dt)
     Decorations.update(dt)
 
@@ -319,6 +335,8 @@ function love.draw()
     local camX, camY = 0, 0
     Level.draw(camX, camY)
     Monitor.draw()
+    LaserEmitter.draw()
+    LaserReceiver.draw()
     Saw.draw()
     Door.draw()
     Plate.draw()
