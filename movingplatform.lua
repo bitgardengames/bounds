@@ -4,6 +4,7 @@
 
 local Level = require("level")
 local Theme = require("theme")
+local Plate = require("pressureplate")
 
 local MovingPlatform = { list = {} }
 
@@ -26,6 +27,31 @@ end
 --------------------------------------------------------------
 -- SPAWN
 --------------------------------------------------------------
+local function applyPosition(p)
+    local eased = smoothstep(p.t)
+
+    --------------------------------------------------------------
+    -- NEW: Horizontal tracks shave 4px from each end
+    --------------------------------------------------------------
+    local offset
+    if p.dir == "horizontal" then
+        local effective = p.travel - 8   -- shorten total by 8px
+        if effective < 0 then effective = 0 end
+        offset = eased * effective
+
+        p.cx = p.anchorCX + offset + 4   -- shift start by 4px
+        p.cy = p.anchorCY
+    else
+        offset = eased * p.travel
+
+        p.cx = p.anchorCX
+        p.cy = p.anchorCY + offset
+    end
+
+    p.x = p.cx - p.w / 2
+    p.y = p.cy - p.h / 2
+end
+
 function MovingPlatform.spawn(x, y, opts)
     opts = opts or {}
     TILE = Level.tileSize or TILE
@@ -57,7 +83,9 @@ function MovingPlatform.spawn(x, y, opts)
     local anchorCX = x + TILE / 2
     local anchorCY = y + h
 
-    table.insert(MovingPlatform.list, {
+    local pressToLift = (opts.active == false and opts.target ~= nil)
+
+    local platform = {
         anchorCX = anchorCX,
         anchorCY = anchorCY,
 
@@ -70,15 +98,20 @@ function MovingPlatform.spawn(x, y, opts)
         h = h,
 
         dir       = opts.dir or "horizontal",
-        t         = 0,
-        direction = 1,
+        t         = pressToLift and 1 or 0,
+        direction = pressToLift and -1 or 1,
         speed     = opts.speed or 0.4,
         travel    = travelPx,
 
         always  = (opts.active ~= false and opts.target == nil),
-        waiting = (opts.active == false),
+        waiting = (not pressToLift) and (opts.active == false),
         target  = opts.target,
-    })
+        pressToLift = pressToLift,
+    }
+
+    applyPosition(platform)
+
+    table.insert(MovingPlatform.list, platform)
 end
 
 --------------------------------------------------------------
@@ -107,50 +140,44 @@ function MovingPlatform.update(dt)
     TILE = Level.tileSize or TILE
 
     for _, p in ipairs(MovingPlatform.list) do
-        if p.target and p.waiting then
+        local targetT
+        if p.pressToLift then
+            local isPressed = Plate.isDown(p.target)
+            targetT = isPressed and 0 or 1
+
+            if targetT > p.t then
+                p.direction = 1
+            elseif targetT < p.t then
+                p.direction = -1
+            else
+                p.direction = 0
+            end
+        elseif p.target and p.waiting then
             goto continue
         end
 
         ------------------------------------------------------
         -- Parametric motion t ∈ [0,1]
         ------------------------------------------------------
-        p.t = p.t + p.speed * dt * p.direction
+        if p.direction ~= 0 then
+            p.t = p.t + p.speed * dt * p.direction
 
-        if p.t > 1 then
-            p.t = 1
-            p.direction = -1
-        elseif p.t < 0 then
-            p.t = 0
-            p.direction = 1
+            if targetT then
+                if p.direction > 0 and p.t > targetT then
+                    p.t = targetT
+                elseif p.direction < 0 and p.t < targetT then
+                    p.t = targetT
+                end
+            elseif p.t > 1 then
+                p.t = 1
+                p.direction = -1
+            elseif p.t < 0 then
+                p.t = 0
+                p.direction = 1
+            end
         end
 
-        local eased = smoothstep(p.t)
-
-        ------------------------------------------------------
-        -- NEW: Horizontal tracks shave 4px from each end
-        ------------------------------------------------------
-        local offset
-        if p.dir == "horizontal" then
-            local effective = p.travel - 8   -- shorten total by 8px
-            if effective < 0 then effective = 0 end
-            offset = eased * effective
-        else
-            offset = eased * p.travel
-        end
-
-        ------------------------------------------------------
-        -- Apply to center
-        ------------------------------------------------------
-        if p.dir == "horizontal" then
-            p.cx = p.anchorCX + offset + 4   -- shift start by 4px
-            p.cy = p.anchorCY
-        else
-            p.cx = p.anchorCX
-            p.cy = p.anchorCY + offset
-        end
-
-        p.x = p.cx - p.w / 2
-        p.y = p.cy - p.h / 2
+        applyPosition(p)
 
         ::continue::
     end
