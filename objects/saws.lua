@@ -5,7 +5,7 @@
 
 local Theme = require("theme")
 local Saw = { list = {} }
-local Player = require("player")
+local Player = require("player.player")
 local Plate = require("objects.pressureplate")
 
 --------------------------------------------------------------

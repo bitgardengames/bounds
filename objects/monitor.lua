@@ -4,7 +4,7 @@
 -- Now supports left/right mounting via dir = 1 or -1
 ------------------------------------------------------------
 
-local Player = require("player")  -- direct access to player
+local Player = require("player.player")  -- direct access to player
 local Theme = require("theme")
 
 local Monitor = {

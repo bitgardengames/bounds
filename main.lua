@@ -4,8 +4,8 @@
 
 local Level = require("level")
 local LevelData = require("leveldata")
-local Player = require("player")
 local Particles = require("particles")
+local Player = require("player.player")
 local Blink = require("player.blink")
 local Idle = require("player.idle")
 local Camera = require("camera")
