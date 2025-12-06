@@ -5,7 +5,6 @@ local chamber = {
 
     doorCriteria = {
         plates = { mode = "all", ids = { "plate_1" } },
-        lasers = { mode = "all", ids = { "receiver_1" } },
     },
 
     layers = {
