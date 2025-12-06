@@ -4,7 +4,7 @@
 
 local Level = require("level")
 local Theme = require("theme")
-local Plate = require("pressureplate")
+local Plate = require("objects.pressureplate")
 
 local MovingPlatform = { list = {} }
 

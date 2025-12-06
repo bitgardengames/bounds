@@ -1,4 +1,4 @@
-local Plate = require("pressureplate")
+local Plate = require("objects.pressureplate")
 local Decorations = require("decorations")
 
 local Chamber = {
