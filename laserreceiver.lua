@@ -64,7 +64,7 @@ end
 --------------------------------------------------------------
 -- HIT TEST — does the beam intersect the receiver face?
 --------------------------------------------------------------
-local function hitTest(inst, lx, ly)
+function LaserReceiver.hitTest(inst, lx, ly)
     -- lx,ly = laser hit pixel from emitter
     -- Each receiver checks if lx,ly enters its "sensor zone"
 
@@ -110,7 +110,7 @@ function LaserReceiver.update(dt, emitters)
     for _, em in ipairs(emitters) do
         if em.active then
             for _, inst in ipairs(LaserReceiver.list) do
-                if hitTest(inst, em.hitX, em.hitY) then
+                if LaserReceiver.hitTest(inst, em.hitX, em.hitY) then
                     inst.active = true
                 end
             end
