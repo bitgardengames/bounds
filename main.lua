@@ -209,7 +209,7 @@ function loadChamber(index)
     Level.load(chamber)
     TILE_SIZE = Level.tileSize or TILE_SIZE
 
-    Chamber.reset(index, chamberCount)
+    Chamber.reset(index, chamberCount, chamber.doorCriteria, chamber.objects)
     clearActors()
     spawnDecorations(chamber)
     spawnObjects(chamber)

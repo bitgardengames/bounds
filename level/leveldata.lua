@@ -10,6 +10,11 @@ local LevelData = {
             width  = 40,
             height = 23,
 
+            doorCriteria = {
+                plates = { mode = "all", ids = { "plate_1" } },
+                lasers = { mode = "all", ids = { "receiver_1" } },
+            },
+
             layers = {
 
                 --------------------------------------------------------------
@@ -188,6 +193,10 @@ local LevelData = {
             name   = "Test Chamber 2",
             width  = 40,
             height = 23,
+
+            doorCriteria = {
+                plates = { mode = "all" },
+            },
 
             layers = {
 
