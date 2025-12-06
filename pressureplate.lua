@@ -4,7 +4,7 @@
 
 local Theme = require("theme")
 
-local Plate = {}
+local Plate = { list = {} }
 
 --------------------------------------------------------------
 -- CONSTANTS
@@ -25,40 +25,66 @@ local BASE_OFFSET = 4
 local BASE_UP     = 3
 local BUTTON_PEEK = 4
 
---------------------------------------------------------------
--- INTERNAL STATE
---------------------------------------------------------------
+local function resetPlateState()
+    return {
+        id = nil,
+        x = 0,
+        y = 0,
+        active  = false,
+        pressed = false,
+        t       = 0,
+    }
+end
 
-Plate.x = 0
-Plate.y = 0
-Plate.active  = false
-Plate.pressed = false
-Plate.t       = 0
 
---------------------------------------------------------------
--- SPAWN
---------------------------------------------------------------
+function Plate.spawn(x, y, opts)
+    opts = opts or {}
 
-function Plate.spawn(x, y)
-    Plate.x = x
-    Plate.y = y
-    Plate.active  = true
-    Plate.pressed = false
-    Plate.t       = 0
+    local plate = resetPlateState()
+    plate.id = opts.id
+    plate.x = x
+    plate.y = y
+    plate.active = true
+
+    table.insert(Plate.list, plate)
 end
 
 function Plate.clear()
-    Plate.active = false
-    Plate.pressed = false
-    Plate.t = 0
+    Plate.list = {}
 end
 
---------------------------------------------------------------
--- QUERY
---------------------------------------------------------------
 
-function Plate.isDown()
-    return Plate.pressed
+local function findPlate(id)
+    for _, p in ipairs(Plate.list) do
+        if p.id == id then
+            return p
+        end
+    end
+end
+
+function Plate.isDown(id)
+    if id then
+        local plate = findPlate(id)
+        return plate and plate.pressed or false
+    end
+
+    for _, p in ipairs(Plate.list) do
+        if p.pressed then return true end
+    end
+
+    return false
+end
+
+function Plate.allDown()
+    if #Plate.list == 0 then return false end
+
+    for _, p in ipairs(Plate.list) do
+        if not p.pressed then
+            return false
+        end
+    end
+
+    return true
 end
 
 --------------------------------------------------------------
@@ -106,116 +132,117 @@ end
 --------------------------------------------------------------
 
 function Plate.update(dt, player, cubes)
-    if not Plate.active then return end
+    for _, p in ipairs(Plate.list) do
+        if p.active then
+            local px1, px2, bandTop, bandBottom = pressBounds(p.x, p.y)
 
-    local px1, px2, bandTop, bandBottom = pressBounds(Plate.x, Plate.y)
+            ------------------------------------------------------
+            -- PLAYER PRESSING?
+            ------------------------------------------------------
+            local pressed = objectPressing(player, px1, px2, bandTop, bandBottom)
 
-    ----------------------------------------------------------
-    -- PLAYER PRESSING?
-    ----------------------------------------------------------
-    local pressed = objectPressing(player, px1, px2, bandTop, bandBottom)
-
-    ----------------------------------------------------------
-    -- ANY CUBE PRESSING?
-    ----------------------------------------------------------
-    if cubes then
-        for _, c in ipairs(cubes) do
-            if objectPressing(c, px1, px2, bandTop, bandBottom) then
-                pressed = true
-                break
+            ------------------------------------------------------
+            -- ANY CUBE PRESSING?
+            ------------------------------------------------------
+            if cubes then
+                for _, c in ipairs(cubes) do
+                    if objectPressing(c, px1, px2, bandTop, bandBottom) then
+                        pressed = true
+                        break
+                    end
+                end
             end
+
+            p.pressed = pressed
+
+            ------------------------------------------------------
+            -- SMOOTH ANIMATION
+            ------------------------------------------------------
+            local target = p.pressed and 1 or 0
+            p.t = p.t + (target - p.t) * dt * EASE
         end
     end
-
-    Plate.pressed = pressed
-
-    ----------------------------------------------------------
-    -- SMOOTH ANIMATION
-    ----------------------------------------------------------
-    local target = Plate.pressed and 1 or 0
-    Plate.t = Plate.t + (target - Plate.t) * dt * EASE
 end
 
---------------------------------------------------------------
--- DRAW
---------------------------------------------------------------
 
 function Plate.draw()
-    if not Plate.active then return end
+    for _, p in ipairs(Plate.list) do
+        if p.active then
+            local x, y = p.x, p.y
+            local t = p.t
 
-    local x, y = Plate.x, Plate.y
-    local t = Plate.t
+            --------------------------------------------------
+            -- BASE POSITION
+            --------------------------------------------------
+            local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
 
-    ----------------------------------------------------------
-    -- BASE POSITION
-    ----------------------------------------------------------
-    local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
+            --------------------------------------------------
+            -- BUTTON SHRINK (instead of sliding)
+            --------------------------------------------------
+            local compress = PRESS_DEPTH * t
+            local visualH = BUTTON_H - compress
+            if visualH < 2 then visualH = 2 end
 
-    ----------------------------------------------------------
-    -- BUTTON SHRINK (instead of sliding)
-    ----------------------------------------------------------
-    local compress = PRESS_DEPTH * t
-    local visualH = BUTTON_H - compress
-    if visualH < 2 then visualH = 2 end
+            local btnX = x + (TILE - BUTTON_W) * 0.5
+            local btnY = baseTop - visualH
 
-    local btnX = x + (TILE - BUTTON_W) * 0.5
-    local btnY = baseTop - visualH
+            --------------------------------------------------
+            -- BUTTON (draw first)
+            --------------------------------------------------
+            love.graphics.setColor(Theme.pressurePlate.outline)
+            love.graphics.rectangle(
+                "fill",
+                btnX - OUTLINE,
+                btnY - OUTLINE,
+                BUTTON_W + OUTLINE*2,
+                visualH + OUTLINE*2,
+                6,6
+            )
 
-    ----------------------------------------------------------
-    -- BUTTON (draw first)
-    ----------------------------------------------------------
-    love.graphics.setColor(Theme.pressurePlate.outline)
-    love.graphics.rectangle(
-        "fill",
-        btnX - OUTLINE,
-        btnY - OUTLINE,
-        BUTTON_W + OUTLINE*2,
-        visualH + OUTLINE*2,
-        6,6
-    )
+            love.graphics.setColor(Theme.pressurePlate.button) -- cute red button
+            love.graphics.rectangle(
+                "fill",
+                btnX,
+                btnY,
+                BUTTON_W,
+                visualH,
+                6,6
+            )
 
-    love.graphics.setColor(Theme.pressurePlate.button) -- cute red button
-    love.graphics.rectangle(
-        "fill",
-        btnX,
-        btnY,
-        BUTTON_W,
-        visualH,
-        6,6
-    )
+            love.graphics.setColor(Theme.pressurePlate.buttonGlow)
+            love.graphics.rectangle(
+                "fill",
+                btnX + 5,
+                btnY + 3,
+                BUTTON_W - 10,
+                visualH * 0.35,
+                6,6
+            )
 
-    love.graphics.setColor(Theme.pressurePlate.buttonGlow)
-    love.graphics.rectangle(
-        "fill",
-        btnX + 5,
-        btnY + 3,
-        BUTTON_W - 10,
-        visualH * 0.35,
-        6,6
-    )
+            --------------------------------------------------
+            -- BASE (draw second)
+            --------------------------------------------------
+            love.graphics.setColor(Theme.pressurePlate.outline)
+            love.graphics.rectangle(
+                "fill",
+                x - OUTLINE,
+                baseTop - OUTLINE,
+                TILE + OUTLINE*2,
+                BASE_H + OUTLINE*2,
+                4,4
+            )
 
-    ----------------------------------------------------------
-    -- BASE (draw second)
-    ----------------------------------------------------------
-    love.graphics.setColor(Theme.pressurePlate.outline)
-    love.graphics.rectangle(
-        "fill",
-        x - OUTLINE,
-        baseTop - OUTLINE,
-        TILE + OUTLINE*2,
-        BASE_H + OUTLINE*2,
-        4,4
-    )
-
-    love.graphics.setColor(Theme.pressurePlate.base)
-    love.graphics.rectangle(
-        "fill",
-        x,
-        baseTop,
-        TILE,
-        BASE_H,
-        4,4
-    )
+            love.graphics.setColor(Theme.pressurePlate.base)
+            love.graphics.rectangle(
+                "fill",
+                x,
+                baseTop,
+                TILE,
+                BASE_H,
+                4,4
+            )
+        end
+    end
 end
 
 return Plate
