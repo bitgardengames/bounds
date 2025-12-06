@@ -177,19 +177,20 @@ local function spawnObjects(chamber)
 
     if objects.movingPlatforms then
         for _, mp in ipairs(objects.movingPlatforms) do
-            MovingPlatform.spawn(
-                mp.tx * TILE_SIZE,
-                mp.ty * TILE_SIZE,
-                {
-                    dir         = mp.dir or "horizontal",
-                    trackTiles  = mp.trackTiles or 2,
-                    speed       = mp.speed or 0.3,
-                    active      = mp.active,       -- true OR false
-                    target      = mp.target,       -- string ID for plates
-                }
-            )
+                MovingPlatform.spawn(
+                    mp.tx * TILE_SIZE,
+                    mp.ty * TILE_SIZE,
+                    {
+                        dir         = mp.dir or "horizontal",
+                        trackTiles  = mp.trackTiles or 2,
+                        speed       = mp.speed or 0.3,
+                        active      = mp.active,       -- true OR false
+                        target      = mp.target,       -- string ID for plates
+                        loop        = mp.loop,
+                    }
+                )
+            end
         end
-    end
 
     Monitor.clear()
     Monitor.tileSize = TILE_SIZE
