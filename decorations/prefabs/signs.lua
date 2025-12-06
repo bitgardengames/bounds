@@ -43,7 +43,7 @@ return function(Decorations)
             ----------------------------------------------------------
             -- DRAW: OUTLINE
             ----------------------------------------------------------
-            love.graphics.setColor(S.signShadow)
+            love.graphics.setColor(S.dark)
             love.graphics.rectangle(
                 "fill",
                 boxX - outline,

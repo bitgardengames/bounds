@@ -115,6 +115,10 @@ local LevelData = {
                         -- Sign
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
 
+						-- Platform track
+						{type="conduit_h", tx=10, ty=15},
+						{type="conduit_h", tx=11, ty=15},
+						{type="conduit_h", tx=12, ty=15},
                     },
                 },
 
@@ -166,6 +170,25 @@ local LevelData = {
                     {tx = 38, ty = 5, dir = -1},
 					--{tx = 1, ty = 2},
                 },
+
+				movingPlatforms = {
+					{
+						tx = 10, ty = 15,
+						dir = "horizontal",
+						length = 180,
+						speed = 70,
+						active = true,        -- moves constantly
+					},
+
+					{
+						tx = 20, ty = 12,
+						dir = "vertical",
+						length = 140,
+						speed = 60,
+						active = false,       -- waits for plate
+						target = "plate_1",   -- ties into pressure plate ID
+					},
+				},
             },
 
 			contextZones = {

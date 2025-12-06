@@ -20,7 +20,6 @@ Theme.decorations = {
     fanFill = {0.88, 0.88, 0.92, 1},
     conduit = {0.48, 0.54, 0.62},
     pipe = {0.36, 0.40, 0.46},
-    signShadow = {0, 0, 0, 0.3},
     signText = {0.1, 0.1, 0.1, 1},
 }
 

@@ -16,13 +16,13 @@ local MovingPlatform = { list = {} }
 --------------------------------------------------------------
 
 local OUTLINE = 4
-local TILE = 48         -- updated at load
-local PLATFORM_W = TILE * 0.5
-local PLATFORM_H = TILE * 0.5
+local TILE = 48 -- updated at load
+local PLATFORM_W = TILE
+local PLATFORM_H = 12
 
 local COLOR_FILL    = Theme.level.solid
+local COLOR_FOOT    = Theme.decorations.metal
 local COLOR_OUTLINE = Theme.outline
-
 
 --------------------------------------------------------------
 -- SPAWN
@@ -161,6 +161,38 @@ function MovingPlatform.draw()
             p.w,
             p.h,
             6, 6
+        )
+
+        ------------------------------------------------------------------
+        -- NEW: Small 12px-wide bottom block with 4px outline
+        ------------------------------------------------------------------
+        local footW = 18
+        local footH = 4
+        local footRadius = 3
+
+        local footX = p.x + p.w/2 - footW/2
+        local footY = p.y + p.h + 4 -- sits directly under the platform
+
+        -- Outline
+        love.graphics.setColor(COLOR_OUTLINE)
+        love.graphics.rectangle(
+            "fill",
+            footX - OUTLINE,
+            footY - OUTLINE,
+            footW + OUTLINE * 2,
+            footH + OUTLINE * 2,
+            footRadius, footRadius
+        )
+
+        -- Fill
+        love.graphics.setColor(COLOR_FOOT)
+        love.graphics.rectangle(
+            "fill",
+            footX,
+            footY,
+            footW,
+            footH,
+            footRadius, footRadius
         )
     end
 end
