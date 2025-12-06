@@ -14,6 +14,7 @@ local Door = {
     open = false,
     t = 0,
     speed = 6,
+    id = "door",
 }
 
 ------------------------------------------------------------
@@ -37,7 +38,10 @@ end
 ------------------------------------------------------------
 -- SPAWN
 ------------------------------------------------------------
-function Door.spawn(tx, ty, tile)
+function Door.spawn(tx, ty, tile, opts)
+    opts = opts or {}
+
+    Door.id = tostring(opts.id or "door")
     Door.w = tile * 1.5
     Door.x = tx * tile - (Door.w - tile) * 0.5
 

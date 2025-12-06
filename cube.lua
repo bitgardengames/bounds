@@ -34,8 +34,11 @@ local COLLISION_FOOT_OFFSET = 0
 -- SPAWN
 --------------------------------------------------------------
 
-function Cube.spawn(x, y)
+function Cube.spawn(x, y, opts)
+    opts = opts or {}
+
     table.insert(Cube.list, {
+        id = tostring(opts.id or string.format("cube_%d", #Cube.list + 1)),
         x = x,
         y = y,
         w = CUBE_SIZE,

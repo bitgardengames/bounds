@@ -41,7 +41,7 @@ function Plate.spawn(x, y, opts)
     opts = opts or {}
 
     local plate = resetPlateState()
-    plate.id = opts.id
+    plate.id = tostring(opts.id or string.format("plate_%d", #Plate.list + 1))
     plate.x = x
     plate.y = y
     plate.active = true
