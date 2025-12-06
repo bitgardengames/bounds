@@ -29,6 +29,7 @@ local OUTLINE = 4
 local COLOR_FILL = Theme.cube.fill
 local COLOR_OUTLINE = Theme.cube.outline
 local COLLISION_FOOT_OFFSET = 0
+local PLATFORM_SINK = 2
 
 --------------------------------------------------------------
 -- SPAWN
@@ -172,12 +173,12 @@ local function resolvePlatformCollision(c)
 
         if overlapX > 0 and overlapY > 0 then
             if fromAbove or (overlapY <= overlapX and (c.y + c.h) <= py1 + overlapY) then
-                c.y = py1 - c.h
+                c.y = py1 - c.h + PLATFORM_SINK
                 c.vy = math.min(c.vy, platform.vy or 0)
                 c.grounded = true
                 c.x = c.x + (platform.dx or 0)
             elseif fromBelow then
-                c.y = py2
+                c.y = py2 - PLATFORM_SINK
                 c.vy = math.max(c.vy, platform.vy or 0)
             elseif overlapX < overlapY then
                 if (c.x + c.w / 2) < (platform.x + platform.w / 2) then
@@ -189,14 +190,14 @@ local function resolvePlatformCollision(c)
                 end
             end
         elseif alignedHorizontally then
-            local gap = py1 - cy2
+            local gap = py1 - cy2 + PLATFORM_SINK
 
-            if gap >= -margin and gap <= margin + 2 and c.vy >= 0 then
-                c.y = py1 - c.h
+            if gap >= -(margin + PLATFORM_SINK) and gap <= margin + 2 and c.vy >= 0 then
+                c.y = py1 - c.h + PLATFORM_SINK
                 c.vy = math.min(c.vy, platform.vy or 0)
                 c.grounded = true
                 c.x = c.x + (platform.dx or 0)
-            elseif c.grounded and math.abs(gap) <= margin + 0.4 then
+            elseif c.grounded and math.abs(gap) <= margin + 0.4 + PLATFORM_SINK then
                 c.x = c.x + (platform.dx or 0)
             end
         end
