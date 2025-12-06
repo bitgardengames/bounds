@@ -119,11 +119,11 @@ local function spawnObjects(chamber)
         Exit.clear()
     end
 
-    if objects.plates and objects.plates[1] then
-        local plate = objects.plates[1]
-        Plate.spawn(plate.tx * TILE_SIZE, plate.ty * TILE_SIZE)
-    else
-        Plate.clear()
+    Plate.clear()
+    for index, plate in ipairs(objects.plates or {}) do
+        Plate.spawn(plate.tx * TILE_SIZE, plate.ty * TILE_SIZE, {
+            id = plate.id or string.format("plate_%d", index),
+        })
     end
 
     Cube.clear()

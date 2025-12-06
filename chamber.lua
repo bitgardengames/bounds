@@ -16,7 +16,7 @@ function Chamber.reset(index, total)
 end
 
 function Chamber.update(dt, Player, Door, ExitTrigger)
-    local plateOk = Plate.isDown()
+    local plateOk = Plate.allDown()
     local laserOk = true
     local switchOk = true
 
