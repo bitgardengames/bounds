@@ -19,6 +19,7 @@ local PLATFORM_H = 8
 local COLOR_FILL    = Theme.level.solid
 local COLOR_OUTLINE = Theme.outline
 local COLOR_FOOT    = (Theme.decorations and Theme.decorations.metal) or COLOR_FILL
+local ENDPOINT_PAUSE = 0.25
 
 local function smoothstep(t)
     return t * t * (3 - 2 * t)
@@ -109,6 +110,7 @@ function MovingPlatform.spawn(x, y, opts)
         direction = pressToLift and -1 or 1,
         speed     = opts.speed or 0.4,
         travel    = travelPx,
+        pauseRemaining = 0,
 
         always  = (opts.active ~= false and opts.target == nil),
         waiting = (not pressToLift) and (opts.active == false),
@@ -150,6 +152,18 @@ function MovingPlatform.update(dt)
         p.prevX = p.x
         p.prevY = p.y
 
+        if p.pauseRemaining > 0 then
+            p.pauseRemaining = math.max(0, p.pauseRemaining - dt)
+
+            applyPosition(p)
+
+            p.dx = 0
+            p.dy = 0
+            p.vx = 0
+            p.vy = 0
+            goto continue
+        end
+
         local targetT
         if p.pressToLift then
             local isPressed = Plate.isDown(p.target)
@@ -172,18 +186,28 @@ function MovingPlatform.update(dt)
         if p.direction ~= 0 then
             p.t = p.t + p.speed * dt * p.direction
 
+            local hitEndpoint
+
             if targetT then
                 if p.direction > 0 and p.t > targetT then
                     p.t = targetT
+                    hitEndpoint = (targetT == 1)
                 elseif p.direction < 0 and p.t < targetT then
                     p.t = targetT
+                    hitEndpoint = (targetT == 0)
                 end
             elseif p.t > 1 then
                 p.t = 1
                 p.direction = -1
+                hitEndpoint = true
             elseif p.t < 0 then
                 p.t = 0
                 p.direction = 1
+                hitEndpoint = true
+            end
+
+            if hitEndpoint then
+                p.pauseRemaining = ENDPOINT_PAUSE
             end
         end
 
