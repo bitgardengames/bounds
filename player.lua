@@ -681,37 +681,39 @@ function Player.update(dt, Level)
     local function resolveCubeCollision(c)
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
+        local paddedPy2 = py2 + cubeStandOffset
 
         local cx1, cy1 = c.x, c.y
         local cx2, cy2 = c.x + c.w, c.y + c.h
 
         local margin = 1.6
         local overlapX = math.min(px2, cx2) - math.max(px1, cx1)
-        local overlapY = math.min(py2, cy2) - math.max(py1, cy1)
-        local nearContact = overlapX > -margin and overlapY > -margin
-        local aboveCube = py2 <= cy1 + margin
+        local overlapYActual = math.min(py2, cy2) - math.max(py1, cy1)
+        local overlapYPadded = math.min(paddedPy2, cy2) - math.max(py1, cy1)
+        local nearContact = overlapX > -margin and overlapYPadded > -margin
+        local aboveCube = paddedPy2 <= cy1 + margin
         local belowCube = py1 >= cy2 - margin
         local sideAligned = not aboveCube and not belowCube
 
-        local fromAbove = (p.prevY + p.h) <= cy1 + margin and p.vy >= 0
+        local fromAbove = (p.prevY + p.h + cubeStandOffset) <= cy1 + margin and p.vy >= 0
         local fromBelow = p.prevY >= cy2 - margin and p.vy <= 0
 
-        if overlapX > 0 and overlapY > 0 then
-            if fromAbove or (overlapY <= overlapX and not sideAligned) then
+        if overlapX > 0 and overlapYPadded > 0 then
+            if fromAbove or (overlapYPadded <= overlapX and not sideAligned) then
                 p.y = cy1 - p.h - cubeStandOffset
                 p.vy = 0
                 p.onGround = true
                 p.contactBottom = math.max(p.contactBottom, 0.7)
                 p.springVertVel = p.springVertVel - 160
                 return
-            elseif fromBelow then
+            elseif fromBelow and overlapYActual > 0 then
                 p.y = cy2
                 p.vy = 0
 
                 p.contactTop = math.max(p.contactTop, 0.6)
                 p.springVertVel = p.springVertVel + 80
                 return
-            elseif overlapX < overlapY then
+            elseif overlapX < overlapYActual and overlapYActual > 0 then
                 if (p.x + p.w / 2) < (c.x + c.w / 2) then
                     p.x = cx1 - p.w
                     p.vx = math.min(p.vx, 0)
@@ -722,7 +724,7 @@ function Player.update(dt, Level)
 
                 startPushingCube(c)
                 return
-            else
+            elseif overlapYActual > 0 then
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
                     p.y = cy1 - p.h - cubeStandOffset
                     p.onGround = true
