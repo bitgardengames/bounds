@@ -56,7 +56,7 @@ function MovingPlatform.spawn(x, y, opts)
     opts = opts or {}
     TILE = Level.tileSize or TILE
 
-    local w = TILE
+    local w = TILE - 4
     local h = PLATFORM_H
 
     ----------------------------------------------------------

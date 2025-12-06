@@ -116,9 +116,14 @@ local LevelData = {
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
 
 						-- Platform track
-						{type="conduit_h", tx=10, ty=15},
-						{type="conduit_h", tx=11, ty=15},
-						{type="conduit_h", tx=12, ty=15},
+						{type="platform_track_left", tx=10, ty=13},
+						{type="platform_track_h", tx=11, ty=13},
+						{type="platform_track_h", tx=12, ty=13},
+						{type="platform_track_right", tx=13, ty=13},
+
+						{type="platform_track_top", tx=20, ty=12},
+						{type="platform_track_v", tx=20, ty=13},
+						{type="platform_track_bottom", tx=20, ty=14},
                     },
                 },
 
@@ -173,7 +178,7 @@ local LevelData = {
 
 				movingPlatforms = {
 					{
-						tx = 10, ty = 15,
+						tx = 10, ty = 13,
 						dir = "horizontal",
 						trackTiles = 4,   -- instead of: length = 180
 						speed = 0.3,       -- parametric speed (0..1 per second)

@@ -108,5 +108,6 @@ loadPrefab("pipes")
 loadPrefab("conduit")
 loadPrefab("steam")
 loadPrefab("signs")
+loadPrefab("platformtrack")
 
 return Decorations
