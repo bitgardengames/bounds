@@ -51,7 +51,7 @@ local chamber = {
                 {x = 2,  y = 14, w = 15, h = 1},
 
                 -- Floor 2: right segment (holds plate + door)
-                {x = 20, y = 14, w = 15, h = 1},
+                {x = 25, y = 14, w = 15, h = 1},
             },
         },
 
@@ -67,25 +67,29 @@ local chamber = {
     -- OBJECTS
     ----------------------------------------------------------
     objects = {
-        playerStart = { tx = 3, ty = 19 },
+        playerStart = { tx = 3, ty = 3 },
 
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------
-        door = { tx = 37, ty = 13 },
+        door = { tx = 37, ty = 11 },
 
         ------------------------------------------------------
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-            { tx = 10, ty = 19 },
+            { tx = 10, ty = 3 },
+        },
+
+        monitors = {
+            {tx = 38, ty = 5, dir = -1},
         },
 
         ------------------------------------------------------
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-            { tx = 37, ty = 13, id = "plate_1" },
+            { tx = 6, ty = 12, id = "plate_1" },
         },
 
         ------------------------------------------------------
@@ -94,11 +98,11 @@ local chamber = {
         ------------------------------------------------------
         movingPlatforms = {
             {
-                tx = 26,            -- start roughly centered in the gap
+                tx = 16,            -- start roughly centered in the gap
                 ty = 13,            -- same height as the raised floor (tile above it)
                 dir = "horizontal",
-                trackTiles = 6,    -- spans left ↔ right comfortably, crossing gap fully
-                speed = 0.2,
+                trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
+                speed = 0.15,
                 active = true,      -- always moving
             },
         },
