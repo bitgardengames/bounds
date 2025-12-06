@@ -669,6 +669,7 @@ function Player.update(dt, Level)
     -- CUBE collision push logic
     ----------------------------------------------------------
     local wasPushingCube = p.pushingCube
+    local cubeStandOffset = 4
 
     local function startPushingCube(c)
         p.pushingCube = true
@@ -697,7 +698,7 @@ function Player.update(dt, Level)
 
         if overlapX > 0 and overlapY > 0 then
             if fromAbove or (overlapY <= overlapX and not sideAligned) then
-                p.y = cy1 - p.h
+                p.y = cy1 - p.h - cubeStandOffset
                 p.vy = 0
                 p.onGround = true
                 p.contactBottom = math.max(p.contactBottom, 0.7)
@@ -723,7 +724,7 @@ function Player.update(dt, Level)
                 return
             else
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
-                    p.y = cy1 - p.h
+                    p.y = cy1 - p.h - cubeStandOffset
                     p.onGround = true
                     p.contactBottom = math.max(p.contactBottom, 0.7)
                     p.springVertVel = p.springVertVel - 160
