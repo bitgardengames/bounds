@@ -3,17 +3,23 @@ local chamber = {
     width  = 40,
     height = 23,
 
+    ----------------------------------------------------------
+    -- DOOR opens when ALL plates are down
+    ----------------------------------------------------------
     doorCriteria = {
-        plates = { mode = "all" },
+        plates = { mode = "all", ids = { "plate_1" } },
     },
 
     layers = {
+
+        ------------------------------------------------------
+        -- FRAME
+        ------------------------------------------------------
         {
             name  = "Frame",
             kind  = "rectlayer",
             solid = true,
             frame = true,
-
             rects = {
                 {x = 1,  y = 1,  w = 40, h = 1},
                 {x = 1,  y = 23, w = 40, h = 1},
@@ -22,21 +28,30 @@ local chamber = {
             },
         },
 
+        ------------------------------------------------------
+        -- DECOR (still minimal)
+        ------------------------------------------------------
         {
             name = "Decor",
             kind = "decor",
             objects = {
-				{type="sign", tx=4, ty = 5, data = {text = "CH-02"}},
-            },
+                {type="sign", tx=4, ty=5, data={text="CH-02"}},
+            }
         },
 
+        ------------------------------------------------------
+        -- SOLIDS — Updated Floor 2 with a 6-tile gap
+        ------------------------------------------------------
         {
             name  = "Solids",
             kind  = "rectlayer",
             solid = true,
-
             rects = {
-			
+                -- Ground floor (unchanged)
+                {x = 2,  y = 14, w = 15, h = 1},
+
+                -- Floor 2: right segment (holds plate + door)
+                {x = 20, y = 14, w = 15, h = 1},
             },
         },
 
@@ -45,13 +60,51 @@ local chamber = {
             kind  = "rectlayer",
             solid = false,
             rects = {}
-        }
+        },
     },
 
+    ----------------------------------------------------------
+    -- OBJECTS
+    ----------------------------------------------------------
     objects = {
-        playerStart = { tx = 3, ty = 4 },
-        door        = { tx = 16, ty = 20 },
+        playerStart = { tx = 3, ty = 19 },
+
+        ------------------------------------------------------
+        -- Door on raised right platform
+        ------------------------------------------------------
+        door = { tx = 37, ty = 13 },
+
+        ------------------------------------------------------
+        -- Cube on the starting ground floor
+        ------------------------------------------------------
+        cubes = {
+            { tx = 10, ty = 19 },
+        },
+
+        ------------------------------------------------------
+        -- Pressure plate on far-right raised platform
+        ------------------------------------------------------
+        plates = {
+            { tx = 37, ty = 13, id = "plate_1" },
+        },
+
+        ------------------------------------------------------
+        -- MOVING PLATFORMS
+        -- Horizontal platform traverses the 6-tile gap
+        ------------------------------------------------------
+        movingPlatforms = {
+            {
+                tx = 26,            -- start roughly centered in the gap
+                ty = 13,            -- same height as the raised floor (tile above it)
+                dir = "horizontal",
+                trackTiles = 6,    -- spans left ↔ right comfortably, crossing gap fully
+                speed = 0.2,
+                active = true,      -- always moving
+            },
+        },
     },
+
+    contextZones = {},
 }
 
 return chamber
