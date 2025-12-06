@@ -45,6 +45,8 @@ function Cube.spawn(x, y)
         weight = 1,
         visualOffset = 4,
         visualVelocity = 0,
+        angle = 0,
+        angularVelocity = 0,
         pushDustTimer = 0,
     })
 end
@@ -259,6 +261,20 @@ local function updateVisualOffset(c, dt, targetOffset)
 end
 
 --------------------------------------------------------------
+-- VISUAL ANGLE (WOBBLE)
+--------------------------------------------------------------
+
+local function updateAngle(c, dt)
+    local stiffness = c.grounded and 18 or 6
+    local damping = c.grounded and 6 or 2.4
+
+    c.angularVelocity = c.angularVelocity + (0 - c.angle) * stiffness * dt
+    c.angularVelocity = c.angularVelocity * math.max(0, 1 - damping * dt)
+
+    c.angle = c.angle + c.angularVelocity * dt
+end
+
+--------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
 
@@ -301,12 +317,22 @@ function Cube.update(dt, player)
         ------------------------------------------------------
         resolveTileCollision(c, tileSize, grid, width, height)
 
+        if wasGrounded and not c.grounded then
+            local dir = c.vx >= 0 and 1 or -1
+            c.angularVelocity = (c.angularVelocity or 0) + dir * 1.4
+        end
+
         if not wasGrounded and c.grounded then
             local impactBoost = math.min(math.abs(landingVy) * 0.02, 12)
             c.visualVelocity = (c.visualVelocity or 0) + impactBoost
+
+            local wobbleImpulse = math.min(math.abs(landingVy) * 0.0022, 1.8)
+            local spinDir = c.vx ~= 0 and (c.vx > 0 and 1 or -1) or (math.random() < 0.5 and 1 or -1)
+            c.angularVelocity = (c.angularVelocity or 0) * 0.35 + spinDir * wobbleImpulse
         end
 
         updateVisualOffset(c, dt, targetOffset)
+        updateAngle(c, dt)
     end
 end
 
@@ -323,7 +349,12 @@ function Cube.draw()
         local offset  = c.visualOffset or visualOffset
         local w       = c.w
         local h       = c.h
+        local angle   = c.angle or 0
         local ox, oy  = 0, 0
+
+        love.graphics.push()
+        love.graphics.translate(c.x + w/2 + ox, c.y + h/2 - offset + oy)
+        love.graphics.rotate(angle)
 
         ----------------------------------------------------------
         -- OUTLINE
@@ -331,8 +362,8 @@ function Cube.draw()
         love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.rectangle(
             "fill",
-            c.x - OUTLINE + ox,
-            c.y - OUTLINE - offset + oy,
+            -w/2 - OUTLINE,
+            -h/2 - OUTLINE,
             w + OUTLINE*2,
             h + OUTLINE*2,
             6, 6
@@ -344,8 +375,8 @@ function Cube.draw()
         love.graphics.setColor(COLOR_FILL)
         love.graphics.rectangle(
             "fill",
-            c.x + ox,
-            c.y - offset + oy,
+            -w/2,
+            -h/2,
             w,
             h,
             6, 6
@@ -357,14 +388,11 @@ function Cube.draw()
         love.graphics.setColor(Theme.cube.seam)
         love.graphics.setLineWidth(4)
 
-        local cx = c.x + w/2
-        local cy = c.y + h/2 - offset
-
         -- Vertical seam (top → bottom)
-        love.graphics.line(cx, c.y - offset, cx, c.y - offset + h)
+        love.graphics.line(0, -h/2, 0, h/2)
 
         -- Horizontal seam (left → right)
-        love.graphics.line(c.x, cy, c.x + w, cy)
+        love.graphics.line(-w/2, 0, w/2, 0)
 
         ----------------------------------------------------------
         -- CENTER CIRCLE
@@ -372,11 +400,13 @@ function Cube.draw()
 
         -- OUTLINE
         love.graphics.setColor(Theme.outline)
-        love.graphics.circle("fill", cx, cy, radius + circleInset)
+        love.graphics.circle("fill", 0, 0, radius + circleInset)
 
         -- FILL
         love.graphics.setColor(Theme.cube.fill or Theme.solid)
-        love.graphics.circle("fill", cx, cy, radius)
+        love.graphics.circle("fill", 0, 0, radius)
+
+        love.graphics.pop()
     end
 end
 
