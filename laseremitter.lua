@@ -8,6 +8,7 @@
 
 local Level = require("level")
 local Theme = require("theme")
+local LaserReceiver = require("laserreceiver")
 
 local LaserEmitter = { list = {} }
 
@@ -26,6 +27,14 @@ local BEAM_GLOW  = {1, 0.15, 0.15, 0.25}
 --------------------------------------------------------------
 -- RAYCAST (pixel-based)
 --------------------------------------------------------------
+local function receiverMatchesDirection(receiver, dx, dy)
+    if dx > 0 then return receiver.dir == "left" end
+    if dx < 0 then return receiver.dir == "right" end
+    if dy > 0 then return receiver.dir == "up" end
+    if dy < 0 then return receiver.dir == "down" end
+    return false
+end
+
 local function raycast(x, y, dx, dy)
     local step = 4
     local maxDist = 2500
@@ -36,6 +45,14 @@ local function raycast(x, y, dx, dy)
     while dist < maxDist do
         px = x + dx * dist
         py = y + dy * dist
+
+        -- stop when hitting a receiver face in the beam's path
+        for _, receiver in ipairs(LaserReceiver.list) do
+            if receiverMatchesDirection(receiver, dx, dy)
+                and LaserReceiver.hitTest(receiver, px, py) then
+                return px, py, true
+            end
+        end
 
         -- use Bounds' collision API
         if Level.isSolidAt(px, py) then
