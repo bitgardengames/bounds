@@ -6,6 +6,7 @@
 local Theme = require("theme")
 local Saw = { list = {} }
 local Player = require("player")
+local Plate = require("pressureplate")
 
 --------------------------------------------------------------
 -- CONFIG
@@ -80,6 +81,8 @@ function Saw.spawn(x, y, opts)
     local dir = opts.dir or "horizontal"
     local mount = opts.mount or (dir == "horizontal" and "bottom" or "left")
 
+    local pressToActivate = (opts.active == false and opts.target ~= nil)
+
     local radius = opts.r or BASE_RADIUS
     local rawPoints = buildSawPoints(radius, TEETH)
 
@@ -95,6 +98,11 @@ function Saw.spawn(x, y, opts)
         dir      = dir,
         mount    = mount,
         trackLength = opts.length or TRACK_LENGTH,
+
+        active = opts.active ~= false,
+        target = opts.target,
+        pressToActivate = pressToActivate,
+        enabled = pressToActivate and false or opts.active ~= false,
 
         progress  = 0,
         direction = 1,
@@ -137,6 +145,17 @@ end
 function Saw.update(dt, player)
     for i = #Saw.list, 1, -1 do
         local s = Saw.list[i]
+
+        local isActive = s.active
+        if s.pressToActivate then
+            isActive = Plate.isDown(s.target)
+        end
+
+        s.enabled = isActive
+
+        if not isActive then
+            goto continue
+        end
 
         ------------------------------------------------------
         -- Spin animation
@@ -198,7 +217,10 @@ function Saw.update(dt, player)
         ------------------------------------------------------
         if s.dead then
             table.remove(Saw.list, i)
+            goto continue
         end
+
+        ::continue::
     end
 end
 
@@ -295,6 +317,7 @@ end
 
 function Saw.draw()
     for _, s in ipairs(Saw.list) do
+        if not s.enabled then goto continue end
         local raw = s.rawPoints or buildSawPoints(s.r, TEETH)
         if not s.rawPoints then
             s.rawPoints = raw
@@ -354,6 +377,8 @@ function Saw.draw()
 
         love.graphics.pop()
         love.graphics.setStencilTest()
+
+        ::continue::
     end
 end
 
