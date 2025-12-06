@@ -1,4 +1,4 @@
-local Blink = require("blink")
+local Blink = require("player.blink")
 
 local Sleep = {}
 

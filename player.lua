@@ -4,8 +4,8 @@
 
 local Theme = require("theme")
 local Particles = require("particles")
-local Blink = require("blink")
-local Idle = require("idle")
+local Blink = require("player.blink")
+local Idle = require("player.idle")
 local Input = require("input")
 local Cube = require("cube")
 local MovingPlatform = require("movingplatform")
