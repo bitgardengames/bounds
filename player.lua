@@ -8,6 +8,7 @@ local Blink = require("blink")
 local Idle = require("idle")
 local Input = require("input")
 local Cube = require("cube")
+local MovingPlatform = require("movingplatform")
 local Collision = require("player.collision")
 local Sleep = require("player.sleep")
 
@@ -191,6 +192,76 @@ local function smoothMorphs(dt)
     p.morphHorz = approach(p.morphHorz, p.springHorz, dt, springRate)
 
     p.morphPre = approach(p.morphPre, p.preJumpSquish, dt, springRate)
+end
+
+local function resolveMovingPlatformCollisions()
+    local margin = 1.8
+
+    for _, platform in ipairs(MovingPlatform.list) do
+        local px1, py1 = p.x, p.y
+        local px2, py2 = p.x + p.w, p.y + p.h
+
+        local sx1, sy1 = platform.x, platform.y
+        local sx2, sy2 = platform.x + platform.w, platform.y + platform.h
+
+        local overlapX = math.min(px2, sx2) - math.max(px1, sx1)
+        local overlapY = math.min(py2, sy2) - math.max(py1, sy1)
+        local alignedHorizontally = overlapX > -margin
+
+        local fromAbove = (p.prevY + p.h) <= sy1 + margin and p.vy >= 0
+        local fromBelow = p.prevY >= sy2 - margin and p.vy <= 0
+
+        if overlapX > 0 and overlapY > 0 then
+            if fromAbove or (overlapY <= overlapX and (p.y + p.h) <= sy1 + overlapY) then
+                p.y = sy1 - p.h
+                p.vy = math.min(p.vy, platform.vy or 0)
+                p.onGround = true
+
+                p.contactBottom = math.max(p.contactBottom, 0.7)
+                p.springVertVel = p.springVertVel - 160
+
+                p.x = p.x + (platform.dx or 0)
+            elseif fromBelow then
+                p.y = sy2
+                p.vy = math.max(p.vy, platform.vy or 0)
+
+                p.contactTop = math.max(p.contactTop, 0.6)
+                p.springVertVel = p.springVertVel + 80
+            elseif overlapX < overlapY then
+                if (p.x + p.w / 2) < (platform.x + platform.w / 2) then
+                    p.x = sx1 - p.w
+                    p.vx = math.min(p.vx, platform.vx or 0)
+                else
+                    p.x = sx2
+                    p.vx = math.max(p.vx, platform.vx or 0)
+                end
+            end
+
+            px1, py1 = p.x, p.y
+            px2, py2 = p.x + p.w, p.y + p.h
+        elseif alignedHorizontally then
+            local gap = sy1 - py2
+
+            if gap >= -margin and gap <= margin + 2 and p.vy >= 0 then
+                p.y = sy1 - p.h
+                p.vy = math.min(p.vy, platform.vy or 0)
+                p.onGround = true
+
+                p.contactBottom = math.max(p.contactBottom, 0.7)
+                p.springVertVel = p.springVertVel - 160
+
+                p.x = p.x + (platform.dx or 0)
+
+                px1, py1 = p.x, p.y
+                px2, py2 = p.x + p.w, p.y + p.h
+            elseif p.onGround and math.abs(gap) <= margin + 0.4 then
+                p.x = p.x + (platform.dx or 0)
+
+                px1, py1 = p.x, p.y
+                px2, py2 = p.x + p.w, p.y + p.h
+            end
+        end
+    end
 end
 
 local function updateSleepBubbleQueue(dt)
@@ -533,6 +604,7 @@ function Player.update(dt, Level)
     Collision.moveHorizontal(p, Level, p.vx * dt)
     Collision.moveVertical(p, Level, p.vy * dt)
     Collision.tryGroundSnap(p, Level)
+    resolveMovingPlatformCollisions()
 
     local justLanded = (not wasOnGround) and p.onGround
     if justLanded then

@@ -97,6 +97,13 @@ function MovingPlatform.spawn(x, y, opts)
         w = w,
         h = h,
 
+        prevX = anchorCX - w / 2,
+        prevY = anchorCY - h / 2,
+        dx = 0,
+        dy = 0,
+        vx = 0,
+        vy = 0,
+
         dir       = opts.dir or "horizontal",
         t         = pressToLift and 1 or 0,
         direction = pressToLift and -1 or 1,
@@ -140,6 +147,9 @@ function MovingPlatform.update(dt)
     TILE = Level.tileSize or TILE
 
     for _, p in ipairs(MovingPlatform.list) do
+        p.prevX = p.x
+        p.prevY = p.y
+
         local targetT
         if p.pressToLift then
             local isPressed = Plate.isDown(p.target)
@@ -178,6 +188,11 @@ function MovingPlatform.update(dt)
         end
 
         applyPosition(p)
+
+        p.dx = p.x - p.prevX
+        p.dy = p.y - p.prevY
+        p.vx = p.dx / dt
+        p.vy = p.dy / dt
 
         ::continue::
     end

@@ -7,6 +7,7 @@
 local level = require("level")
 local Particles = require("particles")
 local Theme = require("theme")
+local MovingPlatform = require("movingplatform")
 
 local Cube = { list = {} }
 
@@ -144,6 +145,57 @@ local function resolveTileCollision(c, TILE, grid, width, height)
         if hitT or hitB then
             c.vx = 0
             c.x = math.floor(leftX / TILE + 1) * TILE
+        end
+    end
+end
+
+local function resolvePlatformCollision(c)
+    local margin = 1.6
+
+    for _, platform in ipairs(MovingPlatform.list) do
+        local cx1, cy1 = c.x, c.y
+        local cx2, cy2 = c.x + c.w, c.y + c.h
+
+        local px1, py1 = platform.x, platform.y
+        local px2, py2 = platform.x + platform.w, platform.y + platform.h
+
+        local overlapX = math.min(cx2, px2) - math.max(cx1, px1)
+        local overlapY = math.min(cy2, py2) - math.max(cy1, py1)
+        local alignedHorizontally = overlapX > -margin
+
+        local prevY = c.prevY or c.y
+        local fromAbove = (prevY + c.h) <= py1 + margin and c.vy >= 0
+        local fromBelow = prevY >= py2 - margin and c.vy <= 0
+
+        if overlapX > 0 and overlapY > 0 then
+            if fromAbove or (overlapY <= overlapX and (c.y + c.h) <= py1 + overlapY) then
+                c.y = py1 - c.h
+                c.vy = math.min(c.vy, platform.vy or 0)
+                c.grounded = true
+                c.x = c.x + (platform.dx or 0)
+            elseif fromBelow then
+                c.y = py2
+                c.vy = math.max(c.vy, platform.vy or 0)
+            elseif overlapX < overlapY then
+                if (c.x + c.w / 2) < (platform.x + platform.w / 2) then
+                    c.x = px1 - c.w
+                    c.vx = math.min(c.vx, platform.vx or 0)
+                else
+                    c.x = px2
+                    c.vx = math.max(c.vx, platform.vx or 0)
+                end
+            end
+        elseif alignedHorizontally then
+            local gap = py1 - cy2
+
+            if gap >= -margin and gap <= margin + 2 and c.vy >= 0 then
+                c.y = py1 - c.h
+                c.vy = math.min(c.vy, platform.vy or 0)
+                c.grounded = true
+                c.x = c.x + (platform.dx or 0)
+            elseif c.grounded and math.abs(gap) <= margin + 0.4 then
+                c.x = c.x + (platform.dx or 0)
+            end
         end
     end
 end
@@ -287,6 +339,8 @@ function Cube.update(dt, player)
     for _, c in ipairs(Cube.list) do
         local wasGrounded = c.grounded
 
+        c.prevX, c.prevY = c.x, c.y
+
         ------------------------------------------------------
         -- GRAVITY
         ------------------------------------------------------
@@ -316,6 +370,7 @@ function Cube.update(dt, player)
         -- COLLISIONS
         ------------------------------------------------------
         resolveTileCollision(c, tileSize, grid, width, height)
+        resolvePlatformCollision(c)
 
         if wasGrounded and not c.grounded then
             local dir = c.vx >= 0 and 1 or -1
