@@ -4,7 +4,7 @@
 -- and real stable ground friction (no jitter).
 --------------------------------------------------------------
 
-local level = require("level")
+local level = require("level.level")
 local Particles = require("particles")
 local Theme = require("theme")
 local MovingPlatform = require("objects.movingplatform")

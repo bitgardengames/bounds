@@ -2,8 +2,8 @@
 -- MAIN GAME MANAGER
 --------------------------------------------------------------
 
-local Level = require("level")
-local LevelData = require("leveldata")
+local Level = require("level.level")
+local LevelData = require("level.leveldata")
 local Particles = require("particles")
 local Player = require("player.player")
 local Blink = require("player.blink")
@@ -13,7 +13,7 @@ local Input = require("input")
 local Saw = require("objects.saws")
 local Door = require("objects.door")
 local Exit = require("exit")
-local Chamber = require("chamber")
+local Chamber = require("level.chamber")
 local Plate = require("objects.pressureplate")
 local Cube = require("objects.cube")
 local MovingPlatform = require("objects.movingplatform")

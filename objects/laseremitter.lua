@@ -6,7 +6,7 @@
 -- • Automatic raycast against Level.isSolidAt
 --------------------------------------------------------------
 
-local Level = require("level")
+local Level = require("level.level")
 local Theme = require("theme")
 local LaserReceiver = require("objects.laserreceiver")
 

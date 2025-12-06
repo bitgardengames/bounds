@@ -2,7 +2,7 @@
 -- MOVING PLATFORM — now top-aligned + padded horizontal track
 --------------------------------------------------------------
 
-local Level = require("level")
+local Level = require("level.level")
 local Theme = require("theme")
 local Plate = require("objects.pressureplate")
 
