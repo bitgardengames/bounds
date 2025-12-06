@@ -820,7 +820,7 @@ return function(Decorations)
             love.graphics.circle("fill", cx, cy, r)
 
             -- Bolt ring (auto adjusted inward)
-            love.graphics.setColor(S.outline)
+            love.graphics.setColor(S.dark)
             local bolts = 6
             for i = 1, bolts do
                 local ang = (i / bolts) * math.pi * 2
