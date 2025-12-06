@@ -1,3 +1,5 @@
+local ContextZones = require("contextzones")
+
 local TAU = math.pi * 2
 
 local Idle = {
@@ -10,12 +12,60 @@ local Idle = {
     activeEffect = nil,
 }
 
+Idle.baseWeights = {
+    glance      = 0.20,
+    glance2     = 0.20,
+    peek        = 0.18,
+    lean        = 0.14,
+    wiggle      = 0.14,
+    rock        = 0.08,
+    scratch     = 0.03,
+    look_up     = 0.03,
+}
+
 local function clamp(v, mn, mx)
     return (v < mn and mn) or (v > mx and mx) or v
 end
 
 local function nextDelay()
     return 6 + math.random() * 6
+end
+
+local function weightedPick(weights)
+    local total = 0
+    for _, w in pairs(weights) do total = total + w end
+    local r = math.random() * total
+    local acc = 0
+
+    for name, w in pairs(weights) do
+        acc = acc + w
+        if r <= acc then
+            return name
+        end
+    end
+
+    return nil
+end
+
+local function buildWeightedTable()
+    local w = {}
+
+    -- start with base weights
+    for name, v in pairs(Idle.baseWeights) do
+        w[name] = v
+    end
+
+    -- apply active zone bias
+    local z = ContextZones.active
+    if z and z.effects then
+        for name, boost in pairs(z.effects) do
+            if w[name] then
+                w[name] = w[name] + boost   -- simple additive bias
+            end
+        end
+    end
+
+    return w
 end
 
 Idle.timeToNext = nextDelay()
@@ -43,28 +93,41 @@ function Idle.update(dt, isIdle)
                 Idle.timeToNext = nextDelay()
             end
         else
-            Idle.timeToNext = Idle.timeToNext - dt
-            if Idle.timeToNext <= 0 then
-                local roll = math.random()
+			Idle.timeToNext = Idle.timeToNext - dt
+			if Idle.timeToNext <= 0 then
+
+				-- Build weighted table with context bias
+				local weights = buildWeightedTable()
+				local chosen = weightedPick(weights)
 				local dir = (math.random() < 0.5) and -1 or 1
-                if roll < 0.20 then
-                    startEffect("glance", { duration = 0.9, dir = -1 })
-                elseif roll < 0.40 then
-                    startEffect("glance", { duration = 0.9, dir = 1 })
-                elseif roll < 0.58 then
-                    startEffect("peek", { duration = 1.1, dir = dir })
-                elseif roll < 0.72 then
-                    startEffect("lean", { duration = 1.4, dir = dir })
-                elseif roll < 0.86 then
-                    startEffect("wiggle", { duration = 1.2, dir = dir, cycles = 2.5 })
-                elseif roll < 0.94 then
-                    startEffect("rock", { duration = 1.5, cycles = 2.4 })
-                elseif roll < 0.97 then
-                    startEffect("scratch", { duration = 1.1, dir = dir })
-                else
-                    startEffect("look_up", { duration = 1.0, dir = dir })
-                end
-            end
+
+				if chosen == "glance" then
+					startEffect("glance", { duration = 0.9, dir = -1 })
+
+				elseif chosen == "glance2" then
+					startEffect("glance", { duration = 0.9, dir = 1 })
+
+				elseif chosen == "peek" then
+					startEffect("peek", { duration = 1.1, dir = dir })
+
+				elseif chosen == "lean" then
+					startEffect("lean", { duration = 1.4, dir = dir })
+
+				elseif chosen == "wiggle" then
+					startEffect("wiggle", { duration = 1.2, dir = dir, cycles = 2.5 })
+
+				elseif chosen == "rock" then
+					startEffect("rock", { duration = 1.5, cycles = 2.4 })
+
+				elseif chosen == "scratch" then
+					startEffect("scratch", { duration = 1.1, dir = dir })
+
+				elseif chosen == "look_up" then
+					startEffect("look_up", { duration = 1.0, dir = dir })
+				end
+
+				Idle.timeToNext = nextDelay()
+			end
         end
     else
         -- very slow drift while not idle

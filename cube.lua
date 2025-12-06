@@ -315,19 +315,19 @@ end
 --------------------------------------------------------------
 
 local visualOffset = 4
-local boltSize = 4
-local boltInset = 5  -- distance from edges
-local boltRadius = 3
+local circleInset = 4
+local radius = 4
 
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
-        local offset = c.visualOffset or visualOffset
-        local w = c.w
-        local h = c.h
-        local ox = 0
-        local oy = 0
+        local offset  = c.visualOffset or visualOffset
+        local w       = c.w
+        local h       = c.h
+        local ox, oy  = 0, 0
 
-        -- Outline
+        ----------------------------------------------------------
+        -- OUTLINE
+        ----------------------------------------------------------
         love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.rectangle(
             "fill",
@@ -335,10 +335,12 @@ function Cube.draw()
             c.y - OUTLINE - offset + oy,
             w + OUTLINE*2,
             h + OUTLINE*2,
-            6,6
+            6, 6
         )
 
-        -- Fill
+        ----------------------------------------------------------
+        -- FILL
+        ----------------------------------------------------------
         love.graphics.setColor(COLOR_FILL)
         love.graphics.rectangle(
             "fill",
@@ -346,9 +348,36 @@ function Cube.draw()
             c.y - offset + oy,
             w,
             h,
-            6,6
+            6, 6
         )
-	end
+
+        ----------------------------------------------------------
+        -- SEAM LINES
+        ----------------------------------------------------------
+        love.graphics.setColor(Theme.cube.seam)
+        love.graphics.setLineWidth(4)
+
+        local cx = c.x + w/2
+        local cy = c.y + h/2 - offset
+
+        -- Vertical seam (top → bottom)
+        love.graphics.line(cx, c.y - offset, cx, c.y - offset + h)
+
+        -- Horizontal seam (left → right)
+        love.graphics.line(c.x, cy, c.x + w, cy)
+
+        ----------------------------------------------------------
+        -- CENTER CIRCLE
+        ----------------------------------------------------------
+
+        -- OUTLINE
+        love.graphics.setColor(Theme.outline)
+        love.graphics.circle("fill", cx, cy, radius + circleInset)
+
+        -- FILL
+        love.graphics.setColor(Theme.cube.fill or Theme.solid)
+        love.graphics.circle("fill", cx, cy, radius)
+    end
 end
 
 return Cube

@@ -108,7 +108,7 @@ local LevelData = {
                         {type="pipe_big_curve_bl", tx=2, ty=20},
                         {type="pipe_big_h",        tx=1, ty=15},
                         {type="pipe_big_h",        tx=1, ty=20},
-						
+
                         -- Sign
                         {type="sign", tx=4, ty=5, data={ text = "CH-01" }},
                     },
@@ -163,6 +163,11 @@ local LevelData = {
 					--{tx = 1, ty = 2},
                 },
             },
+
+			contextZones = {
+				{name = "camera_attention", tx = 2, ty = 5, w = 3, h = 2, effects = {look_up = 0.8}},
+				{name = "plate_excitment", tx = 26, ty = 21, w = 3, h = 1, effects = {wiggle = 0.8}},
+			},
         },
 
         ----------------------------------------------------------------------

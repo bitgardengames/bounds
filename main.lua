@@ -18,6 +18,7 @@ local Plate = require("pressureplate")
 local Cube = require("cube")
 local Decorations = require("decorations")
 local Monitor = require("monitor")
+local ContextZones = require("contextzones")
 
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
@@ -136,12 +137,22 @@ local function spawnObjects(chamber)
         })
     end
 
-        Monitor.clear()
-        Monitor.tileSize = TILE_SIZE
+	Monitor.clear()
+	Monitor.tileSize = TILE_SIZE
 
-        for _, monitor in ipairs(objects.monitors or {}) do
-                Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1)
+	for _, monitor in ipairs(objects.monitors or {}) do
+		Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1)
+	end
+end
+
+local function spawnContextZones(chamber)
+    ContextZones.clear()
+	ContextZones.tileSize = TILE_SIZE
+    if chamber.contextZones then
+        for _, z in ipairs(chamber.contextZones) do
+			ContextZones.add(z.name, z.tx, z.ty, z.w, z.h, z.effects)
         end
+    end
 end
 
 function loadChamber(index)
@@ -157,6 +168,7 @@ function loadChamber(index)
     clearActors()
     spawnDecorations(chamber)
     spawnObjects(chamber)
+	spawnContextZones(chamber)
 
     local spawn = (chamber.objects and chamber.objects.playerStart) or { tx = 2, ty = 4 }
     Player.setSpawn(spawn.tx * TILE_SIZE, spawn.ty * TILE_SIZE)
@@ -182,6 +194,8 @@ function love.update(dt)
     -- Player update with Level collision queries
     ----------------------------------------------------------
     local pl = Player.update(dt, Level)
+
+	ContextZones.update(pl)
 
 	if not pl.sleeping and not pl.sleepingTransition then
 		Blink.update(dt)
@@ -277,6 +291,7 @@ function love.draw()
     Door.draw()
     Plate.draw()
     Cube.draw()
+	ContextZones.draw() -- remove after debugging
 
 	Player.draw()
 
