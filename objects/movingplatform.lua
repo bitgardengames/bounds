@@ -86,6 +86,16 @@ function MovingPlatform.spawn(x, y, opts)
 
     local pressToLift = (opts.active == false and opts.target ~= nil)
 
+    --------------------------------------------------------------
+    -- LOOPING BEHAVIOR
+    -- • Always-on platforms keep looping by default
+    -- • Press-to-lift defaults to one-shot elevator style unless overridden
+    --------------------------------------------------------------
+    local loop = opts.loop
+    if loop == nil then
+        loop = not pressToLift
+    end
+
     local platform = {
         anchorCX = anchorCX,
         anchorCY = anchorCY,
@@ -116,6 +126,8 @@ function MovingPlatform.spawn(x, y, opts)
         waiting = (not pressToLift) and (opts.active == false),
         target  = opts.target,
         pressToLift = pressToLift,
+        loop = loop,
+        resumeDirection = pressToLift and -1 or 1,
     }
 
     applyPosition(platform)
@@ -167,14 +179,29 @@ function MovingPlatform.update(dt)
         local targetT
         if p.pressToLift then
             local isPressed = Plate.isDown(p.target)
-            targetT = isPressed and 0 or 1
 
-            if targetT > p.t then
-                p.direction = 1
-            elseif targetT < p.t then
-                p.direction = -1
+            if p.loop then
+                if isPressed then
+                    if p.direction == 0 then
+                        p.direction = p.resumeDirection or 1
+                    end
+                else
+                    if p.direction ~= 0 then
+                        p.resumeDirection = p.direction
+                    end
+
+                    p.direction = 0
+                end
             else
-                p.direction = 0
+                targetT = isPressed and 0 or 1
+
+                if targetT > p.t then
+                    p.direction = 1
+                elseif targetT < p.t then
+                    p.direction = -1
+                else
+                    p.direction = 0
+                end
             end
         elseif p.target and p.waiting then
             goto continue
@@ -209,6 +236,12 @@ function MovingPlatform.update(dt)
             if hitEndpoint then
                 p.pauseRemaining = ENDPOINT_PAUSE
             end
+        elseif p.loop and p.pauseRemaining == 0 and p.resumeDirection then
+            --------------------------------------------------------------
+            -- When paused by a pressure plate mid-track, remember where
+            -- to head once movement resumes.
+            --------------------------------------------------------------
+            p.direction = 0
         end
 
         applyPosition(p)
@@ -217,6 +250,10 @@ function MovingPlatform.update(dt)
         p.dy = p.y - p.prevY
         p.vx = p.dx / dt
         p.vy = p.dy / dt
+
+        if p.direction ~= 0 then
+            p.resumeDirection = p.direction
+        end
 
         ::continue::
     end
