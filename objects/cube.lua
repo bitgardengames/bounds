@@ -7,7 +7,7 @@
 local level = require("level")
 local Particles = require("particles")
 local Theme = require("theme")
-local MovingPlatform = require("movingplatform")
+local MovingPlatform = require("objects.movingplatform")
 
 local Cube = { list = {} }
 

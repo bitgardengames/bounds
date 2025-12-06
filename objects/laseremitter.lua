@@ -8,7 +8,7 @@
 
 local Level = require("level")
 local Theme = require("theme")
-local LaserReceiver = require("laserreceiver")
+local LaserReceiver = require("objects.laserreceiver")
 
 local LaserEmitter = { list = {} }
 
