@@ -16,6 +16,7 @@ local Exit = require("exit")
 local Chamber = require("chamber")
 local Plate = require("pressureplate")
 local Cube = require("cube")
+local MovingPlatform = require("movingplatform")
 local Decorations = require("decorations")
 local Monitor = require("monitor")
 local ContextZones = require("contextzones")
@@ -84,6 +85,7 @@ local function clearActors()
     Plate.clear()
     Monitor.clear()
     Exit.clear()
+	MovingPlatform.clear()
 end
 
 local function spawnDecorations(chamber)
@@ -136,6 +138,23 @@ local function spawnObjects(chamber)
             sineFreq = saw.sineFreq,
         })
     end
+
+	if objects.movingPlatforms then
+		for _, mp in ipairs(objects.movingPlatforms) do
+			MovingPlatform.spawn(
+				mp.tx * TILE_SIZE,
+				mp.ty * TILE_SIZE,
+				{
+					dir         = mp.dir or "horizontal",
+					length      = mp.length or 160,
+					speed       = mp.speed or 60,
+					active      = mp.active,       -- true OR false
+					target      = mp.target,       -- string ID for plates
+					phaseOffset = mp.phaseOffset,
+				}
+			)
+		end
+	end
 
 	Monitor.clear()
 	Monitor.tileSize = TILE_SIZE
@@ -205,6 +224,7 @@ function love.update(dt)
     Plate.update(dt, pl, Cube.list)
     Door.update(dt)
     Monitor.update(dt)
+    MovingPlatform.update(dt)
     Particles.update(dt)
     Decorations.update(dt)
 
@@ -291,8 +311,8 @@ function love.draw()
     Door.draw()
     Plate.draw()
     Cube.draw()
+	MovingPlatform.draw()
 	ContextZones.draw() -- remove after debugging
-
 	Player.draw()
 
     Particles.draw()
