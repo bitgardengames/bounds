@@ -151,7 +151,7 @@ local LevelData = {
             --------------------------------------------------------------
             objects = {
                 playerStart = {tx = 3, ty = 4},
-                door        = {tx = 36, ty = 20},
+                door = {tx = 36, ty = 20},
 
                 plates = {
                     {tx = 27, ty = 21, id = "plate_1"},
@@ -165,6 +165,15 @@ local LevelData = {
                     {tx = 38, ty = 5, dir = -1},
 					--{tx = 1, ty = 2},
                 },
+
+				laserEmitters = {
+					{tx = 4, ty = 6, dir = "right"},
+					{tx = 10, ty = 8, dir = "down"},
+				},
+
+				laserReceivers = {
+					{tx = 20, ty = 6, dir = "left", id = "receiver_1"},
+				},
             },
 
 			contextZones = {

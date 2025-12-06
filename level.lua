@@ -205,6 +205,18 @@ function Level.isSolidTile(tx, ty)
 end
 
 --------------------------------------------------------------
+-- PIXEL COLLISION QUERY (needed for laser raycast)
+--------------------------------------------------------------
+function Level.isSolidAt(px, py)
+    -- convert pixel > tile
+    local ts = Level.tileSize
+    local tx = math.floor(px / ts) + 1
+    local ty = math.floor(py / ts) + 1
+
+    return Level.isSolidTile(tx, ty)
+end
+
+--------------------------------------------------------------
 -- LOAD
 --------------------------------------------------------------
 
