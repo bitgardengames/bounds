@@ -8,6 +8,7 @@ local Player = require("player")  -- direct access to player
 local Theme = require("theme")
 
 local Monitor = {
+    id       = nil,
     tileSize = 48,
     active   = false,
     x        = 0,
@@ -24,6 +25,8 @@ local Monitor = {
     refocusTimer  = 0,
     refocusActive = false,
     nextRefocus   = 2.0,
+
+    spawnCount = 0,
 }
 
 local player = Player.get()
@@ -45,7 +48,11 @@ end
 ------------------------------------------------------------
 -- tx, ty: tile coordinates
 -- dir: 1 (left wall, looking right) or -1 (right wall, looking left)
-function Monitor.spawn(tx, ty, dir)
+function Monitor.spawn(tx, ty, dir, opts)
+    opts = opts or {}
+
+    Monitor.spawnCount = (Monitor.spawnCount or 0) + 1
+    Monitor.id = tostring(opts.id or string.format("monitor_%d", Monitor.spawnCount))
     Monitor.x = tx * Monitor.tileSize
     Monitor.y = ty * Monitor.tileSize
 
@@ -67,6 +74,8 @@ end
 ------------------------------------------------------------
 function Monitor.clear()
     Monitor.active = false
+    Monitor.id = nil
+    Monitor.spawnCount = 0
 end
 
 ------------------------------------------------------------

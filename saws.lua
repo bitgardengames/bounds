@@ -87,6 +87,7 @@ function Saw.spawn(x, y, opts)
     local rawPoints = buildSawPoints(radius, TEETH)
 
     table.insert(Saw.list, {
+        id = tostring(opts.id or string.format("saw_%d", #Saw.list + 1)),
         anchorX = x,
         anchorY = y,
 
@@ -100,7 +101,7 @@ function Saw.spawn(x, y, opts)
         trackLength = opts.length or TRACK_LENGTH,
 
         active = opts.active ~= false,
-        target = opts.target,
+        target = opts.target and tostring(opts.target) or nil,
         pressToActivate = pressToActivate,
         enabled = pressToActivate and false or opts.active ~= false,
 

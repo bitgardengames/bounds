@@ -103,7 +103,9 @@ local function spawnObjects(chamber)
     local doorSpawned = false
 
     if objects.door then
-        Door.spawn(objects.door.tx, objects.door.ty, TILE_SIZE)
+        Door.spawn(objects.door.tx, objects.door.ty, TILE_SIZE, {
+            id = objects.door.id or "door",
+        })
         doorSpawned = true
     end
 
@@ -127,13 +129,16 @@ local function spawnObjects(chamber)
     end
 
     Cube.clear()
-    for _, cube in ipairs(objects.cubes or {}) do
-        Cube.spawn(cube.tx * TILE_SIZE, cube.ty * TILE_SIZE)
+    for index, cube in ipairs(objects.cubes or {}) do
+        Cube.spawn(cube.tx * TILE_SIZE, cube.ty * TILE_SIZE, {
+            id = cube.id or string.format("cube_%d", index),
+        })
     end
 
     Saw.clear()
-    for _, saw in ipairs(objects.saws or {}) do
+    for index, saw in ipairs(objects.saws or {}) do
         Saw.spawn(saw.tx * TILE_SIZE, saw.ty * TILE_SIZE, {
+            id = saw.id or string.format("saw_%d", index),
             dir = saw.dir,
             mount = saw.mount,
             speed = saw.speed,
@@ -162,11 +167,13 @@ local function spawnObjects(chamber)
 	end
 
 	Monitor.clear()
-	Monitor.tileSize = TILE_SIZE
+        Monitor.tileSize = TILE_SIZE
 
-	for _, monitor in ipairs(objects.monitors or {}) do
-		Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1)
-	end
+        for index, monitor in ipairs(objects.monitors or {}) do
+                Monitor.spawn(monitor.tx, monitor.ty, monitor.dir or 1, {
+                        id = monitor.id or string.format("monitor_%d", index),
+                })
+        end
 end
 
 local function spawnContextZones(chamber)
