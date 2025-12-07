@@ -26,25 +26,35 @@ local function smoothstep(t)
 end
 
 --------------------------------------------------------------
--- EASING: ONLY SLOW NEAR ENDPOINTS
+-- EASING: CONSISTENT SPEED WITH GENTLE ENDPOINT TAPER
 --------------------------------------------------------------
 -- Platforms previously used smoothstep across the full [0,1]
 -- range, which means if you stopped mid-track and restarted,
 -- you'd jump back in at the fastest part of the curve. This
--- helper only eases at the first/last 10% of motion so speed
--- remains consistent elsewhere.
+-- helper now keeps motion linear everywhere except near the
+-- first/last few percent of travel, where we gently taper so
+-- platforms slow into endpoints and ease back out smoothly.
 local function endpointEase(t)
-    local EASE_PORTION = 0.1
+    local EASE_PORTION   = 0.05
+    local EASE_STRENGTH = 0.35
 
-    if t < EASE_PORTION then
-        local localT = t / EASE_PORTION
-        return smoothstep(localT) * EASE_PORTION
-    elseif t > (1 - EASE_PORTION) then
-        local localT = (t - (1 - EASE_PORTION)) / EASE_PORTION
-        return (1 - EASE_PORTION) + smoothstep(localT) * EASE_PORTION
-    else
+    ------------------------------------------------------------------
+    -- Edge weight is 1 near endpoints and fades to 0 in the middle.
+    ------------------------------------------------------------------
+    local edgeDistance = math.min(t, 1 - t)
+    local edgeWeight = 1 - math.min(edgeDistance / EASE_PORTION, 1)
+
+    if edgeWeight <= 0 then
         return t
     end
+
+    ------------------------------------------------------------------
+    -- Blend a little smoothstep only where edgeWeight > 0, keeping the
+    -- bulk of the track perfectly linear while softly damping the ends.
+    ------------------------------------------------------------------
+    local eased = smoothstep(t)
+
+    return t + (eased - t) * edgeWeight * EASE_STRENGTH
 end
 
 --------------------------------------------------------------
