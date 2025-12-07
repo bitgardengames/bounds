@@ -291,10 +291,9 @@ function MovingPlatform.draw()
         love.graphics.rectangle(
             "fill",
             p.x - OUTLINE,
-            p.y - OUTLINE,
+            p.y - 2 - OUTLINE,
             p.w + OUTLINE * 2,
-            p.h + OUTLINE * 2,
-            6, 6
+            p.h + OUTLINE * 2
         )
 
         -- BODY FILL
@@ -302,10 +301,9 @@ function MovingPlatform.draw()
         love.graphics.rectangle(
             "fill",
             p.x,
-            p.y,
+            p.y - 2,
             p.w,
-            p.h,
-            6, 6
+            p.h
         )
 
         -- FOOT
