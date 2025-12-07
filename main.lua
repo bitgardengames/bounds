@@ -361,7 +361,7 @@ function love.draw()
     Plate.draw()
     Cube.draw()
 	MovingPlatform.draw()
-	Liquids.draw()-- first draw liquids to their canvas
+	Liquids.draw()
 	ContextZones.draw() -- remove after debugging
 	Player.draw()
 
