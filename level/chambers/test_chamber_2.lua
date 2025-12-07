@@ -34,6 +34,15 @@ local chamber = {
             }
         },
 
+		{
+			name  = "Water",
+			kind  = "water",
+			solid = false,    -- water isn’t solid for collisions
+			rects = {
+				{x=2, y=20, w=38, h=3}, -- one tile high pool
+			}
+		},
+
         ------------------------------------------------------
         -- SOLIDS — Updated Floor 2 with a 6-tile gap
         ------------------------------------------------------
