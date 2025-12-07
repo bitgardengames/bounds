@@ -1,3 +1,9 @@
+--[[
+	Notes
+	Could add the sequence here where the player drops in, looks at the puzzle, steps on the plate. after a moment of stepping off the plate the player has a conundrum moment... I don't have the tools to solve this. Then the drop tube coughs up a cube.
+	Soft lock potential - If the player sends the cube back across the gap, they're stuck at the start. despawn cube and drop a new one from the delivery tube
+--]]
+
 local chamber = {
     name   = "Test Chamber 2",
     width  = 40,
@@ -31,15 +37,29 @@ local chamber = {
             kind = "decor",
             objects = {
                 {type="sign", tx=4, ty=5, data={text="CH-02"}},
+				
+                {type="conduit_curve_br", tx=6, ty=14},
+                {type="conduit_h_join",     tx=7, ty=14},
+                {type="conduit_h",          tx=8, ty=14},
+                {type="conduit_h",          tx=9, ty=14},
+                {type="conduit_h_join",     tx=10, ty=14},
+                {type="conduit_h",          tx=11, ty=14},
+                {type="conduit_h",          tx=12, ty=14},
+                {type="conduit_h_join",     tx=13, ty=14},
+				
+				{type="conduit_junctionbox",tx=25, ty=14},
             }
         },
 
 		{
 			name  = "Water",
-			kind  = "water",
+			kind  = "liquid",
 			solid = false,    -- water isn’t solid for collisions
 			rects = {
-				{x=2, y=20, w=38, h=3}, -- one tile high pool
+				--{x=2, y=20, w=38, h=3}, -- one tile high pool
+				{x=2, y=20, w=38, h=1}, -- one tile high pool
+				{x=2, y=21, w=38, h=1}, -- one tile high pool
+				{x=2, y=22, w=38, h=1}, -- one tile high pool
 			}
 		},
 

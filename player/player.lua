@@ -201,7 +201,7 @@ local function resolveMovingPlatformCollisions()
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
 
-        local sx1, sy1 = platform.x, platform.y
+        local sx1, sy1 = platform.x, platform.y - 2
         local sx2, sy2 = platform.x + platform.w, platform.y + platform.h
 
         local overlapX = math.min(px2, sx2) - math.max(px1, sx1)

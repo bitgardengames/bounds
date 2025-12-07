@@ -6,6 +6,7 @@
 
 local Theme = require("theme")
 local Decorations = require("decorations")
+local Liquids = require("systems.liquids")
 
 local Level = {}
 
@@ -228,12 +229,10 @@ function Level.load(data)
 
     Level.solidLayer = nil
     Level.frameLayer = nil
-    Level.waterLayer = nil
 
     Level.solidGrid  = newGrid(Level.width, Level.height, false)
     Level.solidBlobs = {}
     Level.frameBlobs = {}
-    Level.waterBlobs = {}
 
     for _, src in ipairs(data.layers or {}) do
         local layer = {
@@ -251,9 +250,11 @@ function Level.load(data)
             Level.frameLayer = layer
         elseif layer.solid then
             Level.solidLayer = layer
-		elseif layer.kind == "water" then
-			Level.waterLayer = layer
         end
+		
+		if layer.kind == "liquid" then
+			Liquids.load(layer, Level.width, Level.height, Level.tileSize)
+		end
     end
 
     assert(Level.solidLayer, "No Solids layer in leveldata")
@@ -266,15 +267,6 @@ function Level.load(data)
             end
         end
     end
-
-	if Level.waterLayer then
-		Level.waterBlobs = buildBlobsFromTiles(
-			Level.waterLayer.tiles,
-			Level.width,
-			Level.height,
-			Level.tileSize
-		)
-	end
 
     Level.solidBlobs = buildBlobsFromTiles(
         Level.solidLayer.tiles, Level.width, Level.height, Level.tileSize
@@ -326,61 +318,6 @@ local function drawBlobs(blobs, color, inset)
         ------------------------------------------------------
         love.graphics.setColor(color)
         love.graphics.draw(cv, ox, oy, 0, sx, sy)
-    end
-end
-
-local function drawWaterBlobs(blobs)
-    local ts = Level.tileSize
-
-    for _, blob in ipairs(blobs) do
-        local x = blob.x
-        local y = blob.y
-        local w = blob.w
-        local h = blob.h
-
-        local rows = h / ts
-        local isTopRow = true
-
-        love.graphics.setScissor(x, y, w, h)
-
-        ----------------------------------------------------------
-        -- WATER BODY
-        ----------------------------------------------------------
-        love.graphics.setColor(0.20, 0.45, 0.70, 0.78)
-        love.graphics.rectangle("fill", x, y, w, h)
-
-        ----------------------------------------------------------
-        -- SURFACE ANIMATION (calm wave)
-        ----------------------------------------------------------
-        if isTopRow then
-            local time = love.timer.getTime()
-            local waveHeight = 4
-            local surfaceY = y
-
-            love.graphics.setColor(0.10, 0.16, 0.22, 1)
-
-            local x1 = x
-            local x2 = x + w
-
-            local function wave(xp)
-                return math.sin((xp * 0.06) + time * 2.2) * waveHeight
-            end
-
-            love.graphics.setLineWidth(4)
-            love.graphics.line(
-                x1, surfaceY + wave(x1),
-                x2, surfaceY + wave(x2)
-            )
-        end
-
-        --[[----------------------------------------------------------
-        -- TOP OUTLINE
-        ----------------------------------------------------------
-        love.graphics.setColor(0.06, 0.10, 0.14, 1)
-        love.graphics.setLineWidth(4)
-        love.graphics.line(x, y, x+w, y)]]
-
-        love.graphics.setScissor()
     end
 end
 
@@ -468,10 +405,6 @@ function Level.draw(camX, camY)
         -- Fallback: no canvas available, just draw normally
         Decorations.draw()
     end
-
-	if Level.waterBlobs then
-		drawWaterBlobs(Level.waterBlobs)
-	end
 
     -- SOLIDS (inset by 2px per side)
     drawBlobs(Level.solidBlobs, Level.colors.solid, 2)

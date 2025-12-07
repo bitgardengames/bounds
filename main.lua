@@ -22,6 +22,7 @@ local Monitor = require("objects.monitor")
 local ContextZones = require("contextzones")
 local LaserEmitter = require("objects.laseremitter")
 local LaserReceiver = require("objects.laserreceiver")
+local Liquids = require("systems.liquids")
 local DropTube = require("objects.droptube")
 
 local TILE_SIZE = LevelData.tileSize or 48
@@ -29,6 +30,7 @@ local currentChamber = 1
 local chamberCount = #LevelData.chambers
 local gameComplete = false
 local isTransitioning = false
+local loadChamber
 
 local Transition = {
     active = false,
@@ -38,9 +40,6 @@ local Transition = {
     alpha = 0,
     nextChamber = nil,
 }
-
--- Forward declarations
-local loadChamber
 
 local function startTransition(nextChamber)
     Transition.active = true
@@ -267,6 +266,7 @@ function love.update(dt)
     LaserReceiver.update(dt, LaserEmitter.list)
     DropTube.update(dt)
     Particles.update(dt)
+	Liquids.update(dt)
     Decorations.update(dt)
 
     ----------------------------------------------------------
@@ -320,6 +320,11 @@ function love.keypressed(key)
         love.graphics.captureScreenshot("screenshot_" .. time .. ".png")
     end
 
+    if key == "r" then
+        local mx, my = love.mouse.getPosition()
+		Liquids.ripple(mx, my, 500)
+    end
+
     Input.keypressed(key)
 end
 
@@ -356,6 +361,7 @@ function love.draw()
     Plate.draw()
     Cube.draw()
 	MovingPlatform.draw()
+	Liquids.draw()-- first draw liquids to their canvas
 	ContextZones.draw() -- remove after debugging
 	Player.draw()
 

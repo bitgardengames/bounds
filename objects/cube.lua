@@ -160,7 +160,7 @@ local function resolvePlatformCollision(c)
         local cx1, cy1 = c.x, c.y
         local cx2, cy2 = c.x + c.w, c.y + c.h - RESTING_FOOT_OFFSET
 
-        local px1, py1 = platform.x, platform.y
+        local px1, py1 = platform.x, platform.y - 2
         local px2, py2 = platform.x + platform.w, platform.y + platform.h
 
         local overlapX = math.min(cx2, px2) - math.max(cx1, px1)
