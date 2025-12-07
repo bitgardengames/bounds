@@ -58,11 +58,11 @@ local function applyPosition(p)
     --------------------------------------------------------------
     local offset
     if p.dir == "horizontal" then
-        local effective = p.travel - 8   -- shorten total by 8px
+        local effective = p.travel   -- shorten total by 8px
         if effective < 0 then effective = 0 end
         offset = eased * effective
 
-        p.cx = p.anchorCX + offset + 4   -- shift start by 4px
+        p.cx = p.anchorCX + offset   -- shift start by 4px
         p.cy = p.anchorCY
     else
         offset = eased * p.travel
