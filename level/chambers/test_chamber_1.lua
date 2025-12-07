@@ -123,16 +123,16 @@ local chamber = {
             {tx = 27, ty = 21, id = "plate_1"},
         },
 
+        dropTubes = {
+            {tx = 3, ty = 1},
+        },
+
         cubes = {
             {tx = 17, ty = 19},
         },
 
         monitors = {
             {tx = 38, ty = 5, dir = -1},
-        },
-
-        dropTubes = {
-            {tx = 12, ty = 3, segments = 3},
         },
     },
 

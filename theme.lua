@@ -30,14 +30,21 @@ Theme.player = {
 
 Theme.cube = {
     fill = {0.95, 0.95, 0.98, 1},
-        bolt = {96 / 255, 118 / 255, 134 / 255, 1},
-        seam = {0.075, 0.075, 0.085, 1},
+	bolt = {96 / 255, 118 / 255, 134 / 255, 1},
+	seam = {0.075, 0.075, 0.085, 1},
     outline = Theme.outline,
 }
 
 Theme.door = {
 	frame = {0.80, 0.84, 0.86, 1},
 	doorFill = {68/255, 83/255, 97/255, 1},
+}
+
+Theme.droptube = {
+	topcap = {0.20, 0.20, 0.22, 1.0},
+	bottomcap = {0.36, 0.40, 0.46},
+	glass = {0.40, 0.55, 0.70, 0.35},
+	highlight = {1, 1, 1, 0.22},
 }
 
 Theme.saw = {

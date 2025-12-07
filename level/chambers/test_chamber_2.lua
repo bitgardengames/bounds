@@ -37,7 +37,7 @@ local chamber = {
             kind = "decor",
             objects = {
                 {type="sign", tx=4, ty=5, data={text="CH-02"}},
-				
+
                 {type="conduit_curve_br", tx=6, ty=14},
                 {type="conduit_h_join",     tx=7, ty=14},
                 {type="conduit_h",          tx=8, ty=14},
@@ -46,7 +46,7 @@ local chamber = {
                 {type="conduit_h",          tx=11, ty=14},
                 {type="conduit_h",          tx=12, ty=14},
                 {type="conduit_h_join",     tx=13, ty=14},
-				
+
 				{type="conduit_junctionbox",tx=25, ty=14},
             }
         },
@@ -117,7 +117,7 @@ local chamber = {
         },
 
         dropTubes = {
-            {tx = 3, ty = 1, segments = 2},
+            {tx = 3, ty = 1},
         },
 
         ------------------------------------------------------

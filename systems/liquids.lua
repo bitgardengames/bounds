@@ -7,12 +7,10 @@ local Liquids = {}
 
 Liquids.tileSize = 48
 Liquids.blobs    = {}
-Liquids.canvas   = nil
 
-Liquids.fillColor    = {0.20, 0.45, 0.70, 0.70}
+Liquids.fillColor    = {0.20, 0.45, 0.70, 0.60}
 Liquids.outlineColor = {0.07, 0.12, 0.18, 1.0}
 Liquids.outlineWidth = 4
-
 
 --------------------------------------------------------------
 -- Grid helpers
@@ -180,7 +178,6 @@ function Liquids.load(layer, width, height, T)
     end
 
     Liquids.blobs = blobs
-    Liquids.canvas = love.graphics.newCanvas(width*T, height*T)
 end
 
 function Liquids.update(dt)
@@ -207,11 +204,6 @@ end
 --------------------------------------------------------------
 
 function Liquids.draw()
-    if not Liquids.canvas then return end
-
-    love.graphics.setCanvas(Liquids.canvas)
-    love.graphics.clear(0,0,0,0)
-
     for _,blob in ipairs(Liquids.blobs) do
         local x,y,w,h = blob.x,blob.y,blob.w,blob.h
         local s=blob.surface
@@ -240,8 +232,8 @@ function Liquids.draw()
         ------------------------------------------------------
         -- Draw fill
         ------------------------------------------------------
-        --love.graphics.setColor(Liquids.fillColor)
-        --love.graphics.polygon("fill", poly)
+        love.graphics.setColor(Liquids.fillColor)
+        love.graphics.polygon("fill", poly)
 
         ------------------------------------------------------
         -- Draw top outline (exact same vertices)
@@ -259,11 +251,6 @@ function Liquids.draw()
             px,py = nx,ny
         end
     end
-
-    love.graphics.setCanvas()
-    love.graphics.setColor(1,1,1,1)
-    love.graphics.draw(Liquids.canvas,0,0)
-    --love.graphics.draw(Liquids.canvas,0,-4)
 end
 
 

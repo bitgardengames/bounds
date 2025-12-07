@@ -1,5 +1,6 @@
 --------------------------------------------------------------
--- DROP TUBE — Ceiling-mounted pipe inspired by classic warp tubes
+-- DROP TUBE — Clean lab-style rounded-top + bottom glass tube
+-- Rebuilt from scratch to match Bounds' new visual direction.
 --------------------------------------------------------------
 
 local Theme = require("theme")
@@ -10,20 +11,33 @@ local DropTube = {
 }
 
 --------------------------------------------------------------
+-- CONFIG
+--------------------------------------------------------------
+local OUTLINE      = 4
+local CAP_HEIGHT   = 16
+local RADIUS_CAP   = 6
+
+-- Colors
+local COLOR_TOP_CAP     = Theme.droptube.topcap
+local COLOR_BOTTOM_CAP  = Theme.droptube.bottomcap
+local COLOR_BOTTOM  = Theme.outline
+local COLOR_GLASS   = Theme.droptube.glass
+local COLOR_HL      = Theme.droptube.highlight
+local OUTLINE_COLOR = Theme.outline or {0,0,0,1}
+
+--------------------------------------------------------------
 -- SPAWN / CLEAR
 --------------------------------------------------------------
-
 local function newInstance(tx, ty, opts)
     opts = opts or {}
     local tile = DropTube.tileSize
-    local segments = math.max(1, opts.segments or opts.length or 2)
 
     return {
         id     = tostring(opts.id or string.format("droptube_%d", #DropTube.list + 1)),
         x      = tx * tile,
         y      = ty * tile,
         w      = tile,
-        h      = segments * tile,
+        h      = tile * 2,
         t      = love.math.random() * 10,
         active = true,
     }
@@ -39,9 +53,8 @@ function DropTube.clear()
 end
 
 --------------------------------------------------------------
--- UPDATE
+-- UPDATE — tiny idle wobble
 --------------------------------------------------------------
-
 function DropTube.update(dt)
     for _, tube in ipairs(DropTube.list) do
         tube.t = tube.t + dt
@@ -49,90 +62,117 @@ function DropTube.update(dt)
 end
 
 --------------------------------------------------------------
--- DRAW HELPERS
+-- HELPER: Outlined rounded rectangle
 --------------------------------------------------------------
-
-local OUTLINE = 4
-local S = Theme.decorations
-local OUTLINE_COLOR = Theme.outline
-
-local function drawBody(tube, offsetY)
-    local tile = DropTube.tileSize
-    local tubeW = tile * 0.72
-    local lipH = math.max(tile * 0.32, math.min(tile * 0.48, tube.h * 0.45))
-    local bodyH = math.max(tile * 0.6, tube.h - lipH)
-
-    local x = tube.x
-    local y = tube.y + offsetY
-
-    local bodyX = x + (tile - tubeW) * 0.5
-    local bodyY = y
-
+local function drawOutlinedRoundedRect(mode, x, y, w, h, rx, ry)
+    -- OUTLINE
     love.graphics.setColor(OUTLINE_COLOR)
-    love.graphics.rectangle("fill", bodyX - OUTLINE, bodyY, tubeW + OUTLINE * 2, bodyH, 10, 10)
+    love.graphics.rectangle("fill",
+        x - OUTLINE,
+        y - OUTLINE,
+        w + OUTLINE * 2,
+        h + OUTLINE * 2,
+        rx, ry
+    )
 
-    love.graphics.setColor(S.pipe)
-    love.graphics.rectangle("fill", bodyX, bodyY + 2, tubeW, bodyH - 2, 8, 8)
-
-    -- darker banding
-    love.graphics.setColor(S.dark)
-    love.graphics.rectangle("fill", bodyX + 6, bodyY + bodyH * 0.25, tubeW - 12, 6, 3, 3)
-    love.graphics.rectangle("fill", bodyX + 6, bodyY + bodyH * 0.60, tubeW - 12, 6, 3, 3)
-
-    -- highlight stripe
-    love.graphics.setColor(1, 1, 1, 0.12)
-    love.graphics.rectangle("fill", bodyX + 6, bodyY + 10, 6, bodyH - 20, 3, 3)
-
-    return lipH, bodyX, bodyY + bodyH, tubeW
-end
-
-local function drawLip(tube, lipH, bodyX, lipTopY, bodyW)
-    local tile = DropTube.tileSize
-    local lipW = math.min(tile * 1.25, bodyW + tile * 0.32)
-    local lipX = tube.x + (tile - lipW) * 0.5
-
-    love.graphics.setColor(OUTLINE_COLOR)
-    love.graphics.rectangle("fill", lipX - OUTLINE, lipTopY, lipW + OUTLINE * 2, lipH + OUTLINE, 12, 12)
-
-    love.graphics.setColor(S.pipe)
-    love.graphics.rectangle("fill", lipX, lipTopY + 2, lipW, lipH, 10, 10)
-
-    -- lip shading
-    love.graphics.setColor(S.dark)
-    love.graphics.rectangle("fill", lipX + 4, lipTopY + lipH * 0.35, lipW - 8, lipH * 0.25, 6, 6)
-
-    -- inner cavity
-    local gap = 10
-    love.graphics.setColor(0, 0, 0, 0.82)
-    love.graphics.rectangle("fill", lipX + gap, lipTopY + lipH - 16, lipW - gap * 2, 12, 6, 6)
-end
-
-local function drawCeilingMount(tube, offsetY)
-    local tile = DropTube.tileSize
-    local mountW = tile * 0.5
-    local mountH = tile * 0.16
-    local mountX = tube.x + (tile - mountW) * 0.5
-    local mountY = tube.y + offsetY - mountH
-
-    love.graphics.setColor(OUTLINE_COLOR)
-    love.graphics.rectangle("fill", mountX - OUTLINE, mountY - 1, mountW + OUTLINE * 2, mountH + OUTLINE, 6, 6)
-
-    love.graphics.setColor(S.pipe)
-    love.graphics.rectangle("fill", mountX, mountY + 1, mountW, mountH - 2, 4, 4)
+    -- FILL
+    love.graphics.setColor(mode.color)
+    love.graphics.rectangle("fill",
+        x,
+        y,
+        w,
+        h,
+        rx, ry
+    )
 end
 
 --------------------------------------------------------------
 -- DRAW
 --------------------------------------------------------------
-
 function DropTube.draw()
     for _, tube in ipairs(DropTube.list) do
         if tube.active then
-            local wobble = math.sin(tube.t * 1.25) * 1.5
+            local x  = tube.x
+            local y  = tube.y
+            local w  = tube.w
+            local h  = tube.h
 
-            local lipH, bodyX, lipTopY, bodyW = drawBody(tube, wobble)
-            drawLip(tube, lipH, bodyX, lipTopY, bodyW)
-            drawCeilingMount(tube, wobble)
+            --------------------------------------------------
+            -- TOP CAP (rounded rectangle)
+            --------------------------------------------------
+            drawOutlinedRoundedRect(
+                {color = COLOR_TOP_CAP},
+                x,
+                y + 2,
+                w,
+                CAP_HEIGHT,
+                RADIUS_CAP,
+                RADIUS_CAP
+            )
+
+            --------------------------------------------------
+            -- GLASS BODY
+            --------------------------------------------------
+            local bodyY = y + CAP_HEIGHT + 2
+            local bodyH = h - CAP_HEIGHT * 2  -- reduce to make space for bottom cap
+
+            -- Glass fill (inset)
+            love.graphics.setColor(COLOR_GLASS)
+            love.graphics.rectangle("fill",
+                x + 4,
+                bodyY + 4,
+                w - 8,
+                bodyH
+            )
+
+            --------------------------------------------------
+            -- SIDE OUTLINES (no radius, pure 4px lines)
+            --------------------------------------------------
+            love.graphics.setColor(OUTLINE_COLOR)
+
+            -- left
+            love.graphics.rectangle("fill",
+                x,
+                bodyY,
+                4,
+                bodyH
+            )
+
+            -- right
+            love.graphics.rectangle("fill",
+                x + w - 4,
+                bodyY,
+                4,
+                bodyH
+            )
+
+            --------------------------------------------------
+            -- GLASS HIGHLIGHT
+            --------------------------------------------------
+            love.graphics.setColor(COLOR_HL)
+            love.graphics.rectangle(
+                "fill",
+                x + w * 0.15,
+                bodyY + 6,
+                w * 0.12,
+                bodyH - 12,
+                4, 4
+            )
+
+            --------------------------------------------------
+            -- NEW: BOTTOM CAP (mirrors top cap)
+            --------------------------------------------------
+            local bottomY = y + h - CAP_HEIGHT
+
+            drawOutlinedRoundedRect(
+                {color = COLOR_BOTTOM_CAP},
+                x,
+                bottomY,
+                w,
+                CAP_HEIGHT,
+                RADIUS_CAP,
+                RADIUS_CAP
+            )
         end
     end
 end
