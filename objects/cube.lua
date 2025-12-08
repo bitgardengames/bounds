@@ -396,6 +396,15 @@ function Cube.update(dt, player)
             end
         end
 
+        if c.grounded then
+            local decay = math.exp(-dt * 2.2)
+            c.restAngle = (c.restAngle or 0) * decay
+
+            if math.abs(c.restAngle) < 0.002 then
+                c.restAngle = 0
+            end
+        end
+
         updateVisualOffset(c, dt, targetOffset)
         updateAngle(c, dt)
     end
