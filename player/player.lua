@@ -735,7 +735,6 @@ function Player.update(dt, Level)
     -- CUBE collision push logic
     ----------------------------------------------------------
     local wasPushingCube = p.pushingCube
-    local cubeStandOffset = 4
 
     local function startPushingCube(c)
         p.pushingCube = true
@@ -747,7 +746,7 @@ function Player.update(dt, Level)
     local function resolveCubeCollision(c)
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
-        local paddedPy2 = py2 + cubeStandOffset
+        local paddedPy2 = py2
 
         local cx1, cy1 = c.x, c.y
         local cx2, cy2 = c.x + c.w, c.y + c.h
@@ -761,12 +760,12 @@ function Player.update(dt, Level)
         local belowCube = py1 >= cy2 - margin
         local sideAligned = not aboveCube and not belowCube
 
-        local fromAbove = (p.prevY + p.h + cubeStandOffset) <= cy1 + margin and p.vy >= 0
+        local fromAbove = (p.prevY + p.h) <= cy1 + margin and p.vy >= 0
         local fromBelow = p.prevY >= cy2 - margin and p.vy <= 0
 
         if overlapX > 0 and overlapYPadded > 0 then
             if fromAbove or (overlapYPadded <= overlapX and not sideAligned) then
-                p.y = cy1 - p.h - cubeStandOffset
+                p.y = cy1 - p.h
                 p.vy = 0
                 p.onGround = true
                 p.contactBottom = math.max(p.contactBottom, 0.7)
@@ -792,7 +791,7 @@ function Player.update(dt, Level)
                 return
             elseif overlapYActual > 0 then
                 if (p.y + p.h / 2) < (c.y + c.h / 2) then
-                    p.y = cy1 - p.h - cubeStandOffset
+                    p.y = cy1 - p.h
                     p.onGround = true
                     p.contactBottom = math.max(p.contactBottom, 0.7)
                     p.springVertVel = p.springVertVel - 160
