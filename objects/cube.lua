@@ -379,21 +379,10 @@ function Cube.update(dt, player)
         end
 
         if not wasGrounded and c.grounded then
-            local impactBoost = math.min(math.abs(landingVy) * 0.02, 12)
-            c.visualVelocity = (c.visualVelocity or 0) + impactBoost
-
-            local wobbleImpulse = math.min(math.abs(landingVy) * 0.0022, 1.8)
-            local spinDir = c.vx ~= 0 and (c.vx > 0 and 1 or -1) or (math.random() < 0.5 and 1 or -1)
-            c.angularVelocity = (c.angularVelocity or 0) * 0.35 + spinDir * wobbleImpulse
-
-            local tumbleLean = 0.24 + math.min(math.abs(landingVy) * 0.0006, 0.28) + math.min(math.abs(c.vx) * 0.0015, 0.18)
-            c.restAngle = spinDir * math.min(tumbleLean, 0.62)
-
-            if math.abs(landingVy) > BOUNCE_THRESHOLD then
-                local bounceSpeed = math.min(math.abs(landingVy) * BOUNCE_DAMPING, MAX_FALL_SPEED * 0.7)
-                c.vy = -bounceSpeed
-                c.grounded = false
-            end
+            c.angularVelocity = 0
+            c.restAngle = 0
+            c.angle = 0
+            c.visualVelocity = 0
         end
 
         if c.grounded then
