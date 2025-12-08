@@ -102,7 +102,7 @@ local chamber = {
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-            { tx = 10, ty = 3 },
+            { tx = 23, ty = 12 },
         },
 
         monitors = {
