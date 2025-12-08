@@ -881,14 +881,14 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     if p.sleeping then
         if not wasSleeping then
-            p.sleepBubbleTimer = 3 + math.random() * 0.3
+            p.sleepBubbleTimer = 4 + math.random() * 0.3
         else
             p.sleepBubbleTimer = p.sleepBubbleTimer - dt
         end
 
         if p.sleepBubbleTimer <= 0 then
             queueSleepBubbles()
-            p.sleepBubbleTimer = 3 + math.random() * 0.3
+            p.sleepBubbleTimer = 4 + math.random() * 0.3
         end
 
         updateSleepBubbleQueue(dt)

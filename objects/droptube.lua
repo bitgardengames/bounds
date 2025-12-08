@@ -4,8 +4,6 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
-local Player = require("player.player")
-local p = Player.get()
 
 local DropTube = {
     list     = {},
@@ -55,8 +53,22 @@ function DropTube.dropPlayer(tube)
     local dropX = tube.x + tube.w/2 - 16   -- center player horizontally
     local dropY = tube.y - tube.w/2
 
-    local Player = require("player.player")
+	local Player = require("player.player")
     Player.beginDrop(dropX, dropY)
+end
+
+function DropTube.dropCube(tube, cube)
+    local dropX = tube.x + tube.w/2 - cube.w/2 + 4   -- tweak like player
+    local dropY = tube.y - (DropTube.tileSize * 0.5)
+
+    cube.x = dropX
+    cube.y = dropY
+    cube.vx = 0
+    cube.vy = 0
+
+    cube.arriving = true
+    cube.arrivalTimer = 0
+    cube.arrivalDelay = 0.25 -- optional animation window
 end
 
 function DropTube.clear()
@@ -94,6 +106,9 @@ end
 function DropTube.update(dt)
     -- When the player has finished their death timer,
     -- this flag is set by Player.update()
+	local Player = require("player.player")
+	local p = Player.get()
+	
     if p.pendingTubeRespawn then
         p.pendingTubeRespawn = false
 
@@ -108,6 +123,22 @@ function DropTube.update(dt)
         if tube then
             -- Use same arrival animation as chamber load
             DropTube.dropPlayer(tube)
+        end
+    end
+	
+    -- CUBES RESPAWN
+    local Cube = require("objects.cube")
+    for _, c in ipairs(Cube.list) do
+        if c.pendingTubeRespawn then
+            c.pendingTubeRespawn = false
+
+            c.x = -9999
+            c.y = -9999
+            c.vx = 0
+            c.vy = 0
+
+            local tube = DropTube.list[1]
+            if tube then DropTube.dropCube(tube, c) end
         end
     end
 end

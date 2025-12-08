@@ -4,10 +4,12 @@
 -- and real stable ground friction (no jitter).
 --------------------------------------------------------------
 
-local level = require("level.level")
+local Level = require("level.level")
 local Particles = require("particles")
 local Theme = require("theme")
 local MovingPlatform = require("objects.movingplatform")
+local Liquids = require("systems.liquids")
+local DropTube = require("objects.droptube")
 
 local Cube = { list = {} }
 
@@ -331,10 +333,10 @@ end
 --------------------------------------------------------------
 
 function Cube.update(dt, player)
-    local tileSize = level.tileSize or 48
-    local grid = level.solidGrid
-    local width = level.width or 0
-    local height = level.height or 0
+    local tileSize = Level.tileSize or 48
+    local grid = Level.solidGrid
+    local width = Level.width or 0
+    local height = Level.height or 0
 
     for _, c in ipairs(Cube.list) do
         local wasGrounded = c.grounded
@@ -394,6 +396,45 @@ function Cube.update(dt, player)
             end
         end
 
+		----------------------------------------------------------
+		-- WATER COLLISION
+		----------------------------------------------------------
+		local topY      = c.y + 4
+		local leftX     = c.x + 4
+		local rightX    = c.x + c.w - 4
+
+		local leftUnder  = Liquids.isPointInWater(leftX, topY)
+		local rightUnder = Liquids.isPointInWater(rightX, topY)
+
+		if leftUnder and rightUnder then
+			if not c.dead then
+				c.dead = true
+				c.respawnTimer = 1.0
+				Liquids.ripple(leftX, topY, 50)
+			end
+		end
+
+		----------------------------------------------------------
+		-- RESPAWN
+		----------------------------------------------------------
+		if c.dead then
+			c.respawnTimer = c.respawnTimer - dt
+			if c.respawnTimer <= 0 then
+				c.dead = false
+				c.respawnTimer = nil
+
+				-- Move cube offscreen so it doesn't flash
+				c.x = -48
+				c.y = -48
+				c.vx = 0
+				c.vy = 0
+
+				-- Signal droptube that cube needs a respawn
+				c.pendingTubeRespawn = true
+			end
+			return  -- stop updating cube while dead
+		end
+
         updateVisualOffset(c, dt, targetOffset)
         updateAngle(c, dt)
     end
@@ -409,6 +450,10 @@ local radius = 4
 
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
+		if c.dead then
+			goto continue
+		end
+
         local offset  = c.visualOffset or visualOffset
         local w       = c.w
         local h       = c.h
@@ -470,6 +515,8 @@ function Cube.draw()
         love.graphics.circle("fill", 0, 0, radius)
 
         love.graphics.pop()
+
+		::continue::
     end
 end
 
