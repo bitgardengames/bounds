@@ -269,7 +269,7 @@ return function(Decorations)
 			)
 
 			-- Inner metal fill
-			love.graphics.setColor(S.conduit)
+			love.graphics.setColor(S.bracket)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,
@@ -329,7 +329,7 @@ return function(Decorations)
 			)
 
 			-- Inner fill
-			love.graphics.setColor(S.conduit)
+			love.graphics.setColor(S.bracket)
 			love.graphics.rectangle("fill",
 				jx + O,
 				jy + O,

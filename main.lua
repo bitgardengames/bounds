@@ -231,7 +231,7 @@ function loadChamber(index)
 	local dropTube = DropTube.list[1]  -- simple: first tube in the chamber
 	if dropTube then
 		-- small delay before dropping
-		Timer.after(0.5, function()
+		Timer.after(1, function()
 			DropTube.dropPlayer(dropTube)
 		end)
 	--[[else

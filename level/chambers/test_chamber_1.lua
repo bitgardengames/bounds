@@ -44,9 +44,8 @@ local chamber = {
                 {type="panel_tall", tx=28, ty=5},
                 {type="panel_tall", tx=34, ty=16},
 
-                {type="conduit_v",          tx=27, ty=21},
-                {type="conduit_curve_tr",   tx=27, ty=20},
-                {type="conduit_h_join",     tx=28, ty=20},
+                {type="conduit_v",          tx=28, ty=21},
+                {type="conduit_curve_tr",   tx=28, ty=20},
                 {type="conduit_h",          tx=29, ty=20},
                 {type="conduit_h_join",     tx=30, ty=20},
                 {type="conduit_h",tx=31, ty=20},
