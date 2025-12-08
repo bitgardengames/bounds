@@ -30,6 +30,8 @@ local COLOR_FILL = Theme.cube.fill
 local COLOR_OUTLINE = Theme.cube.outline
 local RESTING_FOOT_OFFSET = 2
 local PLATFORM_SINK = 2
+local BOUNCE_THRESHOLD = 520
+local BOUNCE_DAMPING = 0.36
 
 --------------------------------------------------------------
 -- SPAWN
@@ -48,7 +50,7 @@ function Cube.spawn(x, y, opts)
         vy = 0,
         grounded = false,
         weight = 1,
-        visualOffset = 4,
+        visualOffset = 0,
         visualVelocity = 0,
         angle = 0,
         angularVelocity = 0,
@@ -297,24 +299,15 @@ local function applyFriction(c, dt, beingPushed)
 end
 
 --------------------------------------------------------------
--- VISUAL OFFSET (SOFT LANDING)
+-- VISUAL OFFSET (SUBTLE FLOAT WITHOUT SETTLING)
 --------------------------------------------------------------
 
 local function updateVisualOffset(c, dt, targetOffset)
-    local stiffness = c.grounded and 42 or 28
-    local damping = 10
-
     local offset = c.visualOffset or targetOffset
-    local velocity = c.visualVelocity or 0
+    local blend = 1 - math.exp(-dt * 18)
 
-    local delta = targetOffset - offset
-    velocity = velocity + delta * stiffness * dt
-    velocity = velocity * math.max(0, 1 - damping * dt)
-
-    offset = math.max(0, offset + velocity * dt)
-
-    c.visualOffset = offset
-    c.visualVelocity = velocity
+    c.visualOffset = offset + (targetOffset - offset) * blend
+    c.visualVelocity = 0
 end
 
 --------------------------------------------------------------
@@ -362,7 +355,7 @@ function Cube.update(dt, player)
         local pushing = applyPush(c, player, dt)
         applyFriction(c, dt, pushing)
 
-        local targetOffset = c.grounded and 4 or 2
+        local targetOffset = 0
         local landingVy = c.vy
 
         ------------------------------------------------------
@@ -389,6 +382,12 @@ function Cube.update(dt, player)
             local wobbleImpulse = math.min(math.abs(landingVy) * 0.0022, 1.8)
             local spinDir = c.vx ~= 0 and (c.vx > 0 and 1 or -1) or (math.random() < 0.5 and 1 or -1)
             c.angularVelocity = (c.angularVelocity or 0) * 0.35 + spinDir * wobbleImpulse
+
+            if math.abs(landingVy) > BOUNCE_THRESHOLD then
+                local bounceSpeed = math.min(math.abs(landingVy) * BOUNCE_DAMPING, MAX_FALL_SPEED * 0.7)
+                c.vy = -bounceSpeed
+                c.grounded = false
+            end
         end
 
         updateVisualOffset(c, dt, targetOffset)
@@ -400,7 +399,7 @@ end
 -- DRAW
 --------------------------------------------------------------
 
-local visualOffset = 4
+local visualOffset = 0
 local circleInset = 4
 local radius = 4
 
