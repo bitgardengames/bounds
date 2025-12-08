@@ -121,8 +121,6 @@ function Chamber.update(dt, Player, Door, ExitTrigger)
         Chamber.exitEnabled = false
     end
 
-    Decorations.setJunctionBoxesActive(Chamber.exitEnabled)
-
     if Chamber.exitEnabled and ExitTrigger.playerInside(Player) and not Chamber.isComplete then
         Chamber.isComplete = true
     end

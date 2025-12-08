@@ -91,10 +91,21 @@ function Decorations.update(dt)
     end
 end
 
-function Decorations.setJunctionBoxesActive(active)
+function Decorations.setIndicatorActive(id, active)
+    for _, inst in ipairs(list) do
+        if inst.type == "conduit_indicator" and inst.data.id == id then
+            inst.data.active = active
+        end
+    end
+end
+
+function Decorations.setIndicators(map)
     for _, inst in ipairs(list) do
         if inst.type == "conduit_indicator" then
-            inst.data.active = not not active
+            local id = inst.data.id
+            if id and map[id] ~= nil then
+                inst.data.active = map[id]
+            end
         end
     end
 end

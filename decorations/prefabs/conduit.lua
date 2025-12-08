@@ -165,7 +165,9 @@ return function(Decorations)
 		w = 1,
 		h = 1,
 
-		init = function(inst)
+		init = function(inst, entry)
+			inst.data = inst.data or {}
+			inst.data.id = entry.data and entry.data.id
 			inst.data.active = false
 		end,
 
@@ -175,13 +177,6 @@ return function(Decorations)
 			local cx = x + w/2
 			local cy = y + h/2
 
-			------------------------------------------------------------------
-			-- 4-LAYER CIRCLE CONSTRUCTION (outer → inner):
-			-- 1) black outline      : outlineR
-			-- 2) metal ring         : metalR
-			-- 3) inner black outline: innerR
-			-- 4) LED fill           : ledR
-			------------------------------------------------------------------
 			local ledR     = 4           -- FINAL LED radius
 			local innerR   = ledR + 4    -- inner black outline radius
 			local metalR   = innerR + 4  -- metal ring radius

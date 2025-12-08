@@ -214,7 +214,7 @@ local function spawnContextZones(chamber)
 end
 
 function loadChamber(index)
-    local chamber = LevelData.chambers[2 or index]  -- Brute force here for testing, return to index when done, 1 or index
+    local chamber = LevelData.chambers[index]  -- Brute force here for testing, return to index when done, 1 or index
     assert(chamber, "No chamber data for index " .. tostring(index))
 
     chamber.tileSize = LevelData.tileSize
@@ -323,6 +323,16 @@ function love.update(dt)
             print("LEVEL COMPLETE!")
         end
     end
+
+    ----------------------------------------------------------
+    -- Indicator logic
+    ----------------------------------------------------------
+	local chamber = LevelData.chambers[currentChamber]
+
+	if chamber.indicatorLogic then
+		local map = chamber.indicatorLogic(Plate, MovingPlatform, LaserReceiver)
+		Decorations.setIndicators(map)
+	end
 
     ----------------------------------------------------------
     -- Late input cleanup

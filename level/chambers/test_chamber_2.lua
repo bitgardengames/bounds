@@ -37,8 +37,8 @@ local chamber = {
                 {type="conduit_h",         tx=8, ty=14},
                 {type="conduit_h",         tx=9, ty=14},
                 {type="conduit_h_join",    tx=10, ty=14},
-                {type="conduit_h", tx=11, ty=14},
-                {type="conduit_indicator", tx=11, ty=14},
+                {type="conduit_h",         tx=11, ty=14},
+                {type="conduit_indicator", tx=11, ty=14, data = {id = "indicator_1"}},
                 {type="conduit_h_join",    tx=12, ty=14},
                 {type="conduit_h",         tx=13, ty=14},
                 {type="conduit_h",         tx=14, ty=14},
@@ -132,6 +132,12 @@ local chamber = {
             },
         },
     },
+
+	indicatorLogic = function(Plate)
+		return {
+			indicator_1 = Plate.isDown("plate_1"),
+		}
+	end,
 
     contextZones = {},
 }
