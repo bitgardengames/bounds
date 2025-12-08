@@ -57,7 +57,7 @@ local chamber = {
                 {type="conduit_h_join",     tx=22, ty=14},
                 {type="conduit_h",          tx=23, ty=14},
                 {type="conduit_h_join",     tx=24, ty=14},
-				{type="conduit_junctionbox",tx=25, ty=14},
+				{type="conduit_indicator",tx=25, ty=14},
 				{type="conduit_h_join",     tx=26, ty=14},
 				{type="conduit_h",          tx=27, ty=14},
 				{type="conduit_h",          tx=28, ty=14},
@@ -113,8 +113,6 @@ local chamber = {
     -- OBJECTS
     ----------------------------------------------------------
     objects = {
-        playerStart = { tx = 3, ty = 3 },
-
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------

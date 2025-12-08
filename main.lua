@@ -4,6 +4,7 @@
 
 local Level = require("level.level")
 local LevelData = require("level.leveldata")
+local Timer = require("systems.timer")
 local Particles = require("particles")
 local Player = require("player.player")
 local Blink = require("player.blink")
@@ -212,7 +213,7 @@ local function spawnContextZones(chamber)
 end
 
 function loadChamber(index)
-    local chamber = LevelData.chambers[1 or index]  -- Brute force here for testing, return to index when done
+    local chamber = LevelData.chambers[index]  -- Brute force here for testing, return to index when done, 1 or index
     assert(chamber, "No chamber data for index " .. tostring(index))
 
     chamber.tileSize = LevelData.tileSize
@@ -226,8 +227,21 @@ function loadChamber(index)
     spawnObjects(chamber)
 	spawnContextZones(chamber)
 
-    local spawn = (chamber.objects and chamber.objects.playerStart) or { tx = 2, ty = 4 }
-    Player.setSpawn(spawn.tx * TILE_SIZE, spawn.ty * TILE_SIZE)
+	-- Instead of spawning directly, begin the drop-in sequence
+	local dropTube = DropTube.list[1]  -- simple: first tube in the chamber
+	if dropTube then
+		-- small delay before dropping
+		Timer.after(0.5, function()
+			DropTube.dropPlayer(dropTube)
+		end)
+	--[[else
+		-- fallback
+		local spawn = (chamber.objects and chamber.objects.playerStart) or { tx = 2, ty = 4 }
+		
+		if spawn then
+			Player.setSpawn(spawn.tx * TILE_SIZE, spawn.ty * TILE_SIZE)
+		end]]
+	end
 end
 
 --------------------------------------------------------------
@@ -241,6 +255,7 @@ function love.load()
 end
 
 function love.update(dt)
+	Timer.update(dt)
     ----------------------------------------------------------
     -- Input system
     ----------------------------------------------------------
@@ -355,7 +370,6 @@ function love.draw()
     Monitor.draw()
     LaserEmitter.draw()
     LaserReceiver.draw()
-    DropTube.draw()
     Saw.draw()
     Door.draw()
     Plate.draw()
@@ -364,6 +378,7 @@ function love.draw()
 	Liquids.draw()
 	ContextZones.draw() -- remove after debugging
 	Player.draw()
+	DropTube.draw()
 
     Particles.draw()
 

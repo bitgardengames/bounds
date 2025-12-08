@@ -93,7 +93,7 @@ end
 
 function Decorations.setJunctionBoxesActive(active)
     for _, inst in ipairs(list) do
-        if inst.type == "conduit_junctionbox" then
+        if inst.type == "conduit_indicator" then
             inst.data.active = not not active
         end
     end

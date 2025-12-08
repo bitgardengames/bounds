@@ -442,7 +442,7 @@ function Cube.draw()
             6, 6
         )
 
-        ----------------------------------------------------------
+        --[[----------------------------------------------------------
         -- SEAM LINES
         ----------------------------------------------------------
         love.graphics.setColor(Theme.cube.seam)
@@ -452,7 +452,7 @@ function Cube.draw()
         love.graphics.line(0, -h/2, 0, h/2)
 
         -- Horizontal seam (left → right)
-        love.graphics.line(-w/2, 0, w/2, 0)
+        love.graphics.line(-w/2, 0, w/2, 0)]]
 
         ----------------------------------------------------------
         -- CENTER CIRCLE

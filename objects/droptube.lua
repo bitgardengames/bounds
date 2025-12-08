@@ -48,6 +48,16 @@ function DropTube.spawn(tx, ty, opts)
     table.insert(DropTube.list, inst)
 end
 
+function DropTube.dropPlayer(tube)
+    -- tube.x, tube.y is the TOP of tube
+    -- drop location = just below bottom cap
+    local dropX = tube.x + tube.w/2 - 18   -- center player horizontally
+    local dropY = tube.y
+
+    local Player = require("player.player")
+    Player.beginDrop(dropX, dropY)
+end
+
 function DropTube.clear()
     DropTube.list = {}
 end

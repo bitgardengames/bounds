@@ -31,8 +31,8 @@ local CUBE_PUSH_MAX = 120
 --------------------------------------------------------------
 
 local p = {
-    x = 64,
-    y = 128,
+    x = -64,
+    y = -64,
 
     spawnX = 64,
     spawnY = 128,
@@ -102,6 +102,10 @@ local p = {
     respawnTimer = 0,
     dead = false,
 
+	arriving = false,
+	arrivalTimer = 0,
+	arrivalDelay = 0.35,
+
     -- Sleep system
     idleTimer = 0,
     sleeping  = false,
@@ -127,14 +131,26 @@ local p = {
 --------------------------------------------------------------
 
 function Player.init(Level)
-    local TILE = (Level and Level.tileSize) or 48
+    p.vx, p.vy = 0, 0
+    p.onGround = false
+    p.dead = false
 
-    p.x = TILE * 2
-    p.y = TILE * 4
-    p.spawnX = p.x
-    p.spawnY = p.y
+    p.contactBottom = 0
+    p.contactTop    = 0
+    p.contactLeft   = 0
+    p.contactRight  = 0
+
+    p.morphBottom = 0
+    p.morphTop    = 0
+    p.morphLeft   = 0
+    p.morphRight  = 0
+    p.morphVert   = 0
+    p.morphHorz   = 0
+    p.morphPre    = 0
+
+    p.arriving = false
+    p.arrivalTimer = 0
 end
-
 
 local function clamp(v, mn, mx)
     return (v < mn and mn) or (v > mx and mx) or v
@@ -292,6 +308,24 @@ local function updateSleepBubbleQueue(dt)
     end
 end
 
+function Player.beginDrop(x, y)
+    p.x = x
+    p.y = y
+
+    p.vx = 0
+    p.vy = 0
+    p.arriving = true
+    p.arrivalTimer = 0
+
+    -- Disable normal movement behavior until fall starts
+    p.onGround = false
+    p.sleeping = false
+    p.sleepingTransition = false
+
+    -- Slight upward stretch before drop
+    p.preJumpSquish = -0.25
+end
+
 --------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
@@ -299,6 +333,33 @@ end
 function Player.update(dt, Level)
     p.prevY = p.y
     p.prevX = p.x
+
+	----------------------------------------------------------
+	-- ARRIVAL (droptube drop logic)
+	----------------------------------------------------------
+	if p.arriving then
+		p.arrivalTimer = p.arrivalTimer + dt
+
+		-- Pre-drop animation: stretch down, eyes wide, no input
+		local t = p.arrivalTimer / p.arrivalDelay
+		t = math.min(t, 1)
+
+		-- Animate from stretch → neutral
+		p.preJumpSquish = -0.25 + t * 0.25
+
+		-- No input allowed yet
+		p.vx = 0
+
+		if p.arrivalTimer >= p.arrivalDelay then
+			-- Release! Begin falling.
+			p.arriving = false
+			p.vy = 0     -- begin clean fall
+			p.preJumpSquish = 0
+		else
+			-- Freeze in place until drop moment
+			return p
+		end
+	end
 
     ----------------------------------------------------------
     -- Death / respawn block
@@ -368,6 +429,13 @@ function Player.update(dt, Level)
     p.contactTop    = approach(p.contactTop,    0, dt, 14)
     p.contactLeft   = approach(p.contactLeft,   0, dt, 14)
     p.contactRight  = approach(p.contactRight,  0, dt, 14)
+
+	-- Is this the right spot for this?
+	if p.arriving then
+		move = 0
+		jumpDown = false
+		jumpReleased = false
+	end
 
     ----------------------------------------------------------
     -- Input
@@ -791,15 +859,10 @@ function Player.update(dt, Level)
 
     local wasSleeping = p.sleeping
 
-    ----------------------------------------------------------
-    -- SLEEP SYSTEM (idle timer + transition)
-    ----------------------------------------------------------
-    Sleep.updateIdle(p, dt, move)
-
-    ----------------------------------------------------------
-    -- SLEEPY BLINK (Pixar-grade)
-    ----------------------------------------------------------
-    Sleep.updateBlink(p, dt)
+	if not p.arriving then
+		Sleep.updateIdle(p, dt, move)
+		Sleep.updateBlink(p, dt)
+	end
 
     ----------------------------------------------------------
     -- ZZZ BUBBLES (soft, occasional trio)
