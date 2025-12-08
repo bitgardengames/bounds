@@ -38,7 +38,6 @@ local function newInstance(tx, ty, opts)
         y      = ty * tile,
         w      = tile,
         h      = tile * 2,
-        t      = love.math.random() * 10,
         active = true,
     }
 end
@@ -51,8 +50,8 @@ end
 function DropTube.dropPlayer(tube)
     -- tube.x, tube.y is the TOP of tube
     -- drop location = just below bottom cap
-    local dropX = tube.x + tube.w/2 - 18   -- center player horizontally
-    local dropY = tube.y
+    local dropX = tube.x + tube.w/2 - 16   -- center player horizontally
+    local dropY = tube.y - tube.w/2
 
     local Player = require("player.player")
     Player.beginDrop(dropX, dropY)
@@ -60,15 +59,6 @@ end
 
 function DropTube.clear()
     DropTube.list = {}
-end
-
---------------------------------------------------------------
--- UPDATE — tiny idle wobble
---------------------------------------------------------------
-function DropTube.update(dt)
-    for _, tube in ipairs(DropTube.list) do
-        tube.t = tube.t + dt
-    end
 end
 
 --------------------------------------------------------------
@@ -106,6 +96,15 @@ function DropTube.draw()
             local y  = tube.y
             local w  = tube.w
             local h  = tube.h
+
+			--------------------------------------------------
+			-- TOP MASK to hide player/cube before drop
+			--------------------------------------------------
+			local maskH = 48        -- height of the mask strip
+			local maskY = y - maskH - 2
+
+			love.graphics.setColor(Theme.level.outer)
+			love.graphics.rectangle("fill", x - 4, maskY, w + 8, maskH)
 
             --------------------------------------------------
             -- TOP CAP (rounded rectangle)

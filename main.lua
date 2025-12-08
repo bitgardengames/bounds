@@ -226,6 +226,7 @@ function loadChamber(index)
     spawnDecorations(chamber)
     spawnObjects(chamber)
 	spawnContextZones(chamber)
+	Player.init(Level)
 
 	-- Instead of spawning directly, begin the drop-in sequence
 	local dropTube = DropTube.list[1]  -- simple: first tube in the chamber
@@ -250,7 +251,6 @@ end
 
 function love.load()
     Blink.init()
-    Player.init(Level)
     loadChamber(currentChamber)
 end
 
@@ -279,7 +279,7 @@ function love.update(dt)
     MovingPlatform.update(dt)
     LaserEmitter.update(dt)
     LaserReceiver.update(dt, LaserEmitter.list)
-    DropTube.update(dt)
+    --DropTube.update(dt)
     Particles.update(dt)
 	Liquids.update(dt)
     Decorations.update(dt)

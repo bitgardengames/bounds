@@ -37,8 +37,8 @@ local p = {
     spawnX = 64,
     spawnY = 128,
 
-    w = 36,
-    h = 36,
+    w = 32,
+    h = 32,
 
     radius  = 18,
     outline = 5,
