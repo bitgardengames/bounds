@@ -4,6 +4,8 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
+local Player = require("player.player")
+local p = Player.get()
 
 local DropTube = {
     list     = {},
@@ -87,6 +89,30 @@ local function drawOutlinedRoundedRect(mode, x, y, w, h, rx, ry)
 end
 
 --------------------------------------------------------------
+-- CENTRALIZED RESPAWN HANDLING
+--------------------------------------------------------------
+function DropTube.update(dt)
+    -- When the player has finished their death timer,
+    -- this flag is set by Player.update()
+    if p.pendingTubeRespawn then
+        p.pendingTubeRespawn = false
+
+        -- Force player completely offscreen before drop
+        p.x = -9999
+        p.y = -9999
+        p.vx = 0
+        p.vy = 0
+
+        -- Choose spawn tube (first tube for now)
+        local tube = DropTube.list[1]
+        if tube then
+            -- Use same arrival animation as chamber load
+            DropTube.dropPlayer(tube)
+        end
+    end
+end
+
+--------------------------------------------------------------
 -- DRAW
 --------------------------------------------------------------
 function DropTube.draw()
@@ -161,10 +187,10 @@ function DropTube.draw()
             love.graphics.setColor(COLOR_HL)
             love.graphics.rectangle(
                 "fill",
-                x + w * 0.15,
-                bodyY + 6,
-                w * 0.12,
-                bodyH - 12,
+                x + 8,
+                bodyY + 8,
+                6,
+                bodyH - 18,
                 4, 4
             )
 

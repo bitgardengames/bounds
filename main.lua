@@ -231,17 +231,9 @@ function loadChamber(index)
 	-- Instead of spawning directly, begin the drop-in sequence
 	local dropTube = DropTube.list[1]  -- simple: first tube in the chamber
 	if dropTube then
-		-- small delay before dropping
 		Timer.after(1, function()
 			DropTube.dropPlayer(dropTube)
 		end)
-	--[[else
-		-- fallback
-		local spawn = (chamber.objects and chamber.objects.playerStart) or { tx = 2, ty = 4 }
-		
-		if spawn then
-			Player.setSpawn(spawn.tx * TILE_SIZE, spawn.ty * TILE_SIZE)
-		end]]
 	end
 end
 
@@ -266,6 +258,16 @@ function love.update(dt)
     ----------------------------------------------------------
     local pl = Player.update(dt, Level)
 
+	-- Handle drop-tube respawn
+	if pl.pendingTubeRespawn then
+		pl.pendingTubeRespawn = false
+
+		local tube = DropTube.list[1]
+		if tube then
+			DropTube.dropPlayer(tube)
+		end
+	end
+
 	ContextZones.update(pl)
 
 	if not pl.sleeping and not pl.sleepingTransition then
@@ -279,7 +281,7 @@ function love.update(dt)
     MovingPlatform.update(dt)
     LaserEmitter.update(dt)
     LaserReceiver.update(dt, LaserEmitter.list)
-    --DropTube.update(dt)
+    DropTube.update(dt)
     Particles.update(dt)
 	Liquids.update(dt)
     Decorations.update(dt)

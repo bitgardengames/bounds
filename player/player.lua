@@ -11,6 +11,7 @@ local Cube = require("objects.cube")
 local MovingPlatform = require("objects.movingplatform")
 local Collision = require("player.collision")
 local Sleep = require("player.sleep")
+local Liquids = require("systems.liquids")
 
 local Player = {}
 
@@ -33,9 +34,6 @@ local CUBE_PUSH_MAX = 120
 local p = {
     x = -64,
     y = -64,
-
-    spawnX = 64,
-    spawnY = 128,
 
     w = 32,
     h = 32,
@@ -376,8 +374,7 @@ function Player.update(dt, Level)
         smoothMorphs(dt)
 
         if p.respawnTimer <= 0 then
-            p.x = p.spawnX
-            p.y = p.spawnY
+            p.x, p.y = -48, -48
             p.vx, p.vy = 0, 0
             p.springVert, p.springVertVel = 0, 0
             p.springHorz, p.springHorzVel = 0, 0
@@ -395,6 +392,7 @@ function Player.update(dt, Level)
             p.contactRight = 0
             p.onGround = false
             p.dead = false
+            p.pendingTubeRespawn = true
 
             p.morphBottom = 0
             p.morphTop = 0
@@ -864,19 +862,33 @@ function Player.update(dt, Level)
 		Sleep.updateBlink(p, dt)
 	end
 
+	----------------------------------------------------------
+	-- WATER COLLISION → DROWN
+	----------------------------------------------------------
+	local midX = p.x + p.w * 0.5
+	local midY = p.y + p.h * 0.8   -- sample near bottom of player
+
+	if Liquids.isPointInWater(midX, midY) then
+		if not p.dead then
+			Player.kill()
+			-- Optional water ripple:
+			Liquids.ripple(midX, midY, 50)
+		end
+	end
+
     ----------------------------------------------------------
     -- ZZZ BUBBLES (soft, occasional trio)
     ----------------------------------------------------------
     if p.sleeping then
         if not wasSleeping then
-            p.sleepBubbleTimer = 1.0 + math.random() * 0.8
+            p.sleepBubbleTimer = 3 + math.random() * 0.3
         else
             p.sleepBubbleTimer = p.sleepBubbleTimer - dt
         end
 
         if p.sleepBubbleTimer <= 0 then
             queueSleepBubbles()
-            p.sleepBubbleTimer = 2.6 + math.random() * 1.6
+            p.sleepBubbleTimer = 3 + math.random() * 0.3
         end
 
         updateSleepBubbleQueue(dt)
@@ -1086,28 +1098,6 @@ function Player.kill()
             {1,1,1,1}
         )
     end
-end
-
-function Player.setSpawn(x, y)
-    p.spawnX = x
-    p.spawnY = y
-    p.x = x
-    p.y = y
-    p.vx = 0
-    p.vy = 0
-    p.onGround = false
-    p.sleeping = false
-    p.contactBottom = 0
-    p.contactTop    = 0
-    p.contactLeft   = 0
-    p.contactRight  = 0
-    p.morphBottom = 0
-    p.morphTop    = 0
-    p.morphLeft   = 0
-    p.morphRight  = 0
-    p.morphVert   = 0
-    p.morphHorz   = 0
-    p.morphPre    = 0
 end
 
 return Player

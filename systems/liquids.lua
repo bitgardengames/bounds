@@ -44,30 +44,30 @@ end
 local function buildBlobsFromTiles(tiles, width, height, T)
     local visited = newGrid(width, height, false)
     local blobs = {}
-    
+
     local dirs = {{1,0},{-1,0},{0,1},{0,-1}}
-    
+
     for ty=1,height do
         for tx=1,width do
             if tiles[ty][tx] and not visited[ty][tx] then
                 local queue = {{tx,ty}}
                 visited[ty][tx] = true
                 local qi = 1
-                
+
                 local cells = {}
                 local minX,maxX = tx,tx
                 local minY,maxY = ty,ty
-                
+
                 while qi <= #queue do
                     local cx,cy = queue[qi][1], queue[qi][2]
                     qi = qi + 1
                     cells[#cells+1] = {cx,cy}
-                    
+
                     minX = math.min(minX,cx)
                     maxX = math.max(maxX,cx)
                     minY = math.min(minY,cy)
                     maxY = math.max(maxY,cy)
-                    
+
                     for _,d in ipairs(dirs) do
                         local nx,ny = cx+d[1], cy+d[2]
                         if nx>=1 and nx<=width and ny>=1 and ny<=height then
@@ -78,7 +78,7 @@ local function buildBlobsFromTiles(tiles, width, height, T)
                         end
                     end
                 end
-                
+
                 blobs[#blobs+1] = {
                     x = (minX-1)*T,
                     y = (minY-1)*T,
@@ -88,7 +88,7 @@ local function buildBlobsFromTiles(tiles, width, height, T)
             end
         end
     end
-    
+
     return blobs
 end
 
@@ -198,6 +198,15 @@ function Liquids.ripple(px, py, strength)
     end
 end
 
+function Liquids.isPointInWater(px, py)
+    for _, b in ipairs(Liquids.blobs) do
+        if px >= b.x and px <= b.x + b.w
+        and py >= b.y and py <= b.y + b.h then
+            return true
+        end
+    end
+    return false
+end
 
 --------------------------------------------------------------
 -- FINAL: Draw (fill polygon + real top outline)
