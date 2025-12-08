@@ -183,6 +183,7 @@ local function spawnObjects(chamber)
                     {
                         dir         = mp.dir or "horizontal",
                         trackTiles  = mp.trackTiles or 2,
+                        widthTiles  = mp.widthTiles or 2,
                         speed       = mp.speed or 0.3,
                         active      = mp.active,       -- true OR false
                         target      = mp.target,       -- string ID for plates
@@ -213,7 +214,7 @@ local function spawnContextZones(chamber)
 end
 
 function loadChamber(index)
-    local chamber = LevelData.chambers[index]  -- Brute force here for testing, return to index when done, 1 or index
+    local chamber = LevelData.chambers[2 or index]  -- Brute force here for testing, return to index when done, 1 or index
     assert(chamber, "No chamber data for index " .. tostring(index))
 
     chamber.tileSize = LevelData.tileSize

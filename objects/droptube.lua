@@ -58,7 +58,7 @@ function DropTube.dropPlayer(tube)
 end
 
 function DropTube.dropCube(tube, cube)
-    local dropX = tube.x + tube.w/2 - cube.w/2 + 4   -- tweak like player
+    local dropX = tube.x + tube.w/2 - cube.w/2
     local dropY = tube.y - (DropTube.tileSize * 0.5)
 
     cube.x = dropX

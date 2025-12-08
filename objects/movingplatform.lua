@@ -89,8 +89,9 @@ function MovingPlatform.spawn(x, y, opts)
     opts = opts or {}
     TILE = Level.tileSize or TILE
 
-    local w = TILE - 4
-    local h = PLATFORM_H
+	local widthTiles = opts.widthTiles or 1
+	local w = widthTiles * TILE - 4
+	local h = PLATFORM_H
 
     ----------------------------------------------------------
     -- TRACK LENGTH FROM TILES
