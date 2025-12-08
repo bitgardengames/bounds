@@ -54,6 +54,7 @@ function Cube.spawn(x, y, opts)
         visualVelocity = 0,
         angle = 0,
         angularVelocity = 0,
+        restAngle = 0,
         pushDustTimer = 0,
     })
 end
@@ -315,10 +316,11 @@ end
 --------------------------------------------------------------
 
 local function updateAngle(c, dt)
-    local stiffness = c.grounded and 18 or 6
-    local damping = c.grounded and 6 or 2.4
+    local target = c.grounded and (c.restAngle or 0) or 0
+    local stiffness = c.grounded and 9 or 5
+    local damping = c.grounded and 5.2 or 2.6
 
-    c.angularVelocity = c.angularVelocity + (0 - c.angle) * stiffness * dt
+    c.angularVelocity = c.angularVelocity + (target - c.angle) * stiffness * dt
     c.angularVelocity = c.angularVelocity * math.max(0, 1 - damping * dt)
 
     c.angle = c.angle + c.angularVelocity * dt
@@ -373,6 +375,7 @@ function Cube.update(dt, player)
         if wasGrounded and not c.grounded then
             local dir = c.vx >= 0 and 1 or -1
             c.angularVelocity = (c.angularVelocity or 0) + dir * 1.4
+            c.restAngle = 0
         end
 
         if not wasGrounded and c.grounded then
@@ -382,6 +385,9 @@ function Cube.update(dt, player)
             local wobbleImpulse = math.min(math.abs(landingVy) * 0.0022, 1.8)
             local spinDir = c.vx ~= 0 and (c.vx > 0 and 1 or -1) or (math.random() < 0.5 and 1 or -1)
             c.angularVelocity = (c.angularVelocity or 0) * 0.35 + spinDir * wobbleImpulse
+
+            local tumbleLean = 0.24 + math.min(math.abs(landingVy) * 0.0006, 0.28) + math.min(math.abs(c.vx) * 0.0015, 0.18)
+            c.restAngle = spinDir * math.min(tumbleLean, 0.62)
 
             if math.abs(landingVy) > BOUNCE_THRESHOLD then
                 local bounceSpeed = math.min(math.abs(landingVy) * BOUNCE_DAMPING, MAX_FALL_SPEED * 0.7)
