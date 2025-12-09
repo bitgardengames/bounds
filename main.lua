@@ -5,26 +5,27 @@
 local Level = require("level.level")
 local LevelData = require("level.leveldata")
 local Timer = require("systems.timer")
-local Particles = require("particles")
+local Particles = require("systems.particles")
 local Player = require("player.player")
 local Blink = require("player.blink")
 local Idle = require("player.idle")
-local Camera = require("camera")
-local Input = require("input")
+local Camera = require("systems.camera")
+local Input = require("systems.input")
 local Saw = require("objects.saws")
 local Door = require("objects.door")
-local Exit = require("exit")
+local Exit = require("systems.exit")
 local Chamber = require("level.chamber")
 local Plate = require("objects.pressureplate")
 local Cube = require("objects.cube")
 local MovingPlatform = require("objects.movingplatform")
 local Decorations = require("decorations")
 local Monitor = require("objects.monitor")
-local ContextZones = require("contextzones")
+local ContextZones = require("systems.contextzones")
 local LaserEmitter = require("objects.laseremitter")
 local LaserReceiver = require("objects.laserreceiver")
 local Liquids = require("systems.liquids")
 local DropTube = require("objects.droptube")
+local Button = require("objects.button")
 
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
@@ -87,6 +88,7 @@ local function clearActors()
     Cube.clear()
     Plate.clear()
     Monitor.clear()
+    Button.clear()
     Exit.clear()
     MovingPlatform.clear()
     LaserEmitter.clear()
@@ -96,11 +98,34 @@ end
 
 local function spawnDecorations(chamber)
     Decorations.clear()
+
+    ------------------------------------------------------
+    -- 1. Spawn normal decor objects from chamber data
+    ------------------------------------------------------
     for _, layer in ipairs(chamber.layers or {}) do
         if layer.kind == "decor" then
             Decorations.spawnLayer(layer, TILE_SIZE)
         end
     end
+
+	------------------------------------------------------
+	-- 2. AUTO-SPAWN PLATFORM TOP STRIPS (Solids only)
+	------------------------------------------------------
+	for _, layer in ipairs(chamber.layers or {}) do
+		if layer.name == "Solids" and layer.kind == "rectlayer" then
+			for _, r in ipairs(layer.rects or {}) do
+
+				Decorations.spawn({
+					type = "platformstrip",
+					tx   = r.x,
+					ty   = r.y - 1,
+					w    = r.w,
+					h    = 1,
+				}, TILE_SIZE)
+
+			end
+		end
+	end
 end
 
 local function spawnObjects(chamber)
@@ -174,6 +199,12 @@ local function spawnObjects(chamber)
             segments = tube.segments or tube.length,
         })
     end
+
+	if objects.buttons then
+		for _, b in ipairs(objects.buttons) do
+			Button.spawn(b.tx, b.ty, b)
+		end
+	end
 
     if objects.movingPlatforms then
         for _, mp in ipairs(objects.movingPlatforms) do
@@ -277,6 +308,7 @@ function love.update(dt)
 
     Cube.update(dt, pl)
     Plate.update(dt, pl, Cube.list)
+	Button.update(dt, pl)
     Door.update(dt)
     Monitor.update(dt)
     MovingPlatform.update(dt)
@@ -381,6 +413,7 @@ function love.draw()
     local camX, camY = 0, 0
     Level.draw(camX, camY)
     Monitor.draw()
+	Button.draw()
     LaserEmitter.draw()
     LaserReceiver.draw()
     Saw.draw()

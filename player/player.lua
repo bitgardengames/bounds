@@ -5,10 +5,10 @@
 -- Name idea: Lumo
 
 local Theme = require("theme")
-local Particles = require("particles")
+local Particles = require("systems.particles")
 local Blink = require("player.blink")
 local Idle = require("player.idle")
-local Input = require("input")
+local Input = require("systems.input")
 local Cube = require("objects.cube")
 local MovingPlatform = require("objects.movingplatform")
 local Collision = require("player.collision")
@@ -882,14 +882,14 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     if p.sleeping then
         if not wasSleeping then
-            p.sleepBubbleTimer = 4 + math.random() * 0.3
+            p.sleepBubbleTimer = 5 + math.random() * 0.3
         else
             p.sleepBubbleTimer = p.sleepBubbleTimer - dt
         end
 
         if p.sleepBubbleTimer <= 0 then
             queueSleepBubbles()
-            p.sleepBubbleTimer = 4 + math.random() * 0.3
+            p.sleepBubbleTimer = 4.6 + math.random() * 0.3
         end
 
         updateSleepBubbleQueue(dt)

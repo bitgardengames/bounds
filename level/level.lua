@@ -251,7 +251,7 @@ function Level.load(data)
         elseif layer.solid then
             Level.solidLayer = layer
         end
-		
+
 		if layer.kind == "liquid" then
 			Liquids.load(layer, Level.width, Level.height, Level.tileSize)
 		end
@@ -408,6 +408,9 @@ function Level.draw(camX, camY)
 
     -- SOLIDS (inset by 2px per side)
     drawBlobs(Level.solidBlobs, Level.colors.solid, 2)
+
+	-- PLATFORM STRIPS (drawn ABOVE solids, BELOW decorations)
+	Decorations.drawStrips()
 
 	-- INNER BLACK OUTLINE (aligned to inner play-area backdrop)
 	do

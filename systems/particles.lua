@@ -52,7 +52,6 @@ function Particles.puff(x, y, vx, vy, radius, life, color)
         softFade = true,
     })
 end
--- From original file:
 
 --------------------------------------------------------------
 -- BRIGHT SPARKLE (no gravity, quick fade)

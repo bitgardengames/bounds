@@ -1,4 +1,4 @@
-local ContextZones = require("contextzones")
+local ContextZones = require("systems.contextzones")
 
 local TAU = math.pi * 2
 

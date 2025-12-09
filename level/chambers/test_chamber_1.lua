@@ -26,6 +26,8 @@ local chamber = {
             name  = "Decor",
             kind  = "decor",
             objects = {
+				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
+				--{type="backgroundnoise", tx=1, ty=1, w=40, h=23},
 				{type="sign", tx=4, ty = 5, data = {text = "CH-01"}},
                 {type="vent",       tx=12, ty=5},
                 {type="vent",       tx=27, ty=13},
@@ -55,7 +57,7 @@ local chamber = {
                 {type="conduit_h",          tx=34, ty=20},
                 {type="conduit_h_join",     tx=35, ty=20},
 
-                {type="conduit_v_double_join",       tx=13, ty=21},
+               --[[ {type="conduit_v_double_join",       tx=13, ty=21},
                 {type="conduit_v_double",       tx=13, ty=20},
                 {type="conduit_v_double",  tx=13, ty=19},
                 {type="conduit_v_double",       tx=13, ty=18},
@@ -63,9 +65,9 @@ local chamber = {
                 {type="conduit_curve_tr_double",tx=13, ty=16},
                 {type="conduit_h_double_join",       tx=14, ty=16},
                 {type="conduit_h_double",       tx=15, ty=16},
-
+]]
                 {type="fan",       tx=15, ty=8},
-                {type="fan_large", tx=15, ty=15},
+                --{type="fan_large", tx=15, ty=15},
                 {type="fan_3",     tx=26, ty=8},
 
                 {type="pipe_big_h",          tx=38, ty=2},
@@ -93,6 +95,9 @@ local chamber = {
                 {type="pipe_big_h",        tx=1, ty=15},
                 {type="pipe_big_h",        tx=1, ty=20},
                 {type="pipe_cap", tx=2, ty=18},
+				
+                --{type="scribble_lumo", tx=10, ty=12},
+               -- {type="hazard_electric", tx=12, ty=12},
             },
         },
 
@@ -133,6 +138,11 @@ local chamber = {
         monitors = {
             {tx = 38, ty = 5, dir = -1},
         },
+		
+		buttons = {
+		--	{ tx = 10, ty = 21, mode = "oneshot", id = "btn_1" },
+		--	{ tx = 20, ty = 21, mode = "timed", duration = 4, id = "btn_timer" },
+		},
     },
 
 	indicatorLogic = function(Plate)

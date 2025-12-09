@@ -1,4 +1,4 @@
-local Particles = require("particles")
+local Particles = require("systems.particles")
 
 local Collision = {}
 

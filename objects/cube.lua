@@ -5,7 +5,7 @@
 --------------------------------------------------------------
 
 local Level = require("level.level")
-local Particles = require("particles")
+local Particles = require("systems.particles")
 local Theme = require("theme")
 local MovingPlatform = require("objects.movingplatform")
 local Liquids = require("systems.liquids")

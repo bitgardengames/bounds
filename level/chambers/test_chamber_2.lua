@@ -30,7 +30,8 @@ local chamber = {
             name = "Decor",
             kind = "decor",
             objects = {
-                {type="sign", tx=4, ty=5, data={text="CH-02"}},
+				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
+                {type="sign", tx=4, ty=9, data={text="CH-02"}},
 
                 {type="conduit_curve_br",  tx=6, ty=14},
                 {type="conduit_h_join",    tx=7, ty=14},

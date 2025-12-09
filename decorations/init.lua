@@ -1,4 +1,4 @@
-local Particles = require("particles")
+local Particles = require("systems.particles")
 local Theme = require("theme")
 
 local Decorations = {}
@@ -6,10 +6,13 @@ local Decorations = {}
 local registry = {}
 local list = {}
 local updatable = {}
+local strips = {}
 
 Decorations.list = list
 Decorations.style = Theme.decorations
 Decorations.colors = Theme.decorations
+Decorations.strips = strips
+Decorations.Particles = Particles
 
 local function shallowCopy(source)
     if not source then return {} end
@@ -49,8 +52,21 @@ function Decorations.spawn(entry, tileSize)
         config = entry,
     }
 
+	inst.config = entry
+	inst.config.tileSize = tileSize
+
     if prefab.init then
         prefab.init(inst, entry)
+    end
+
+    -- route platform strips to their own layer
+    if entry.type == "platformstrip" then
+        table.insert(strips, inst)
+    else
+        table.insert(list, inst)
+        if prefab.update then
+            table.insert(updatable, inst)
+        end
     end
 
     table.insert(list, inst)
@@ -69,6 +85,7 @@ end
 function Decorations.clear()
     for i = #list, 1, -1 do list[i] = nil end
     for i = #updatable, 1, -1 do updatable[i] = nil end
+    for i = #strips, 1, -1 do strips[i] = nil end
 end
 
 function Decorations.draw()
@@ -110,7 +127,14 @@ function Decorations.setIndicators(map)
     end
 end
 
-Decorations.Particles = Particles
+function Decorations.drawStrips()
+    for _, d in ipairs(strips) do
+        local prefab = registry[d.type]
+        if prefab then
+            prefab.draw(d.x, d.y, d.w, d.h, d)
+        end
+    end
+end
 
 local function loadPrefab(moduleName)
     local loader = require("decorations.prefabs." .. moduleName)
@@ -126,5 +150,8 @@ loadPrefab("conduit")
 loadPrefab("steam")
 loadPrefab("signs")
 loadPrefab("platformtrack")
+loadPrefab("backgroundnoise")
+loadPrefab("panelseams")
+loadPrefab("platformstrip")
 
 return Decorations
