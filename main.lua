@@ -232,7 +232,7 @@ function loadChamber(index)
 	-- Instead of spawning directly, begin the drop-in sequence
 	local dropTube = DropTube.list[1]  -- simple: first tube in the chamber
 	if dropTube then
-		Timer.after(1, function()
+		Timer.after(0.8, function()
 			DropTube.dropPlayer(dropTube)
 		end)
 	end

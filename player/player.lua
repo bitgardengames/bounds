@@ -2,6 +2,8 @@
 -- PLAYER MODULE (movement, collisions, deformation, drawing)
 --------------------------------------------------------------
 
+-- Name idea: Lumo
+
 local Theme = require("theme")
 local Particles = require("particles")
 local Blink = require("player.blink")
@@ -871,7 +873,7 @@ function Player.update(dt, Level)
 		if not p.dead then
 			Player.kill()
 			-- Optional water ripple:
-			Liquids.ripple(midX, midY, 50)
+			Liquids.ripple(midX, midY, 70)
 		end
 	end
 

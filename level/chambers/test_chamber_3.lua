@@ -5,11 +5,14 @@
 --]]
 
 local chamber = {
-    name   = "Test Chamber 2",
+    name   = "Test Chamber 3",
     width  = 40,
     height = 23,
 
-	doorCriteria = {},
+	doorCriteria = {
+		plates = { mode = "all", ids = { "plate_1", "plate_2" } },
+	},
+
 
     layers = {
 
@@ -49,10 +52,10 @@ local chamber = {
             solid = true,
             rects = {
                 -- Ground floor (unchanged)
-                {x = 2,  y = 14, w = 15, h = 1},
+                {x = 2,  y = 14, w = 6, h = 1},
 
                 -- Floor 2: right segment (holds plate + door)
-                {x = 25, y = 14, w = 15, h = 1},
+                {x = 25, y = 18, w = 15, h = 1},
             },
         },
 
@@ -71,13 +74,13 @@ local chamber = {
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------
-        door = { tx = 37, ty = 11, open = true},
+        door = { tx = 36, ty = 15},
 
         ------------------------------------------------------
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-            { tx = 23, ty = 12 },
+           -- { tx = 26, ty = 12 },
         },
 
         monitors = {
@@ -88,7 +91,7 @@ local chamber = {
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-            { tx = 6, ty = 12, id = "plate_1" },
+          --  { tx = 6, ty = 12, id = "plate_1" },
         },
 
         dropTubes = {
@@ -97,19 +100,16 @@ local chamber = {
 
         ------------------------------------------------------
         -- MOVING PLATFORMS
-        -- Horizontal platform traverses the 6-tile gap
         ------------------------------------------------------
         movingPlatforms = {
             {
-                tx = 16,            -- start roughly centered in the gap
-                ty = 13,            -- same height as the raised floor (tile above it)
-                dir = "horizontal",
-                trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
-				widthTiles = 3,
-                speed = 0.15,
-                active = false,      -- always moving
+                tx = 23,
+                ty = 17,
+                dir = "vertical",
+                trackTiles = 6,
+				widthTiles = 1,
+                speed = 0.2,
 				loop = true,
-				target = "plate_1",
             },
         },
     },
