@@ -27,6 +27,9 @@ local SEAM_HALF   = 2
 
 local COLOR_FRAME = Theme.door.frame
 local COLOR_DOOR  = Theme.door.doorFill
+local COLOR_LOCKED = Theme.door.locked
+local COLOR_UNLOCKED = Theme.door.unlocked
+local COLOR_OUTLINE = Theme.outline
 
 ------------------------------------------------------------
 -- EASING
@@ -218,6 +221,61 @@ function Door.draw()
 
     -- Inner shadow / rim shape (your recessed outline)
     drawInnerOutline(x, y, w, h)
+
+	------------------------------------------------------------
+	-- DOOR STATUS LIGHT STRIP (premium eased brightness)
+	------------------------------------------------------------
+	do
+		local stripW = w
+		local stripH = 6
+		local cx = x + w * 0.5
+		local topY = y - 16
+
+		local sx = cx - stripW * 0.5
+		local sy = topY
+
+		--------------------------------------------------------
+		-- Outline (rounded capsule)
+		--------------------------------------------------------
+		love.graphics.setColor(COLOR_OUTLINE)
+		love.graphics.rectangle(
+			"fill",
+			sx - 4, sy - 4,
+			stripW + 8, stripH + 8,
+			6, 6
+		)
+
+		--------------------------------------------------------
+		-- PREMIUM FADE:
+		-- Instead of binary on/off, we modulate opacity AND
+		-- brightness using the door interpolation value (e)
+		--------------------------------------------------------
+
+		-- Full bright = unlocked color
+		local r, g, b = COLOR_UNLOCKED[1], COLOR_UNLOCKED[2], COLOR_UNLOCKED[3]
+
+		-- Fade strength uses ease(e) so it "blooms" in naturally
+		local k = e * e * (3 - 2 * e)  -- smoothstep again
+
+		-- Optional: dark tint when closed (locked color)
+		local lr, lg, lb = COLOR_LOCKED[1], COLOR_LOCKED[2], COLOR_LOCKED[3]
+
+		-- Blend locked → unlocked by premium easing
+		local R = lr + (r - lr) * k
+		local G = lg + (g - lg) * k
+		local B = lb + (b - lb) * k
+
+		--------------------------------------------------------
+		-- Light fill with easing blend
+		--------------------------------------------------------
+		love.graphics.setColor(R, G, B, 1)
+		love.graphics.rectangle(
+			"fill",
+			sx, sy,
+			stripW, stripH,
+			6, 6
+		)
+	end
 
     ------------------------------------------------------------
     -- 2. PANEL GEOMETRY (compute BEFORE stencil / early-out cleanly)

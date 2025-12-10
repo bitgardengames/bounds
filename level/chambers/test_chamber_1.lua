@@ -28,14 +28,14 @@ local chamber = {
             objects = {
 				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
 				--{type="backgroundnoise", tx=1, ty=1, w=40, h=23},
-				{type="sign", tx=4, ty = 5, data = {text = "CH-01"}},
+				{type="sign", tx=4, ty = 18, data = {text = "CH-01"}},
                 {type="vent",       tx=12, ty=5},
                 {type="vent",       tx=27, ty=13},
-                {type="vent",       tx=5,  ty=18},
+                {type="vent",       tx=5,  ty=5},
 
                 {type="vent_round", tx=20, ty=6},
                 {type="vent_round", tx=7,  ty=12},
-                {type="vent_round", tx=30, ty=18},
+                {type="vent_round", tx=30, ty=1},
 
                 {type="panel_tall", tx=8,  ty=4},
                 {type="panel_tall", tx=22, ty=10},
@@ -46,16 +46,16 @@ local chamber = {
                 {type="panel_tall", tx=28, ty=5},
                 {type="panel_tall", tx=34, ty=16},
 
-                {type="conduit_v",          tx=28, ty=21},
-                {type="conduit_curve_tr",   tx=28, ty=20},
-                {type="conduit_h",          tx=29, ty=20},
-                {type="conduit_h_join",     tx=30, ty=20},
-                {type="conduit_h",tx=31, ty=20},
-                {type="conduit_indicator",tx=31, ty=20, data = {id = "indicator_1"}},
-                {type="conduit_h_join",     tx=32, ty=20},
-                {type="conduit_h",          tx=33, ty=20},
-                {type="conduit_h",          tx=34, ty=20},
-                {type="conduit_h_join",     tx=35, ty=20},
+                {type="conduit_v",          tx=28, ty=20},
+                {type="conduit_curve_tr",   tx=28, ty=19},
+                {type="conduit_h",          tx=29, ty=19},
+                {type="conduit_h_join",     tx=30, ty=19},
+                {type="conduit_h",tx=31, ty=19},
+                {type="conduit_indicator",tx=31, ty=19, data = {id = "indicator_1"}},
+                {type="conduit_h_join",     tx=32, ty=19},
+                {type="conduit_h",          tx=33, ty=19},
+                {type="conduit_h",          tx=34, ty=19},
+                {type="conduit_h_join",     tx=35, ty=19},
 
                --[[ {type="conduit_v_double_join",       tx=13, ty=21},
                 {type="conduit_v_double",       tx=13, ty=20},
@@ -79,7 +79,7 @@ local chamber = {
                 {type="pipe_big_curve_br",   tx=32, ty=2},
                 {type="pipe_big_v",          tx=32, ty=1},
 
-                {type="pipe_big_v_join", tx=2,  ty=8},
+                --[[{type="pipe_big_v_join", tx=2,  ty=8},
                 {type="pipe_big_v",      tx=2,  ty=9},
                 {type="pipe_big_v",      tx=2,  ty=10},
                 {type="pipe_big_v_join", tx=2,  ty=11},
@@ -94,14 +94,10 @@ local chamber = {
                 {type="pipe_big_curve_bl", tx=2, ty=20},
                 {type="pipe_big_h",        tx=1, ty=15},
                 {type="pipe_big_h",        tx=1, ty=20},
-                {type="pipe_cap", tx=2, ty=18},
+                {type="pipe_cap", tx=2, ty=18},]]
 				
                 --{type="scribble_lumo", tx=10, ty=12},
                -- {type="hazard_electric", tx=12, ty=12},
-			   
-			   
-			   { type = "timer_display", tx = 8, ty = 19, data = {id = "timer_1", dur = 4 }},
-
             },
         },
 
@@ -112,7 +108,7 @@ local chamber = {
 
             rects = {
                 {x = 15, y = 20, w = 8, h = 1},
-                {x = 2,  y = 8,  w = 5, h = 1},
+                {x = 2,  y = 22,  w = 38, h = 1},
             },
         },
 
@@ -125,11 +121,10 @@ local chamber = {
     },
 
     objects = {
-        door = {tx = 36, ty = 20},
+        door = {tx = 36, ty = 19},
 
         plates = {
-            {tx = 27, ty = 21, id = "plate_1"},
-            {tx = 8, ty = 21, id = "plate_2", timer = "timer_1"},
+            {tx = 27, ty = 20, id = "plate_1"},
         },
 
         dropTubes = {

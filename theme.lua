@@ -44,7 +44,7 @@ Theme.decorations = {
     fanFill   = {0.78, 0.84, 0.90, 1},
 
     signFill = {0.11, 0.14, 0.17, 1},
-    signText = {0.98, 0.62, 0.10, 1},        -- amber/orange
+    signText = Theme.active,
 
 	platformTop = {0.25, 0.29, 0.33, 1},
 
@@ -74,12 +74,6 @@ Theme.monitor = {
     outline = Theme.decorations.outline,
 }
 
---[[local LENS_COLOR = Theme.monitor.lens
-local MOUNT_COLOR = Theme.monitor.mount
-local ARM_COLOR = Theme.monitor.arm
-local BODY_COLOR = Theme.monitor.body
-local LED_COLOR = Theme.monitor.led]]
-
 --------------------------------------------------------------
 -- CUBE
 --------------------------------------------------------------
@@ -96,7 +90,8 @@ Theme.door = {
     frame    = {0.33, 0.39, 0.46, 1},        -- steel frame
     --doorFill = {0.98, 0.62, 0.10, 1},        -- warm amber interior (EXIT)
     doorFill = {0.11, 0.14, 0.17, 1},        -- warm amber interior (EXIT)
-	led = Theme.active,
+	unlocked = Theme.active,
+	locked = Theme.decorations.dark,
 }
 
 --------------------------------------------------------------

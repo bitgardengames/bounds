@@ -169,6 +169,20 @@ return function(Decorations)
 			inst.data = inst.data or {}
 			inst.data.id = entry.data and entry.data.id
 			inst.data.active = false
+			inst.data.t = 0
+		end,
+
+		update = function(inst, dt)
+			local d = inst.data
+			local target = d.active and 1 or 0    -- what we want to reach
+			local speed = 8                       -- how “premium” the easing feels
+
+			-- basic smooth approach
+			d.t = d.t + (target - d.t) * speed * dt
+
+			-- clamp for safety
+			if d.t < 0 then d.t = 0 end
+			if d.t > 1 then d.t = 1 end
 		end,
 
 		draw = function(x, y, w, h, inst)
@@ -177,6 +191,7 @@ return function(Decorations)
 			local cx = x + w/2
 			local cy = y + h/2
 
+			local d = inst.data
 			local ledR     = 4           -- FINAL LED radius
 			local innerR   = ledR + 4    -- inner black outline radius
 			local metalR   = innerR + 4  -- metal ring radius
@@ -203,11 +218,17 @@ return function(Decorations)
 			------------------------------------------------------------------
 			-- LED (layer 4)
 			------------------------------------------------------------------
-			if active then
-				love.graphics.setColor(S.conduitEnabled)
-			else
-				love.graphics.setColor(S.conduitDisabled)
-			end
+			-- PREMIUM COLOR FADE
+			local k = d.t * d.t * (3 - 2 * d.t) -- smoothstep
+
+			local r1,g1,b1 = S.conduitDisabled[1], S.conduitDisabled[2], S.conduitDisabled[3]
+			local r2,g2,b2 = S.conduitEnabled[1],  S.conduitEnabled[2],  S.conduitEnabled[3]
+
+			local R = r1 + (r2 - r1) * k
+			local G = g1 + (g2 - g1) * k
+			local B = b1 + (b2 - b1) * k
+
+			love.graphics.setColor(R, G, B, 1)
 			love.graphics.circle("fill", cx, cy, ledR)
 
 			------------------------------------------------------------------
@@ -216,62 +237,6 @@ return function(Decorations)
 			love.graphics.setColor(1, 1, 1, 0.25)
 			love.graphics.circle("fill", cx + 1.5, cy - 1.5, 1.5)
 		end,
-	})
-
-	Decorations.register("conduit_h_join", {
-		w = 1, h = 1,
-
-		draw = function(x, y, w, h)
-			local pipeFill = 4
-			local O = 4
-
-			local thick = pipeFill + O*2        -- 12px total conduit height
-			local cy = y + h/2 - thick/2        -- center Y
-
-			----------------------------------------------------------------
-			-- BASE CONDUIT (same as conduit_h)
-			----------------------------------------------------------------
-			love.graphics.setColor(S.outline)
-			love.graphics.rectangle("fill", x, cy, w, thick)
-
-			love.graphics.setColor(S.conduit)
-			love.graphics.rectangle("fill",
-				x,
-				cy + O,
-				w,
-				pipeFill
-			)
-
-			----------------------------------------------------------------
-			-- COUPLING BAND (4px larger just like big pipes)
-			----------------------------------------------------------------
-
-			-- Outer coupling size
-			local joinW = 10                 -- Outer width of the coupling
-			local joinFill = joinW - O*2     -- Inner metal fill (2px)
-
-			local joinH = thick + 8          -- 12 + 8 = 20px tall coupling
-			local jy = y + h/2 - joinH/2     -- vertically centered
-			local jx = x + w/2 - joinW/2     -- horizontally centered
-
-			-- Outline
-			love.graphics.setColor(S.outline)
-			love.graphics.rectangle("fill",
-				jx,
-				jy,
-				joinW,
-				joinH
-			)
-
-			-- Inner metal fill
-			love.graphics.setColor(S.bracket)
-			love.graphics.rectangle("fill",
-				jx + O,
-				jy + O,
-				joinFill,
-				joinH - O*2
-			)
-		end
 	})
 
 	Decorations.register("timer_display", {
@@ -351,6 +316,62 @@ return function(Decorations)
 					)
 				end
 			end
+		end
+	})
+
+	Decorations.register("conduit_h_join", {
+		w = 1, h = 1,
+
+		draw = function(x, y, w, h)
+			local pipeFill = 4
+			local O = 4
+
+			local thick = pipeFill + O*2        -- 12px total conduit height
+			local cy = y + h/2 - thick/2        -- center Y
+
+			----------------------------------------------------------------
+			-- BASE CONDUIT (same as conduit_h)
+			----------------------------------------------------------------
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill", x, cy, w, thick)
+
+			love.graphics.setColor(S.conduit)
+			love.graphics.rectangle("fill",
+				x,
+				cy + O,
+				w,
+				pipeFill
+			)
+
+			----------------------------------------------------------------
+			-- COUPLING BAND (4px larger just like big pipes)
+			----------------------------------------------------------------
+
+			-- Outer coupling size
+			local joinW = 10                 -- Outer width of the coupling
+			local joinFill = joinW - O*2     -- Inner metal fill (2px)
+
+			local joinH = thick + 8          -- 12 + 8 = 20px tall coupling
+			local jy = y + h/2 - joinH/2     -- vertically centered
+			local jx = x + w/2 - joinW/2     -- horizontally centered
+
+			-- Outline
+			love.graphics.setColor(S.outline)
+			love.graphics.rectangle("fill",
+				jx,
+				jy,
+				joinW,
+				joinH
+			)
+
+			-- Inner metal fill
+			love.graphics.setColor(S.bracket)
+			love.graphics.rectangle("fill",
+				jx + O,
+				jy + O,
+				joinFill,
+				joinH - O*2
+			)
 		end
 	})
 

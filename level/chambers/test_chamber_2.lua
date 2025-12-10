@@ -31,20 +31,17 @@ local chamber = {
             kind = "decor",
             objects = {
 				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
-                {type="sign", tx=4, ty=9, data={text="CH-02"}},
+                {type="sign", tx=4, ty=15, data={text="CH-02"}},
 
-                {type="conduit_curve_br",  tx=6, ty=14},
-                {type="conduit_h_join",    tx=7, ty=14},
-                {type="conduit_h",         tx=8, ty=14},
-                {type="conduit_h",         tx=9, ty=14},
-                {type="conduit_h_join",    tx=10, ty=14},
-                {type="conduit_h",         tx=11, ty=14},
-                {type="conduit_indicator", tx=11, ty=14, data = {id = "indicator_1"}},
-                {type="conduit_h_join",    tx=12, ty=14},
-                {type="conduit_h",         tx=13, ty=14},
-                {type="conduit_h",         tx=14, ty=14},
-                {type="conduit_h_join",    tx=15, ty=14},
-				{type="conduit_curve_bl",  tx=16, ty=14},
+                {type="conduit_curve_tr",  tx=7, ty=17},
+                {type="conduit_h_join",    tx=8, ty=17},
+                {type="conduit_h",         tx=9, ty=17},
+                {type="conduit_h_join",    tx=10, ty=17},
+                {type="conduit_h", tx=11, ty=17},
+                {type="conduit_indicator", tx=11, ty=17, data = {id = "indicator_1"}},
+                {type="conduit_h_join",    tx=12, ty=17},
+                {type="conduit_h",         tx=13, ty=17},
+				{type="conduit_curve_tl",  tx=14, ty=17},
             }
         },
 
@@ -69,10 +66,10 @@ local chamber = {
             solid = true,
             rects = {
                 -- Left plaform
-                {x = 2,  y = 14, w = 14, h = 1},
+                {x = 2,  y = 19, w = 14, h = 1},
 
                 -- Right platform
-                {x = 26, y = 14, w = 14, h = 1},
+                {x = 26, y = 19, w = 14, h = 1},
             },
         },
 
@@ -91,13 +88,13 @@ local chamber = {
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------
-        door = { tx = 36, ty = 11, open = true},
+        door = { tx = 36, ty = 16, open = true},
 
         ------------------------------------------------------
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-            { tx = 23, ty = 11 },
+            { tx = 23, ty = 13 },
         },
 
         monitors = {
@@ -108,7 +105,7 @@ local chamber = {
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-            { tx = 6, ty = 12, id = "plate_1" },
+            { tx = 6, ty = 17, id = "plate_1" },
         },
 
         dropTubes = {
@@ -122,7 +119,7 @@ local chamber = {
         movingPlatforms = {
             {
                 tx = 16,            -- start roughly centered in the gap
-                ty = 13,            -- same height as the raised floor (tile above it)
+                ty = 18,            -- same height as the raised floor (tile above it)
                 dir = "horizontal",
                 trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
 				widthTiles = 3,
