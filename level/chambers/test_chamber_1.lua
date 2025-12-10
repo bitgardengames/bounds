@@ -98,6 +98,10 @@ local chamber = {
 				
                 --{type="scribble_lumo", tx=10, ty=12},
                -- {type="hazard_electric", tx=12, ty=12},
+			   
+			   
+			   { type = "timer_display", tx = 8, ty = 19, data = {id = "timer_1", dur = 4 }},
+
             },
         },
 
@@ -125,6 +129,7 @@ local chamber = {
 
         plates = {
             {tx = 27, ty = 21, id = "plate_1"},
+            {tx = 8, ty = 21, id = "plate_2", timer = "timer_1"},
         },
 
         dropTubes = {
@@ -141,7 +146,7 @@ local chamber = {
 		
 		buttons = {
 		--	{ tx = 10, ty = 21, mode = "oneshot", id = "btn_1" },
-		--	{ tx = 20, ty = 21, mode = "timed", duration = 4, id = "btn_timer" },
+		--	{ tx = 8, ty = 21, mode = "timed", duration = 4, id = "btn_timer" },
 		},
     },
 

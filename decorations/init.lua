@@ -68,12 +68,6 @@ function Decorations.spawn(entry, tileSize)
             table.insert(updatable, inst)
         end
     end
-
-    table.insert(list, inst)
-
-    if prefab.update then
-        updatable[#updatable + 1] = inst
-    end
 end
 
 function Decorations.spawnLayer(layer, tileSize)
@@ -123,6 +117,19 @@ function Decorations.setIndicators(map)
             if id and map[id] ~= nil then
                 inst.data.active = map[id]
             end
+        end
+    end
+end
+
+function Decorations.startTimer(id)
+	print("requested startTimer for", id)
+	print(#list)
+    for _, inst in ipairs(list) do
+		print(inst, inst.data.id)
+        if inst.type == "timer_display" and inst.data.id == id then
+            inst.data.remaining = inst.data.dur
+            inst.data.active = true
+            return
         end
     end
 end

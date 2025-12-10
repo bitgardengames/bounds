@@ -204,16 +204,16 @@ return function(Decorations)
 			-- LED (layer 4)
 			------------------------------------------------------------------
 			if active then
-				love.graphics.setColor(0.45, 1.0, 0.45, 1) -- green
+				love.graphics.setColor(S.conduitEnabled)
 			else
-				love.graphics.setColor(1.0, 0.35, 0.35, 1) -- red
+				love.graphics.setColor(S.conduitDisabled)
 			end
 			love.graphics.circle("fill", cx, cy, ledR)
 
 			------------------------------------------------------------------
 			-- Highlight dot
 			------------------------------------------------------------------
-			love.graphics.setColor(1, 1, 1, 0.45)
+			love.graphics.setColor(1, 1, 1, 0.25)
 			love.graphics.circle("fill", cx + 1.5, cy - 1.5, 1.5)
 		end,
 	})
@@ -271,6 +271,86 @@ return function(Decorations)
 				joinFill,
 				joinH - O*2
 			)
+		end
+	})
+
+	Decorations.register("timer_display", {
+		w = 1,
+		h = 1,
+
+		init = function(inst, entry)
+			inst.data = {
+				id  = entry.data and entry.data.id,
+				dur = (entry.data and entry.data.dur) or 5,
+				remaining = 0,
+				active = false,
+				progress = 0
+			}
+		end,
+
+		update = function(inst, dt)
+			local d = inst.data
+
+			if d.active then
+				d.remaining = d.remaining - dt
+				if d.remaining <= 0 then
+					d.remaining = 0
+					d.active = false
+				end
+				d.progress = d.remaining / d.dur  -- full → empty
+			else
+				d.progress = 0
+			end
+		end,
+
+		draw = function(x, y, w, h, inst)
+			local d = inst.data
+			local p = d.progress or 0
+
+			local cx = x + w/2
+			local cy = y + h/2
+
+			------------------------------------------------------------
+			-- HOUSING (same as conduit_indicator)
+			------------------------------------------------------------
+			local ledR     = 4
+			local innerR   = ledR + 4
+			local metalR   = innerR + 4
+			local outlineR = metalR + 4
+
+			love.graphics.setColor(S.outline)
+			love.graphics.circle("fill", cx, cy, outlineR)
+
+			love.graphics.setColor(S.conduit)
+			love.graphics.circle("fill", cx, cy, metalR)
+
+			love.graphics.setColor(S.outline)
+			love.graphics.circle("fill", cx, cy, innerR)
+
+			------------------------------------------------------------
+			-- SEGMENTED CLOCKWISE DEPLETION (NO STENCIL, NO ARC BUGS)
+			------------------------------------------------------------
+			if p > 0 then
+				love.graphics.setColor(S.timerColor)
+				love.graphics.setLineWidth(3)
+
+				local radius = metalR - 2   -- safe, outside cavity
+				local segments = 64         -- smoothness
+				local fullAngle = 2 * math.pi * p
+				local startAngle = -math.pi/2  -- 12 o'clock
+
+				for i = 0, segments do
+					local a1 = startAngle - (i     / segments) * fullAngle
+					local a2 = startAngle - ((i+1) / segments) * fullAngle
+
+					love.graphics.line(
+						cx + math.cos(a1) * radius,
+						cy + math.sin(a1) * radius,
+						cx + math.cos(a2) * radius,
+						cy + math.sin(a2) * radius
+					)
+				end
+			end
 		end
 	})
 

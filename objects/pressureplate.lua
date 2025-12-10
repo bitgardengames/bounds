@@ -3,6 +3,7 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
+local Decorations = require("decorations.init")
 
 local Plate = { list = {} }
 
@@ -36,7 +37,6 @@ local function resetPlateState()
     }
 end
 
-
 function Plate.spawn(x, y, opts)
     opts = opts or {}
 
@@ -45,6 +45,8 @@ function Plate.spawn(x, y, opts)
     plate.x = x
     plate.y = y
     plate.active = true
+	plate.oldPressed = false         -- for detecting press transitions
+	plate.timer = opts.timer       -- id of timer_display to trigger (optional)
 
     table.insert(Plate.list, plate)
 end
@@ -52,7 +54,6 @@ end
 function Plate.clear()
     Plate.list = {}
 end
-
 
 local function findPlate(id)
     for _, p in ipairs(Plate.list) do
@@ -153,7 +154,25 @@ function Plate.update(dt, player, cubes)
                 end
             end
 
+            ------------------------------------------------------
+            -- APPLY NEW PRESS STATE
+            ------------------------------------------------------
             p.pressed = pressed
+
+            ------------------------------------------------------
+            -- DETECT **PRESS EVENT** (just pressed this frame)
+            ------------------------------------------------------
+            if not p.oldPressed and p.pressed then
+                -- If this plate has a designated timer, trigger it
+                if p.timer then
+                    Decorations.startTimer(p.timer)
+                end
+            end
+
+            ------------------------------------------------------
+            -- REMEMBER STATE FOR NEXT FRAME
+            ------------------------------------------------------
+            p.oldPressed = p.pressed
 
             ------------------------------------------------------
             -- SMOOTH ANIMATION
@@ -163,7 +182,6 @@ function Plate.update(dt, player, cubes)
         end
     end
 end
-
 
 function Plate.draw()
     for _, p in ipairs(Plate.list) do

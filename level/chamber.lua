@@ -1,5 +1,5 @@
 local Plate = require("objects.pressureplate")
-local Decorations = require("decorations")
+local Decorations = require("decorations.init")
 local LaserReceiver = require("objects.laserreceiver")
 
 local Chamber = {

@@ -14,11 +14,11 @@ local MovingPlatform = { list = {} }
 local OUTLINE = 4
 local TILE    = 48
 
-local PLATFORM_H = 8
+local PLATFORM_H = 10
 
-local COLOR_FILL    = Theme.level.solid
+local COLOR_FILL    = Theme.level.platformTop
 local COLOR_OUTLINE = Theme.outline
-local COLOR_FOOT    = (Theme.decorations and Theme.decorations.metal) or COLOR_FILL
+local COLOR_FOOT    = Theme.level.solid
 local ENDPOINT_PAUSE = 1.5
 
 local function smoothstep(t)
@@ -28,12 +28,6 @@ end
 --------------------------------------------------------------
 -- EASING: CONSISTENT SPEED WITH GENTLE ENDPOINT TAPER
 --------------------------------------------------------------
--- Platforms previously used smoothstep across the full [0,1]
--- range, which means if you stopped mid-track and restarted,
--- you'd jump back in at the fastest part of the curve. This
--- helper now keeps motion linear everywhere except near the
--- first/last few percent of travel, where we gently taper so
--- platforms slow into endpoints and ease back out smoothly.
 local function endpointEase(t)
     local EASE_PORTION   = 0.05
     local EASE_STRENGTH = 0.35
@@ -302,7 +296,7 @@ function MovingPlatform.draw()
         love.graphics.rectangle(
             "fill",
             p.x - OUTLINE,
-            p.y - 2 - OUTLINE,
+            p.y - 3 - OUTLINE,
             p.w + OUTLINE * 2,
             p.h + OUTLINE * 2
         )
@@ -312,7 +306,7 @@ function MovingPlatform.draw()
         love.graphics.rectangle(
             "fill",
             p.x,
-            p.y - 2,
+            p.y - 3,
             p.w,
             p.h
         )

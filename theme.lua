@@ -4,6 +4,7 @@ local Theme = {}
 -- OUTLINE / GLOBALS
 --------------------------------------------------------------
 Theme.outline = {0.04, 0.05, 0.07, 1}   -- deep navy outline
+Theme.active = {0.98, 0.62, 0.10, 1}
 
 --------------------------------------------------------------
 -- LEVEL BACKGROUND + SOLIDS
@@ -44,25 +45,47 @@ Theme.decorations = {
 
     signFill = {0.11, 0.14, 0.17, 1},
     signText = {0.98, 0.62, 0.10, 1},        -- amber/orange
-	
-	platformTop= {0.25, 0.29, 0.33, 1},
+
+	platformTop = {0.25, 0.29, 0.33, 1},
+
+	timerColor = Theme.active,
+	conduitEnabled = Theme.active,
+	conduitDisabled = {0.18, 0.18, 0.18, 1},
 }
 
 --------------------------------------------------------------
 -- PLAYER (Lumo)
 --------------------------------------------------------------
 Theme.player = {
-    fill    = {0.95, 0.97, 1.00, 1},         -- soft cool white
+    --fill    = {0.95, 0.97, 1.00, 1},         -- soft cool white
+    fill    = {0.92, 0.94, 0.97, 1},         -- warm neutral white
     outline = Theme.outline,
 }
+
+--------------------------------------------------------------
+-- MONITOR
+--------------------------------------------------------------
+Theme.monitor = {
+    lens    = {0.92, 0.94, 0.97, 1},
+    arm     = {0.23, 0.28, 0.34, 1},
+    led     = {1, 0.25, 0.25, 1},
+    mount   = {0.20, 0.20, 0.22, 1},
+    body    = {0.23, 0.28, 0.34, 1},
+    outline = Theme.decorations.outline,
+}
+
+--[[local LENS_COLOR = Theme.monitor.lens
+local MOUNT_COLOR = Theme.monitor.mount
+local ARM_COLOR = Theme.monitor.arm
+local BODY_COLOR = Theme.monitor.body
+local LED_COLOR = Theme.monitor.led]]
 
 --------------------------------------------------------------
 -- CUBE
 --------------------------------------------------------------
 Theme.cube = {
-    fill    = {0.90, 0.92, 0.95, 1},         -- very light blue-grey
-    bolt    = {0.33, 0.39, 0.46, 1},
-    seam    = {0.12, 0.14, 0.18, 1},
+    fill    = {94/255, 106/255, 120/255, 1},         -- very light blue-grey
+    centerFill= {0.98, 0.62, 0.10, 1},         -- very light blue-grey
     outline = Theme.outline,
 }
 
@@ -73,6 +96,7 @@ Theme.door = {
     frame    = {0.33, 0.39, 0.46, 1},        -- steel frame
     --doorFill = {0.98, 0.62, 0.10, 1},        -- warm amber interior (EXIT)
     doorFill = {0.11, 0.14, 0.17, 1},        -- warm amber interior (EXIT)
+	led = Theme.active,
 }
 
 --------------------------------------------------------------
@@ -81,8 +105,7 @@ Theme.door = {
 Theme.droptube = {
     topcap   = {0.18, 0.20, 0.24, 1},
     bottomcap= {0.24, 0.28, 0.33, 1},
-
-    glass    = {0.40, 0.65, 0.88, 0.28},      -- teal-blue translucent
+    glass    = {0.40, 0.65, 0.88, 0.28},
     highlight= {1, 1, 1, 0.18},
 }
 
@@ -91,7 +114,7 @@ Theme.droptube = {
 --------------------------------------------------------------
 Theme.saw = {
     track          = Theme.outline,
-    bladeFill      = {0.82, 0.78, 0.75, 1},   -- warm silver
+    bladeFill      = {0.82, 0.78, 0.75, 1},
     bladeHighlight = {1, 1, 1, 0.12},
     rim            = Theme.outline,
     center         = Theme.outline,
@@ -102,8 +125,8 @@ Theme.saw = {
 --------------------------------------------------------------
 Theme.pressurePlate = {
     outline     = Theme.outline,
-    button      = {0.98, 0.62, 0.10, 1},
-    buttonGlow  = {0.98, 0.62, 0.10, 1},
+    button      = Theme.active,
+    buttonGlow  = Theme.active,
     base        = {0.14, 0.15, 0.18, 1},
 }
 
@@ -111,8 +134,8 @@ Theme.pressurePlate = {
 -- STOOMP BUTTONS
 --------------------------------------------------------------
 Theme.buttons = {
-    cap         = {0.98, 0.62, 0.10, 1},      -- amber cap
-    capPressed  = {0.88, 0.50, 0.08, 1},
+    cap         = Theme.active,
+    capPressed  = Theme.active,
     base        = {0.14, 0.15, 0.18, 1},
 }
 

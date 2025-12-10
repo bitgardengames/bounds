@@ -5,7 +5,7 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
-local Decorations = require("decorations")
+local Decorations = require("decorations.init")
 local Liquids = require("systems.liquids")
 
 local Level = {}

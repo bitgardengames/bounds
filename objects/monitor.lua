@@ -7,6 +7,13 @@
 local Player = require("player.player")  -- direct access to player
 local Theme = require("theme")
 
+local OUTLINE_COLOR = Theme.monitor.outline
+local LENS_COLOR = Theme.monitor.lens
+local MOUNT_COLOR = Theme.monitor.mount
+local ARM_COLOR = Theme.monitor.arm
+local BODY_COLOR = Theme.monitor.body
+local LED_COLOR = Theme.monitor.led
+
 local Monitor = {
     id       = nil,
     tileSize = 48,
@@ -238,14 +245,14 @@ function Monitor.draw()
     ------------------------------------------------------
     -- MOUNT PLATE
     ------------------------------------------------------
-    love.graphics.setColor(0,0,0,1)
+    love.graphics.setColor(OUTLINE_COLOR)
     love.graphics.rectangle("fill",
         plateX - 4, plateY - 4,
         plateW + 8, plateH + 8,
         4, 4
     )
 
-    love.graphics.setColor(0.20, 0.20, 0.22)
+    love.graphics.setColor(MOUNT_COLOR)
     love.graphics.rectangle("fill",
         plateX, plateY,
         plateW, plateH,
@@ -255,13 +262,13 @@ function Monitor.draw()
     ------------------------------------------------------
     -- ARM
     ------------------------------------------------------
-    love.graphics.setColor(0,0,0,1)
+    love.graphics.setColor(OUTLINE_COLOR)
     love.graphics.rectangle("fill",
         armX - 4, armY - 4,
         armW + 8, armH + 8
     )
 
-    love.graphics.setColor(S.grill)
+    love.graphics.setColor(ARM_COLOR)
     love.graphics.rectangle("fill",
         armX, armY,
         armW, armH
@@ -272,14 +279,14 @@ function Monitor.draw()
     ------------------------------------------------------
     local ox = 4
 
-    love.graphics.setColor(0,0,0,1)
+    love.graphics.setColor(OUTLINE_COLOR)
     love.graphics.rectangle("fill",
         bodyX - ox, bodyY - ox,
         bodyW + ox*2, bodyH + ox*2,
         10, 10
     )
 
-    love.graphics.setColor(S.grill)
+    love.graphics.setColor(BODY_COLOR)
     love.graphics.rectangle("fill",
         bodyX, bodyY,
         bodyW, bodyH,
@@ -289,11 +296,11 @@ function Monitor.draw()
     ------------------------------------------------------
     -- LED
     ------------------------------------------------------
-    love.graphics.setColor(S.dark)
+    love.graphics.setColor(OUTLINE_COLOR)
     love.graphics.circle("fill", ledX, ledY, ledR + 4)
 
-    love.graphics.setColor(S.dark)
-    love.graphics.circle("fill", ledX, ledY, ledR + 1)
+    --[[love.graphics.setColor(S.dark)
+    love.graphics.circle("fill", ledX, ledY, ledR + 1)]]
 
     love.graphics.setColor(1, 0.25, 0.25, ledAlpha)
     love.graphics.circle("fill", ledX, ledY, ledR)
@@ -302,7 +309,7 @@ function Monitor.draw()
     -- LENS + REFOCUSING PUPIL
     ------------------------------------------------------
     -- Lens housing
-    love.graphics.setColor(S.dark)
+    love.graphics.setColor(S.outline)
     love.graphics.circle("fill", lx, ly, 12)
 
 	-- Tracking pupil (scaled + correctly mirrored horizontally)
@@ -315,7 +322,7 @@ function Monitor.draw()
 	local pupilY = ly + dy
         local pupilR = 5 * Monitor.pupilScale
 
-	love.graphics.setColor(1,1,1)
+	love.graphics.setColor(LENS_COLOR)
 	love.graphics.circle("fill", pupilX, pupilY, pupilR)
 end
 

@@ -39,7 +39,7 @@ return function(Decorations)
             ---------------------------------------------------------
             inst.onlineTime   = 0
             inst.onlinePhase  = 0      -- 0=off → 1=point → 2=horiz → 3=vert → 4=online → 5=text
-            inst.onlineDelay  = 6      -- wait before powering on
+            inst.onlineDelay  = 2.2      -- wait before powering on
 
             inst.onlineDuration = {
                 point = 0.10,

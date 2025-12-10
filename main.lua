@@ -18,7 +18,7 @@ local Chamber = require("level.chamber")
 local Plate = require("objects.pressureplate")
 local Cube = require("objects.cube")
 local MovingPlatform = require("objects.movingplatform")
-local Decorations = require("decorations")
+local Decorations = require("decorations.init")
 local Monitor = require("objects.monitor")
 local ContextZones = require("systems.contextzones")
 local LaserEmitter = require("objects.laseremitter")
@@ -154,9 +154,7 @@ local function spawnObjects(chamber)
 
     Plate.clear()
     for index, plate in ipairs(objects.plates or {}) do
-        Plate.spawn(plate.tx * TILE_SIZE, plate.ty * TILE_SIZE, {
-            id = plate.id or string.format("plate_%d", index),
-        })
+        Plate.spawn(plate.tx * TILE_SIZE, plate.ty * TILE_SIZE, plate)
     end
 
     Cube.clear()

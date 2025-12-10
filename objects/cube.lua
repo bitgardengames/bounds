@@ -29,6 +29,7 @@ local PUSH_FRICTION_SCALE = 0.06
 local OUTLINE = 4
 
 local COLOR_FILL = Theme.cube.fill
+local COLOR_CENTER_FILL = Theme.cube.centerFill
 local COLOR_OUTLINE = Theme.cube.outline
 local RESTING_FOOT_OFFSET = -2
 local PLATFORM_SINK = 2
@@ -490,28 +491,16 @@ function Cube.draw()
             6, 6
         )
 
-        --[[----------------------------------------------------------
-        -- SEAM LINES
-        ----------------------------------------------------------
-        love.graphics.setColor(Theme.cube.seam)
-        love.graphics.setLineWidth(4)
-
-        -- Vertical seam (top → bottom)
-        love.graphics.line(0, -h/2, 0, h/2)
-
-        -- Horizontal seam (left → right)
-        love.graphics.line(-w/2, 0, w/2, 0)]]
-
         ----------------------------------------------------------
         -- CENTER CIRCLE
         ----------------------------------------------------------
 
         -- OUTLINE
-        love.graphics.setColor(Theme.outline)
+        love.graphics.setColor(COLOR_OUTLINE)
         love.graphics.circle("fill", 0, 0, radius + circleInset)
 
         -- FILL
-        love.graphics.setColor(Theme.cube.fill or Theme.solid)
+        love.graphics.setColor(COLOR_CENTER_FILL)
         love.graphics.circle("fill", 0, 0, radius)
 
         love.graphics.pop()
