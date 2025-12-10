@@ -27,6 +27,7 @@ local Liquids = require("systems.liquids")
 local DropTube = require("objects.droptube")
 local Button = require("objects.button")
 
+local p = Player.get()
 local TILE_SIZE = LevelData.tileSize or 48
 local currentChamber = 1
 local chamberCount = #LevelData.chambers

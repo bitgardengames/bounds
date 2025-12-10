@@ -131,6 +131,8 @@ local p = {
 --------------------------------------------------------------
 
 function Player.init(Level)
+	p.x = -48
+	p.y = -48
     p.vx, p.vy = 0, 0
     p.onGround = false
     p.dead = false

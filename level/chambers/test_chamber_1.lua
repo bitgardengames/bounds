@@ -31,7 +31,6 @@ local chamber = {
 				{type="sign", tx=4, ty = 18, data = {text = "CH-01"}},
                 {type="vent",       tx=12, ty=5},
                 {type="vent",       tx=27, ty=13},
-                {type="vent",       tx=5,  ty=5},
 
                 {type="vent_round", tx=20, ty=6},
                 {type="vent_round", tx=7,  ty=12},

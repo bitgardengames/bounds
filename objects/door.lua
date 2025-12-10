@@ -226,7 +226,7 @@ function Door.draw()
 	-- DOOR STATUS LIGHT STRIP (premium eased brightness)
 	------------------------------------------------------------
 	do
-		local stripW = w
+		local stripW = w - 8
 		local stripH = 6
 		local cx = x + w * 0.5
 		local topY = y - 16

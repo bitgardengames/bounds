@@ -96,7 +96,6 @@ end
 --------------------------------------------------------------
 -- Ripple surface setup
 --------------------------------------------------------------
-
 local function initSurface(blob)
     local w = blob.w
     local N = math.floor(w / 8 + 0.5)
@@ -106,9 +105,9 @@ local function initSurface(blob)
         N = N,
         y = {},
         v = {},
-        tension = 0.025,
-        damping = 0.020,
-        spread  = 0.22,
+        tension = 0.020,
+        damping = 0.014,
+        spread  = 0.34,
         maxAmp  = 12
     }
 
