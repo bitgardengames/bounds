@@ -32,7 +32,7 @@ local COLOR_FILL = Theme.cube.fill
 local COLOR_CENTER_FILL = Theme.cube.centerFill
 local COLOR_OUTLINE = Theme.cube.outline
 local RESTING_FOOT_OFFSET = -2
-local PLATFORM_SINK = 2
+local PLATFORM_SINK = 1
 local BOUNCE_THRESHOLD = 520
 local BOUNCE_DAMPING = 0.36
 

@@ -134,6 +134,19 @@ function Decorations.startTimer(id)
     end
 end
 
+function Decorations.isTimerActive(id)
+    -- Look for a timer_display with matching id in the live decorations list
+    for _, inst in ipairs(list) do
+        if inst.type == "timer_display" and inst.data.id == id then
+            -- Consider it "active" only while its countdown is running
+            return inst.data.active and (inst.data.remaining or 0) > 0
+        end
+    end
+
+    -- No such timer found, or it's not active
+    return false
+end
+
 function Decorations.drawStrips()
     for _, d in ipairs(strips) do
         local prefab = registry[d.type]

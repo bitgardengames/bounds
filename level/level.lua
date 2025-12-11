@@ -234,6 +234,8 @@ function Level.load(data)
     Level.solidBlobs = {}
     Level.frameBlobs = {}
 
+	Liquids.clear()
+
     for _, src in ipairs(data.layers or {}) do
         local layer = {
             name  = src.name or "Layer",

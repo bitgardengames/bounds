@@ -118,12 +118,12 @@ local chamber = {
         ------------------------------------------------------
         movingPlatforms = {
             {
-                tx = 16,            -- start roughly centered in the gap
+                tx = 15,            -- start roughly centered in the gap
                 ty = 18,            -- same height as the raised floor (tile above it)
                 dir = "horizontal",
-                trackTiles = 8,    -- spans left ↔ right comfortably, crossing gap fully
+                trackTiles = 8,
 				widthTiles = 3,
-                speed = 0.2,
+                speed = 0.15,
                 active = false,      -- always moving
 				loop = true,
 				target = "plate_1",

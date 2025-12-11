@@ -88,6 +88,15 @@ function Plate.allDown()
     return true
 end
 
+function Plate.isActive(id)
+    for _, p in ipairs(Plate.list) do
+        if p.id == id then
+            return p.active    -- logical signal
+        end
+    end
+    return false
+end
+
 --------------------------------------------------------------
 -- HELPER: check pressure from one object (player or cube)
 --------------------------------------------------------------
@@ -134,7 +143,6 @@ end
 
 function Plate.update(dt, player, cubes)
     for _, p in ipairs(Plate.list) do
-        if p.active then
             local px1, px2, bandTop, bandBottom = pressBounds(p.x, p.y)
 
             ------------------------------------------------------
@@ -159,6 +167,18 @@ function Plate.update(dt, player, cubes)
             ------------------------------------------------------
             p.pressed = pressed
 
+			------------------------------------------------------
+			-- LOGIC OUTPUT (p.active)
+			------------------------------------------------------
+			if p.timer then
+				-- Timer-linked plate:
+				-- its logic output depends entirely on the timer state
+				p.active = Decorations.isTimerActive(p.timer)
+			else
+				-- Normal plate: output is just "pressed or not"
+				p.active = p.pressed
+			end
+
             ------------------------------------------------------
             -- DETECT **PRESS EVENT** (just pressed this frame)
             ------------------------------------------------------
@@ -179,13 +199,11 @@ function Plate.update(dt, player, cubes)
             ------------------------------------------------------
             local target = p.pressed and 1 or 0
             p.t = p.t + (target - p.t) * dt * EASE
-        end
     end
 end
 
 function Plate.draw()
     for _, p in ipairs(Plate.list) do
-        if p.active then
             local x, y = p.x, p.y
             local t = p.t
 
@@ -259,7 +277,6 @@ function Plate.draw()
                 BASE_H,
                 4,4
             )
-        end
     end
 end
 

@@ -106,8 +106,8 @@ local chamber = {
             solid = true,
 
             rects = {
+				{x = 2,  y = 22,  w = 38, h = 1},
                 {x = 15, y = 20, w = 8, h = 1},
-                {x = 2,  y = 22,  w = 38, h = 1},
             },
         },
 

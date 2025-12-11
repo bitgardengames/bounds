@@ -261,5 +261,8 @@ function Liquids.draw()
     end
 end
 
+function Liquids.clear()
+    Liquids.blobs = {}
+end
 
 return Liquids

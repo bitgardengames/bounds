@@ -1,18 +1,11 @@
---[[
-	Notes
-	Could add the sequence here where the player drops in, looks at the puzzle, steps on the plate. after a moment of stepping off the plate the player has a conundrum moment... I don't have the tools to solve this. Then the drop tube coughs up a cube.
-	Soft lock potential - If the player sends the cube back across the gap, they're stuck at the start. despawn cube and drop a new one from the delivery tube
---]]
-
 local chamber = {
     name   = "Test Chamber 3",
     width  = 40,
     height = 23,
 
 	doorCriteria = {
-		plates = { mode = "all", ids = { "plate_1", "plate_2" } },
+		plates = {mode = "all", ids = {"plate_1"}},
 	},
-
 
     layers = {
 
@@ -39,7 +32,20 @@ local chamber = {
             name = "Decor",
             kind = "decor",
             objects = {
-                {type="sign", tx=4, ty=5, data={text="CH-03"}},
+                {type="sign", tx=4, ty=18, data={text="CH-03"}},
+
+                {type="conduit_curve_tr",  tx=22, ty=20},
+				{type="conduit_h_join",         tx=23, ty=20},
+				{type="conduit_h",    tx=24, ty=20},
+                {type="timer_display", tx=24, ty=20, data={id="timer_1", dur = 5.5}},
+                {type="conduit_h_join", tx=25, ty=20},
+				{type="conduit_curve_tl",  tx=26, ty=20},
+				
+                {type="conduit_curve_tr",  tx=32, ty=16},
+				{type="conduit_h_join",         tx=33, ty=16},
+				{type="conduit_h",         tx=34, ty=16},
+				{type="conduit_indicator", tx=34, ty=16, data = {id = "indicator_1"}},
+				{type="conduit_h_join",    tx=35, ty=16},
             }
         },
 
@@ -51,11 +57,10 @@ local chamber = {
             kind  = "rectlayer",
             solid = true,
             rects = {
-                -- Ground floor (unchanged)
-                {x = 2,  y = 14, w = 6, h = 1},
+                {x = 2,  y = 22,  w = 38, h = 1},
 
                 -- Floor 2: right segment (holds plate + door)
-                {x = 25, y = 18, w = 15, h = 1},
+                {x = 31, y = 18, w = 9, h = 1},
             },
         },
 
@@ -80,7 +85,7 @@ local chamber = {
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-           -- { tx = 26, ty = 12 },
+           { tx = 12, ty = 18 },
         },
 
         monitors = {
@@ -91,7 +96,8 @@ local chamber = {
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-          --  { tx = 6, ty = 12, id = "plate_1" },
+            {tx = 31, ty = 16, id = "plate_1"},
+			{tx = 21, ty = 20, id = "plate_2", timer = "timer_1"},
         },
 
         dropTubes = {
@@ -103,16 +109,23 @@ local chamber = {
         ------------------------------------------------------
         movingPlatforms = {
             {
-                tx = 23,
+                tx = 28,
                 ty = 17,
                 dir = "vertical",
-                trackTiles = 6,
-				widthTiles = 1,
+                trackTiles = 5,
+				widthTiles = 2,
                 speed = 0.2,
-				loop = true,
+				active = false,
+				target = "plate_2"
             },
         },
     },
+	
+	indicatorLogic = function(Plate)
+		return {
+			indicator_1 = Plate.isDown("plate_1"),
+		}
+	end,
 
     contextZones = {},
 }

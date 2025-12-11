@@ -83,79 +83,85 @@ function MovingPlatform.spawn(x, y, opts)
     opts = opts or {}
     TILE = Level.tileSize or TILE
 
-	local widthTiles = opts.widthTiles or 1
-	local w = widthTiles * TILE - 4
-	local h = PLATFORM_H
+    ------------------------------------------------------
+    -- 1. WIDTH IN TILES (no padding, truly tile aligned)
+    ------------------------------------------------------
+    local widthTiles = opts.widthTiles or 1
+    local w = widthTiles * TILE     -- ← exact tile width
+    local h = PLATFORM_H            -- unchanged
 
-    ----------------------------------------------------------
-    -- TRACK LENGTH FROM TILES
-    ----------------------------------------------------------
+    ------------------------------------------------------
+    -- 2. Compute travel distance based on trackTiles
+    ------------------------------------------------------
     local trackTiles = opts.trackTiles
-    local travelPx
+    local travelPx = (trackTiles and trackTiles > 0)
+        and ((trackTiles - 1) * TILE)
+        or (opts.length or (2 * TILE))
 
-    if trackTiles and trackTiles > 0 then
-        travelPx = (trackTiles - 1) * TILE
-    else
-        travelPx = opts.length or (2 * TILE)
-    end
+    ------------------------------------------------------
+    -- 3. TRUE TILE-ALIGNED PLATFORM POSITIONING
+    ------------------------------------------------------
+    -- x and y passed in from chamber data already represent tile coords.
+    -- So we align the platform's LEFT EDGE to the tile.
+    --
+    -- Example: tx=30 → x = 30 * TILE
+    -- Platform widthTiles=2 → width = 96px
+    -- Result: platform spans tiles 30–32 exactly.
+    ------------------------------------------------------
 
-    ----------------------------------------------------------
-    -- PLATFORM IS NOW TOP-ALIGNED IN TILE SPACE
-    ----------------------------------------------------------
-    -- Instead of centering: anchorCY = y + TILE/2
-    -- We position the platform so its top touches top of tile.
-    -- tile top Y = y
-    -- platform height = h
-    -- so center is: y + TILE - h/2
-    ----------------------------------------------------------
-    local anchorCX = x + TILE / 2
-    local anchorCY = y + h
+    local px = x
+    local py = y + 5
 
+    ------------------------------------------------------
+    -- Compute center used by easing system
+    ------------------------------------------------------
+    local cx = px + w/2
+    local cy = py + h/2
+
+    ------------------------------------------------------
+    -- 4. Press-to-lift logic remains unchanged
+    ------------------------------------------------------
     local pressToLift = (opts.active == false and opts.target ~= nil)
 
-    --------------------------------------------------------------
-    -- LOOPING BEHAVIOR
-    -- • Always-on platforms keep looping by default
-    -- • Press-to-lift defaults to one-shot elevator style unless overridden
-    --------------------------------------------------------------
     local loop = opts.loop
     if loop == nil then
         loop = not pressToLift
     end
 
+    ------------------------------------------------------
+    -- 5. Create platform
+    ------------------------------------------------------
     local platform = {
-        anchorCX = anchorCX,
-        anchorCY = anchorCY,
+        anchorCX = cx,
+        anchorCY = cy,
 
-        cx = anchorCX,
-        cy = anchorCY,
-
-        x = anchorCX - w / 2,
-        y = anchorCY - h / 2,
+        cx = cx,
+        cy = cy,
+        x = px,
+        y = py,
         w = w,
         h = h,
 
-        prevX = anchorCX - w / 2,
-        prevY = anchorCY - h / 2,
+        prevX = px,
+        prevY = py,
         dx = 0,
         dy = 0,
-        vx = 0,
-        vy = 0,
 
         dir       = opts.dir or "horizontal",
         t         = pressToLift and 1 or 0,
         direction = pressToLift and -1 or 1,
         speed     = opts.speed or 0.4,
         travel    = travelPx,
-        pauseRemaining = 0,
 
         always  = (opts.active ~= false and opts.target == nil),
         waiting = (not pressToLift) and (opts.active == false),
         target  = opts.target,
         pressToLift = pressToLift,
         loop = loop,
-        resumeDirection = pressToLift and -1 or 1,
+        pauseRemaining = 0,
     }
+
+    table.insert(MovingPlatform.list, platform)
 
     applyPosition(platform)
 
@@ -205,7 +211,8 @@ function MovingPlatform.update(dt)
 
         local targetT
         if p.pressToLift then
-            local isPressed = Plate.isDown(p.target)
+            --local isPressed = Plate.isDown(p.target)
+            local isPressed = Plate.isActive(p.target)
 
             if p.loop then
                 if isPressed then

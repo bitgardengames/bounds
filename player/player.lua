@@ -28,6 +28,7 @@ local WALL_JUMP_PUSH    = 260
 local WALL_JUMP_UP      = -480
 local PRE_JUMP_SQUISH_SCALE = 0.2
 local CUBE_PUSH_MAX = 120
+local DEBUG_PLAYER_COLLISION = false
 
 --------------------------------------------------------------
 -- PLAYER DATA
@@ -37,8 +38,10 @@ local p = {
     x = -64,
     y = -64,
 
-    w = 32,
-    h = 32,
+--    w = 32,
+--    h = 32,
+    w = 40,
+    h = 40,
 
     radius  = 18,
     outline = 5,
@@ -916,6 +919,15 @@ function Player.draw()
     local r = p.radius * breathe
 
     if p.dead then return end
+
+
+    -- DEBUG: draw raw collision box
+    if DEBUG_PLAYER_COLLISION then
+        love.graphics.setColor(1, 0, 1, 0.7)   -- magenta-ish
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", p.x, p.y, p.w, p.h)
+        love.graphics.setLineWidth(1)
+    end
 
     local cx = p.x + p.w/2
     local cy = p.y + p.h - r - 4
