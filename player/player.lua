@@ -87,6 +87,7 @@ local p = {
     gatherDuration = 0.02,
 
     onGround = false,
+	onButton = false,
     pushingCube = false,
     pushingCubeDir = 0,
     pushingCubeRef = nil,
@@ -312,6 +313,7 @@ local function resolveButtonCollisions()
 			p.y = surf.y - p.h
 			p.vy = math.min(p.vy, 0)
 			p.onGround = true
+			p.onButton = true
 
 			-- deformation feedback
 			p.contactBottom = math.max(p.contactBottom, 0.75)
@@ -717,7 +719,7 @@ function Player.update(dt, Level)
 	resolveButtonCollisions()
 
     local justLanded = (not wasOnGround) and p.onGround
-    if justLanded then
+    if justLanded and not p.onButton then
 
 		Input.setLocked(false)
 

@@ -246,7 +246,7 @@ local function spawnContextZones(chamber)
 end
 
 function loadChamber(index)
-    local chamber = LevelData.chambers[3 or index]  -- Brute force here for testing, return to index when done, 1 or index
+    local chamber = LevelData.chambers[index]  -- Brute force here for testing, return to index when done, 1 or index
     assert(chamber, "No chamber data for index " .. tostring(index))
 
     chamber.tileSize = LevelData.tileSize
