@@ -26,8 +26,6 @@ local chamber = {
             name  = "Decor",
             kind  = "decor",
             objects = {
-				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
-				--{type="backgroundnoise", tx=1, ty=1, w=40, h=23},
 				{type="sign", tx=4, ty = 18, data = {text = "CH-01"}},
                 {type="vent",       tx=12, ty=5},
                 {type="vent",       tx=27, ty=13},
@@ -45,16 +43,15 @@ local chamber = {
                 {type="panel_tall", tx=28, ty=5},
                 {type="panel_tall", tx=34, ty=16},
 
-                {type="conduit_v",          tx=28, ty=20},
-                {type="conduit_curve_tr",   tx=28, ty=19},
-                {type="conduit_h",          tx=29, ty=19},
-                {type="conduit_h_join",     tx=30, ty=19},
-                {type="conduit_h",tx=31, ty=19},
-                {type="conduit_indicator",tx=31, ty=19, data = {id = "indicator_1"}},
-                {type="conduit_h_join",     tx=32, ty=19},
-                {type="conduit_h",          tx=33, ty=19},
-                {type="conduit_h",          tx=34, ty=19},
-                {type="conduit_h_join",     tx=35, ty=19},
+                {type="conduit_curve_tr",   tx=28, ty=20},
+                {type="conduit_h",          tx=29, ty=20},
+                {type="conduit_h_join",     tx=30, ty=20},
+                {type="conduit_h",tx=31, ty=20},
+                {type="conduit_indicator",tx=31, ty=20, data = {id = "indicator_1"}},
+                {type="conduit_h_join",     tx=32, ty=20},
+                {type="conduit_h",          tx=33, ty=20},
+                {type="conduit_h",          tx=34, ty=20},
+                {type="conduit_h_join",     tx=35, ty=20},
 
                --[[ {type="conduit_v_double_join",       tx=13, ty=21},
                 {type="conduit_v_double",       tx=13, ty=20},
@@ -94,7 +91,7 @@ local chamber = {
                 {type="pipe_big_h",        tx=1, ty=15},
                 {type="pipe_big_h",        tx=1, ty=20},
                 {type="pipe_cap", tx=2, ty=18},]]
-				
+
                 --{type="scribble_lumo", tx=10, ty=12},
                -- {type="hazard_electric", tx=12, ty=12},
             },
@@ -137,10 +134,9 @@ local chamber = {
         monitors = {
             {tx = 38, ty = 5, dir = -1},
         },
-		
+
 		buttons = {
-		--	{ tx = 10, ty = 21, mode = "oneshot", id = "btn_1" },
-		--	{ tx = 8, ty = 21, mode = "timed", duration = 4, id = "btn_timer" },
+			{ tx = 15, ty = 18, mode = "oneshot", id = "button_1" },
 		},
     },
 

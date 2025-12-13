@@ -1,15 +1,14 @@
 --------------------------------------------------------------
 -- CUBE MODULE — Pushable Weighted Puzzle Cube
--- Supports multiple cubes, gravity, tile collisions, pushing,
--- and real stable ground friction (no jitter).
 --------------------------------------------------------------
 
-local Level = require("level.level")
-local Particles = require("systems.particles")
-local Theme = require("theme")
+local Level          = require("level.level")
+local Theme          = require("theme")
 local MovingPlatform = require("objects.movingplatform")
-local Liquids = require("systems.liquids")
-local DropTube = require("objects.droptube")
+local Liquids        = require("systems.liquids")
+local DropTube       = require("objects.droptube")
+local Particles      = require("systems.particles")
+local Events         = require("systems.events")
 
 local Cube = { list = {} }
 
@@ -17,48 +16,55 @@ local Cube = { list = {} }
 -- CONFIG
 --------------------------------------------------------------
 
-local CUBE_SIZE = 32
-local GRAVITY = 1800
+local CUBE_SIZE      = 32
+local GRAVITY        = 1800
 local MAX_FALL_SPEED = 900
-local PUSH_ACCEL = 820     -- quicker blend toward top push speed
-local CUBE_PUSH_MAX = 132  -- caps speed while being pushed
-local PUSH_STICTION = 8    -- extra resistance before the cube budges
-local FRICTION = 3.2
+
+local PUSH_ACCEL     = 900
+local MAX_PUSH_SPEED = 160
+local FRICTION       = 3.2
 local PUSH_FRICTION_SCALE = 0.06
 
-local OUTLINE = 4
+local FOOT_INSET        = 2
+local PLATFORM_MARGIN   = 1.6
+local PLATFORM_SINK     = 1
+local REST_FOOT_OFFSET  = -2
 
-local COLOR_FILL = Theme.cube.fill
-local COLOR_CENTER_FILL = Theme.cube.centerFill
-local COLOR_OUTLINE = Theme.cube.outline
-local RESTING_FOOT_OFFSET = -2
-local PLATFORM_SINK = 1
-local BOUNCE_THRESHOLD = 520
-local BOUNCE_DAMPING = 0.36
+local LANDING_DAMP_VX = 0.35
+local LANDING_MIN_VY  = 40
 
 --------------------------------------------------------------
--- SPAWN
+-- HELPERS
+--------------------------------------------------------------
+
+local function sign(x)
+    if x > 0 then return 1 end
+    if x < 0 then return -1 end
+    return 0
+end
+
+--------------------------------------------------------------
+-- SPAWN / CLEAR
 --------------------------------------------------------------
 
 function Cube.spawn(x, y, opts)
     opts = opts or {}
 
     table.insert(Cube.list, {
-        id = tostring(opts.id or string.format("cube_%d", #Cube.list + 1)),
-        x = x,
-        y = y,
-        w = CUBE_SIZE,
-        h = CUBE_SIZE,
-        vx = 0,
-        vy = 0,
+        id = tostring(opts.id or ("cube_" .. (#Cube.list + 1))),
+        x = x, y = y,
+        w = CUBE_SIZE, h = CUBE_SIZE,
+
+        vx = 0, vy = 0,
+
         grounded = false,
-        weight = 1,
-        visualOffset = 0,
-        visualVelocity = 0,
-        angle = 0,
-        angularVelocity = 0,
-        restAngle = 0,
-        pushDustTimer = 0,
+        groundedPlatform = nil,
+
+        arriving = false,
+        arrivalTimer = 0,
+        arrivalDelay = 0.25,
+
+        prevY = y,
     })
 end
 
@@ -67,213 +73,96 @@ function Cube.clear()
 end
 
 --------------------------------------------------------------
--- TILE COLLISION HELPERS
+-- TILE COLLISION
 --------------------------------------------------------------
 
-local function tileAtPixel(px, py, TILE, grid, width, height)
+local function tileAtPixel(px, py, TILE, grid, w, h)
     local tx = math.floor(px / TILE) + 1
     local ty = math.floor(py / TILE) + 1
-
-    if tx < 1 or ty < 1 or tx > width or ty > height then
-        return false
-    end
-
+    if tx < 1 or ty < 1 or tx > w or ty > h then return false end
     local row = grid and grid[ty]
     return row and row[tx] == true
 end
 
---------------------------------------------------------------
--- COLLISION RESOLUTION
---------------------------------------------------------------
+local function resolveTileCollision(c, TILE, grid, w, h)
+    c.grounded = false -- do NOT clear groundedPlatform here
 
-local function resolveTileCollision(c, TILE, grid, width, height)
-    local w, h = c.w, c.h
-
-    c.grounded = false
-
-    ----------------------------------------------------------
-    -- VERTICAL COLLISION
-    ----------------------------------------------------------
+    -- Vertical
     if c.vy > 0 then
-        -- falling downward, probe just BELOW the cube (adjusted for resting offset)
-        local footY = c.y + h - RESTING_FOOT_OFFSET
-        local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
-        local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
-
-        if hitL or hitR then
+        local footY = c.y + c.h - REST_FOOT_OFFSET
+        if tileAtPixel(c.x + FOOT_INSET, footY + 1, TILE, grid, w, h)
+        or tileAtPixel(c.x + c.w - FOOT_INSET, footY + 1, TILE, grid, w, h) then
             c.vy = 0
             c.grounded = true
-
-            -- snap cube bottom to the top of the tile
-            local tileY = math.floor(footY / TILE) * TILE
-            c.y = tileY - h + RESTING_FOOT_OFFSET
+            c.groundedPlatform = nil
+            c.y = math.floor(footY / TILE) * TILE - c.h + REST_FOOT_OFFSET
         end
-
     elseif c.vy < 0 then
-        -- upward movement
         local headY = c.y
-        local hitL = tileAtPixel(c.x + 2,     headY, TILE, grid, width, height)
-        local hitR = tileAtPixel(c.x + w - 2, headY, TILE, grid, width, height)
-
-        if hitL or hitR then
+        if tileAtPixel(c.x + FOOT_INSET, headY, TILE, grid, w, h)
+        or tileAtPixel(c.x + c.w - FOOT_INSET, headY, TILE, grid, w, h) then
             c.vy = 0
             c.y = math.floor(headY / TILE + 1) * TILE
         end
     end
 
-    ----------------------------------------------------------
-    -- SUPPORT PROBE (keeps cube grounded while resting)
-    ----------------------------------------------------------
-    if c.vy == 0 then
-        local footY = c.y + h - RESTING_FOOT_OFFSET
-        local hitL = tileAtPixel(c.x + 2,     footY + 1, TILE, grid, width, height)
-        local hitR = tileAtPixel(c.x + w - 2, footY + 1, TILE, grid, width, height)
-
-        if hitL or hitR then
+    -- Support probe
+    if not c.grounded and c.vy == 0 then
+        local footY = c.y + c.h - REST_FOOT_OFFSET
+        if tileAtPixel(c.x + FOOT_INSET, footY + 1, TILE, grid, w, h)
+        or tileAtPixel(c.x + c.w - FOOT_INSET, footY + 1, TILE, grid, w, h) then
             c.grounded = true
+            c.groundedPlatform = nil
         end
     end
 
-    ----------------------------------------------------------
-    -- HORIZONTAL COLLISION
-    ----------------------------------------------------------
+    -- Horizontal
     if c.vx > 0 then
-        local rightX = c.x + w
-        local hitT = tileAtPixel(rightX + 1, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(rightX + 1, c.y + h - 2 - RESTING_FOOT_OFFSET, TILE, grid, width, height)
-
-        if hitT or hitB then
+        local rx = c.x + c.w
+        if tileAtPixel(rx + 1, c.y + FOOT_INSET, TILE, grid, w, h)
+        or tileAtPixel(rx + 1, c.y + c.h - FOOT_INSET, TILE, grid, w, h) then
             c.vx = 0
-            c.x = math.floor(rightX / TILE) * TILE - w
+            c.x = math.floor(rx / TILE) * TILE - c.w
         end
-
     elseif c.vx < 0 then
-        local leftX = c.x
-        local hitT = tileAtPixel(leftX, c.y + 2, TILE, grid, width, height)
-        local hitB = tileAtPixel(leftX, c.y + h - 2 - RESTING_FOOT_OFFSET, TILE, grid, width, height)
-
-        if hitT or hitB then
+        local lx = c.x
+        if tileAtPixel(lx, c.y + FOOT_INSET, TILE, grid, w, h)
+        or tileAtPixel(lx, c.y + c.h - FOOT_INSET, TILE, grid, w, h) then
             c.vx = 0
-            c.x = math.floor(leftX / TILE + 1) * TILE
+            c.x = math.floor(lx / TILE + 1) * TILE
         end
     end
 end
+
+--------------------------------------------------------------
+-- PLATFORM COLLISION (ROBUST & CONTINUOUS)
+--------------------------------------------------------------
 
 local function resolvePlatformCollision(c)
-    local margin = 1.6
-
-    for _, platform in ipairs(MovingPlatform.list) do
-        local cx1, cy1 = c.x, c.y
-        local cx2, cy2 = c.x + c.w, c.y + c.h - RESTING_FOOT_OFFSET
-
-        local px1, py1 = platform.x, platform.y - 6
-        local px2, py2 = platform.x + platform.w, platform.y + platform.h
-
+    for _, p in ipairs(MovingPlatform.list) do
+        local cx1, cx2 = c.x, c.x + c.w
+        local px1, px2 = p.x, p.x + p.w
         local overlapX = math.min(cx2, px2) - math.max(cx1, px1)
-        local overlapY = math.min(cy2, py2) - math.max(cy1, py1)
-        local alignedHorizontally = overlapX > -margin
+        if overlapX <= 0 then goto next end
 
-        local prevY = c.prevY or c.y
-        local prevFoot = (prevY + c.h - RESTING_FOOT_OFFSET)
-        local fromAbove = prevFoot <= py1 + margin and c.vy >= 0
-        local fromBelow = prevY >= py2 - margin and c.vy <= 0
+        local topY  = p.y - 6
+        local footY = c.y + c.h - REST_FOOT_OFFSET
+        local gap   = topY - footY
 
-        if overlapX > 0 and overlapY > 0 then
-            if fromAbove or (overlapY <= overlapX and (c.y + c.h - RESTING_FOOT_OFFSET) <= py1 + overlapY) then
-                c.y = py1 - c.h + PLATFORM_SINK + RESTING_FOOT_OFFSET
-                c.vy = math.min(c.vy, platform.vy or 0)
-                c.grounded = true
-                c.x = c.x + (platform.dx or 0)
-            elseif fromBelow then
-                c.y = py2 - PLATFORM_SINK
-                c.vy = math.max(c.vy, platform.vy or 0)
-            elseif overlapX < overlapY then
-                if (c.x + c.w / 2) < (platform.x + platform.w / 2) then
-                    c.x = px1 - c.w
-                    c.vx = math.min(c.vx, platform.vx or 0)
-                else
-                    c.x = px2
-                    c.vx = math.max(c.vx, platform.vx or 0)
-                end
-            end
-        elseif alignedHorizontally then
-            local gap = py1 - cy2 + PLATFORM_SINK
+        local supported =
+            (gap >= -PLATFORM_MARGIN and gap <= PLATFORM_MARGIN + 2)
+            or c.groundedPlatform == p
 
-            if gap >= -(margin + PLATFORM_SINK) and gap <= margin + 2 and c.vy >= 0 then
-                c.y = py1 - c.h + PLATFORM_SINK + RESTING_FOOT_OFFSET
-                c.vy = math.min(c.vy, platform.vy or 0)
-                c.grounded = true
-                c.x = c.x + (platform.dx or 0)
-            elseif c.grounded and math.abs(gap) <= margin + 0.4 + PLATFORM_SINK then
-                c.x = c.x + (platform.dx or 0)
-            end
-        end
-    end
-end
-
---------------------------------------------------------------
--- PUSHING
---------------------------------------------------------------
-
-local function applyPush(c, player, dt)
-    local px, py = player.x, player.y
-    local pw, ph = player.w, player.h
-
-    local verticalOverlap = (py + ph > c.y + 2 and py < c.y + c.h - 2)
-    local horizontalTouch = (px + pw >= c.x - 6 and px <= c.x + c.w + 6)
-    local touching = player.onGround and verticalOverlap and horizontalTouch
-
-    if not touching then
-        return false
-    end
-
-    -- Determine push direction
-    local dir = 0
-    local playerCenter = px + pw / 2
-    local cubeCenter = c.x + c.w / 2
-
-    if playerCenter < cubeCenter and px + pw <= c.x + c.w then
-        dir = 1
-    elseif playerCenter > cubeCenter and px >= c.x then
-        dir = -1
-    end
-
-    if dir ~= 0 then
-        local target = dir * CUBE_PUSH_MAX
-
-        -- Start with a little "stiction" so the block feels hefty before moving
-        local resistance = PUSH_STICTION
-        if math.abs(c.vx) < resistance then
-            c.vx = c.vx + dir * math.min(resistance, CUBE_PUSH_MAX) * dt * 1.2
+        if supported then
+            c.y = topY - c.h + PLATFORM_SINK + REST_FOOT_OFFSET
+            c.vy = p.vy or 0
+            c.grounded = true
+            c.groundedPlatform = p
+            return
         end
 
-        local pushBlend = math.min(1, dt * (PUSH_ACCEL / 28))
-        c.vx = c.vx + (target - c.vx) * pushBlend
-
-        if math.abs(target - c.vx) < 2 then
-            c.vx = target
-        end
-
-        if c.grounded and math.abs(c.vx) > 24 then
-            c.pushDustTimer = (c.pushDustTimer or 0) - dt
-
-            if c.pushDustTimer <= 0 then
-                c.pushDustTimer = 0.22
-                Particles.puff(
-                    c.x + c.w/2 + dir * (c.w * 0.52),
-                    c.y + c.h + 4,
-                    dir * 8,
-                    -10 + math.random()*12,
-                    4.5, 0.32,
-                    {1,1,1,0.82}
-                )
-            end
-        else
-            c.pushDustTimer = 0
-        end
+        ::next::
     end
-
-    return true
 end
 
 --------------------------------------------------------------
@@ -282,51 +171,29 @@ end
 
 local function applyFriction(c, dt, beingPushed)
     if not c.grounded then return end
+    if math.abs(c.vx) < 1 then c.vx = 0 return end
 
-    if math.abs(c.vx) < 1 then
-        c.vx = 0
-        return
-    end
-
-    local frictionForce = FRICTION * 1200
+    local force = FRICTION * 1200
     if beingPushed then
-        frictionForce = frictionForce * PUSH_FRICTION_SCALE
+        force = force * PUSH_FRICTION_SCALE
     end
 
-    if c.vx > 0 then
-        c.vx = c.vx - frictionForce * dt
-        if c.vx < 0 then c.vx = 0 end
+    local dv = force * dt
+    if dv >= math.abs(c.vx) then
+        c.vx = 0
     else
-        c.vx = c.vx + frictionForce * dt
-        if c.vx > 0 then c.vx = 0 end
+        c.vx = c.vx - sign(c.vx) * dv
     end
 end
 
 --------------------------------------------------------------
--- VISUAL OFFSET (SUBTLE FLOAT WITHOUT SETTLING)
+-- WATER CHECK
 --------------------------------------------------------------
 
-local function updateVisualOffset(c, dt, targetOffset)
-    local offset = c.visualOffset or targetOffset
-    local blend = 1 - math.exp(-dt * 18)
-
-    c.visualOffset = offset + (targetOffset - offset) * blend
-    c.visualVelocity = 0
-end
-
---------------------------------------------------------------
--- VISUAL ANGLE (WOBBLE)
---------------------------------------------------------------
-
-local function updateAngle(c, dt)
-    local target = c.grounded and (c.restAngle or 0) or 0
-    local stiffness = c.grounded and 9 or 5
-    local damping = c.grounded and 5.2 or 2.6
-
-    c.angularVelocity = c.angularVelocity + (target - c.angle) * stiffness * dt
-    c.angularVelocity = c.angularVelocity * math.max(0, 1 - damping * dt)
-
-    c.angle = c.angle + c.angularVelocity * dt
+local function isFullySubmerged(c)
+    local cx = c.x + c.w * 0.5
+    return Liquids.isPointInWater(cx, c.y + 2)
+       and Liquids.isPointInWater(cx, c.y + c.h - 2)
 end
 
 --------------------------------------------------------------
@@ -334,110 +201,103 @@ end
 --------------------------------------------------------------
 
 function Cube.update(dt, player)
-    local tileSize = Level.tileSize or 48
-    local grid = Level.solidGrid
-    local width = Level.width or 0
+    local TILE   = Level.tileSize or 48
+    local grid   = Level.solidGrid
+    local width  = Level.width or 0
     local height = Level.height or 0
 
     for _, c in ipairs(Cube.list) do
+        c.prevY = c.y
         local wasGrounded = c.grounded
 
-        c.prevX, c.prevY = c.x, c.y
-
-        ------------------------------------------------------
-        -- GRAVITY
-        ------------------------------------------------------
-        if not c.grounded then
-            c.vy = c.vy + GRAVITY * dt
-            if c.vy > MAX_FALL_SPEED then
-                c.vy = MAX_FALL_SPEED
+        --------------------------------------------------
+        -- ARRIVAL
+        --------------------------------------------------
+        if c.arriving then
+            c.arrivalTimer = c.arrivalTimer + dt
+            if c.arrivalTimer < c.arrivalDelay then
+                goto continue
             end
+            c.arriving = false
         end
 
-        ------------------------------------------------------
-        -- PUSH + FRICTION
-        ------------------------------------------------------
-        local pushing = applyPush(c, player, dt)
-        applyFriction(c, dt, pushing)
+        --------------------------------------------------
+        -- Gravity
+        --------------------------------------------------
+        if not c.grounded then
+            c.vy = math.min(c.vy + GRAVITY * dt, MAX_FALL_SPEED)
+        end
 
-        local targetOffset = 0
-        local landingVy = c.vy
+        --------------------------------------------------
+        -- Pushing
+        --------------------------------------------------
+        local beingPushed =
+            player
+            and player.pushingCube
+            and player.pushingCubeRef == c
+            and player.onGround
 
-        ------------------------------------------------------
-        -- APPLY MOTION
-        ------------------------------------------------------
+        if beingPushed then
+            c.vx = c.vx + player.pushingCubeDir * PUSH_ACCEL * dt
+            c.vx = math.max(-MAX_PUSH_SPEED, math.min(MAX_PUSH_SPEED, c.vx))
+        end
+
+        applyFriction(c, dt, beingPushed)
+
+        --------------------------------------------------
+        -- Integrate
+        --------------------------------------------------
         c.x = c.x + c.vx * dt
         c.y = c.y + c.vy * dt
 
-        ------------------------------------------------------
-        -- COLLISIONS
-        ------------------------------------------------------
-        resolveTileCollision(c, tileSize, grid, width, height)
+        --------------------------------------------------
+        -- Collisions
+        --------------------------------------------------
+        resolveTileCollision(c, TILE, grid, width, height)
         resolvePlatformCollision(c)
 
-        if wasGrounded and not c.grounded then
-            local dir = c.vx >= 0 and 1 or -1
-            c.angularVelocity = (c.angularVelocity or 0) + dir * 1.4
-            c.restAngle = 0
+        if not c.grounded then
+            c.groundedPlatform = nil
         end
 
+        if c.grounded and c.groundedPlatform then
+            c.x = c.x + (c.groundedPlatform.dx or 0)
+        end
+
+        --------------------------------------------------
+        -- Landing damping
+        --------------------------------------------------
         if not wasGrounded and c.grounded then
-            c.angularVelocity = 0
-            c.restAngle = 0
-            c.angle = 0
-            c.visualVelocity = 0
+            if math.abs(c.vy) < LANDING_MIN_VY then
+                c.vy = 0
+            end
+            c.vx = c.vx * LANDING_DAMP_VX
         end
 
-        if c.grounded then
-            local decay = math.exp(-dt * 2.2)
-            c.restAngle = (c.restAngle or 0) * decay
+        --------------------------------------------------
+        -- WATER → DROPTUBE
+        --------------------------------------------------
+        if isFullySubmerged(c) then
+            Events.emit("cube_drowned", { id = c.id, x = c.x, y = c.y })
 
-            if math.abs(c.restAngle) < 0.002 then
-                c.restAngle = 0
+            for i = 1, 8 do
+                Particles.puff(
+                    c.x + c.w/2 + math.random(-8,8),
+                    c.y + c.h/2 + math.random(-6,6),
+                    (math.random()-0.5)*60,
+                    -40 - math.random()*40,
+                    4.5, 0.45,
+                    {0.7, 0.9, 1.0, 0.9}
+                )
+            end
+
+            local tube = DropTube.list[1]
+            if tube then
+                DropTube.dropCube(tube, c)
             end
         end
 
-		----------------------------------------------------------
-		-- WATER COLLISION
-		----------------------------------------------------------
-		local topY      = c.y + 4
-		local leftX     = c.x + 4
-		local rightX    = c.x + c.w - 4
-
-		local leftUnder  = Liquids.isPointInWater(leftX, topY)
-		local rightUnder = Liquids.isPointInWater(rightX, topY)
-
-		if leftUnder and rightUnder then
-			if not c.dead then
-				c.dead = true
-				c.respawnTimer = 1.0
-				Liquids.ripple(leftX, topY, 50)
-			end
-		end
-
-		----------------------------------------------------------
-		-- RESPAWN
-		----------------------------------------------------------
-		if c.dead then
-			c.respawnTimer = c.respawnTimer - dt
-			if c.respawnTimer <= 0 then
-				c.dead = false
-				c.respawnTimer = nil
-
-				-- Move cube offscreen so it doesn't flash
-				c.x = -48
-				c.y = -48
-				c.vx = 0
-				c.vy = 0
-
-				-- Signal droptube that cube needs a respawn
-				c.pendingTubeRespawn = true
-			end
-			return  -- stop updating cube while dead
-		end
-
-        updateVisualOffset(c, dt, targetOffset)
-        updateAngle(c, dt)
+        ::continue::
     end
 end
 
@@ -445,67 +305,31 @@ end
 -- DRAW
 --------------------------------------------------------------
 
-local visualOffset = 0
-local circleInset = 4
-local radius = 4
-
 function Cube.draw()
     for _, c in ipairs(Cube.list) do
-		if c.dead then
-			goto continue
-		end
-
-        local offset  = c.visualOffset or visualOffset
-        local w       = c.w
-        local h       = c.h
-        local angle   = c.angle or 0
-        local ox, oy  = 0, 0
-
         love.graphics.push()
-        love.graphics.translate(c.x + w/2 + ox, c.y + h/2 - offset + oy)
-        love.graphics.rotate(angle)
+        love.graphics.translate(c.x + c.w/2, c.y + c.h/2)
 
-        ----------------------------------------------------------
-        -- OUTLINE
-        ----------------------------------------------------------
-        love.graphics.setColor(COLOR_OUTLINE)
-        love.graphics.rectangle(
-            "fill",
-            -w/2 - OUTLINE,
-            -h/2 - OUTLINE,
-            w + OUTLINE*2,
-            h + OUTLINE*2,
+        love.graphics.setColor(Theme.cube.outline)
+        love.graphics.rectangle("fill",
+            -c.w/2 - 4, -c.h/2 - 4,
+            c.w + 8, c.h + 8,
             6, 6
         )
 
-        ----------------------------------------------------------
-        -- FILL
-        ----------------------------------------------------------
-        love.graphics.setColor(COLOR_FILL)
-        love.graphics.rectangle(
-            "fill",
-            -w/2,
-            -h/2,
-            w,
-            h,
+        love.graphics.setColor(Theme.cube.fill)
+        love.graphics.rectangle("fill",
+            -c.w/2, -c.h/2,
+            c.w, c.h,
             6, 6
         )
 
-        ----------------------------------------------------------
-        -- CENTER CIRCLE
-        ----------------------------------------------------------
-
-        -- OUTLINE
-        love.graphics.setColor(COLOR_OUTLINE)
-        love.graphics.circle("fill", 0, 0, radius + circleInset)
-
-        -- FILL
-        love.graphics.setColor(COLOR_CENTER_FILL)
-        love.graphics.circle("fill", 0, 0, radius)
+        love.graphics.setColor(Theme.cube.outline)
+        love.graphics.circle("fill", 0, 0, 8)
+        love.graphics.setColor(Theme.cube.centerFill)
+        love.graphics.circle("fill", 0, 0, 4)
 
         love.graphics.pop()
-
-		::continue::
     end
 end
 

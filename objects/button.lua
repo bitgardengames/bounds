@@ -1,20 +1,14 @@
 --------------------------------------------------------------
--- STOOMP BUTTON
--- A chunky pressure-plate-style button that:
--- • Activates ONLY when the player lands on it
--- • Slowly sinks with resistance, then ker-chunks
--- • Supports 3 modes:
---      "oneshot" (permanent press)
---      "timed"   (press activates target for N seconds)
---      "toggle"  (each press toggles state)
--- • Does NOT stay down due to weight (player or cube)
--- • Cubes CANNOT press it
+-- BUTTON — Tall Pressure Plate Variant (Player Only)
+-- • Presses only when landed on from above
+-- • Subtle resistance → delayed heavy commit
+-- • Fires once, remains permanently depressed
 --------------------------------------------------------------
 
-local Theme = require("theme")
-local Timer = require("systems.timer")
+local Theme  = require("theme")
+local Events = require("systems.events")
 
-local StoompButton = { list = {} }
+local Button = { list = {} }
 
 --------------------------------------------------------------
 -- CONSTANTS
@@ -23,211 +17,178 @@ local StoompButton = { list = {} }
 local TILE        = 48
 local OUTLINE     = 4
 
--- Button geometry
-local CAP_HEIGHT  = 20       -- taller than pressure plates
-local CAP_PRESSED = 16       -- how far it sinks fully
-local BASE_HEIGHT = 6
+-- Animation tuning
+local SOFT_PRESS_AMOUNT = 0.18   -- initial give
+local SOFT_PRESS_TIME   = 0.08   -- quick resistance
+local COMMIT_DELAY      = 0.10   -- hesitation before give
+local COMMIT_SPEED      = 6.5    -- slow heavy sink
 
--- Animation
-local RESIST_DELAY   = 0.10   -- hesitation before sinking
-local SINK_TIME      = 0.18   -- duration of the actual sink
-local RISE_TIME      = 0.25   -- spring-back for timed/toggle
-local PRESS_THRESHOLD = -60   -- player vy must be this negative to count as a press
+local PRESS_DEPTH = 12
 
---------------------------------------------------------------
--- MODES:
---  "oneshot" — sinks once, stays down forever
---  "timed"   — sinks, stays for "duration", then rises back up
---  "toggle"  — press toggles active state; button rises after
---------------------------------------------------------------
+-- Visual sizes
+local BASE_H     = 6
+local BUTTON_H   = 24
+local BUTTON_W   = 38
 
-local VALID_MODES = {
-    oneshot = true,
-    timed   = true,
-    toggle  = true,
-}
+-- Vertical offsets
+local BASE_OFFSET = 4
+local BASE_UP     = 3
 
 --------------------------------------------------------------
--- INTERNAL: Create a new button state
+-- STATE
 --------------------------------------------------------------
 
-local function newButton(opts)
-    local b = {
-        id       = opts.id or ("button_" .. tostring(#StoompButton.list + 1)),
-        x        = opts.x,
-        y        = opts.y,
-        tx       = opts.tx,
-        ty       = opts.ty,
+local function resetState()
+    return {
+        id          = nil,
+        x           = 0,
+        y           = 0,
 
-        mode     = opts.mode or "oneshot",
-        duration = opts.duration or 3.0,  -- only used for "timed"
+        active      = false,
+        pressed     = false,
+        oldPressed  = false,
+        latched     = false,
+        fired       = false,   -- 🔑 ensures one-shot behavior
 
-        active   = false,     -- logic state: ON/OFF
-        pressing = false,     -- animation internal flag
-
-        t        = 0,         -- animation timer 0..1 for sinking
-        state    = "idle",    -- "idle", "resist", "sinking", "pressed", "rising"
-
-        -- visuals
-        capColor     = opts.capColor     or Theme.buttons.cap,
-        capPressedColor = opts.capPressedColor or Theme.buttons.capPressed,
-        baseColor    = opts.baseColor    or Theme.buttons.base,
-        outlineColor = opts.outlineColor or Theme.outline,
+        -- animation
+        t           = 0,
+        pressPhase  = "idle",  -- idle → soft → commit → latched
+        phaseTimer  = 0,
     }
-
-    return b
 end
 
 --------------------------------------------------------------
--- SPAWN
+-- SPAWN / CLEAR
 --------------------------------------------------------------
 
-function StoompButton.spawn(tx, ty, opts)
+function Button.spawn(tx, ty, opts)
     opts = opts or {}
-    opts.tx = tx
-    opts.ty = ty
-    opts.x = tx * TILE
-    opts.y = ty * TILE
 
-    -- validate mode
-    if not VALID_MODES[opts.mode] then
-        print("Warning: invalid stoomp button mode '" .. tostring(opts.mode) .. "'; using 'oneshot'")
-        opts.mode = "oneshot"
-    end
+    local b = resetState()
+    b.id = tostring(opts.id or string.format("button_%d", #Button.list + 1))
+    b.x  = tx * TILE
+    b.y  = ty * TILE
 
-    local b = newButton(opts)
-    table.insert(StoompButton.list, b)
+    table.insert(Button.list, b)
+end
+
+function Button.clear()
+    Button.list = {}
 end
 
 --------------------------------------------------------------
--- CLEAR
+-- QUERY
 --------------------------------------------------------------
 
-function StoompButton.clear()
-    StoompButton.list = {}
+local function find(id)
+    for _, b in ipairs(Button.list) do
+        if b.id == id then return b end
+    end
+end
+
+function Button.isDown(id)
+    local b = find(id)
+    return b and b.latched or false
+end
+
+function Button.isActive(id)
+    local b = find(id)
+    return b and b.active or false
 end
 
 --------------------------------------------------------------
--- CHECK PLAYER PRESS
+-- TOP SURFACE (used by player collision + press detection)
 --------------------------------------------------------------
 
-local function playerPressedButton(b, player)
-    -- Press only if landing onto TOP of the button
-    local px, py = player.x, player.y
-    local pw, ph = player.w, player.h
+function Button.getTopSurface(b)
+    local baseTop = b.y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
 
-    -- Player's feet
-    local footY = py + ph
-    local footX1 = px
-   local footX2 = px + pw
+    local compress = PRESS_DEPTH * b.t
+    local visualH  = BUTTON_H - compress
+    if visualH < 4 then visualH = 4 end
 
-    -- Button top area
-    local topY = b.y + (TILE - CAP_HEIGHT)
-    local leftX  = b.x
-    local rightX = b.x + TILE
+    local topY = baseTop - visualH
+    local inset = 4   -- trim collision edges
 
-    -- Check horizontal overlap
-    local overlapX = (footX2 >= leftX) and (footX1 <= rightX)
-
-    -- Check vertical touchdown (player coming DOWN)
-    local descending = (player.vy < PRESS_THRESHOLD)
-
-    -- Check if foot is entering button top region
-    local hittingTop = (footY >= topY and footY <= topY + 12)
-
-    return overlapX and descending and hittingTop
-end
-
---------------------------------------------------------------
--- PRESS LOGIC
---------------------------------------------------------------
-
-local function activateButton(b)
-    if b.mode == "oneshot" then
-        b.active = true
-        b.state  = "pressed"
-
-        -- never rises again
-        return
-    end
-
-    if b.mode == "toggle" then
-        b.active = not b.active
-        b.state = "pressed"
-
-        -- rise back up after small delay
-        Timer.after(0.15, function()
-            b.state = "rising"
-            b.t = 1 -- start from fully pressed
-        end)
-        return
-    end
-
-    if b.mode == "timed" then
-        b.active = true
-        b.state = "pressed"
-
-        -- Begin countdown
-        Timer.after(b.duration, function()
-            b.active = false
-            b.state = "rising"
-            b.t = 1
-        end)
-        return
-    end
+    return {
+        x1 = b.x + inset,
+        x2 = b.x + TILE - inset,
+        y  = topY
+    }
 end
 
 --------------------------------------------------------------
 -- UPDATE
 --------------------------------------------------------------
 
-function StoompButton.update(dt, player)
-    for _, b in ipairs(StoompButton.list) do
+function Button.update(dt, player)
+    for _, b in ipairs(Button.list) do
 
-        ----------------------------------------------------------
-        -- Detect Press (only when button is not already committed)
-        ----------------------------------------------------------
-        if b.state == "idle" and playerPressedButton(b, player) then
-            b.state = "resist"
-            b.t = 0
-        end
+        ------------------------------------------------------
+        -- PRESS DETECTION (LANDING ONLY)
+        ------------------------------------------------------
+        local surf = Button.getTopSurface(b)
+        local pressedNow = false
 
-        ----------------------------------------------------------
-        -- Animation state machine
-        ----------------------------------------------------------
+        if surf and not b.latched then
+            local px1, px2 = player.x, player.x + player.w
+            local py2 = player.y + player.h
+            local prevFoot = (player.prevY or player.y) + player.h
 
-        if b.state == "resist" then
-            b.t = b.t + dt
+            local overlapX = math.min(px2, surf.x2) - math.max(px1, surf.x1)
+            local fromAbove = prevFoot <= surf.y + 1 and player.vy >= 0
 
-            if b.t >= RESIST_DELAY then
-                b.state = "sinking"
-                b.t = 0
-            end
-
-        elseif b.state == "sinking" then
-            b.t = b.t + dt / SINK_TIME
-
-            if b.t >= 1 then
-                b.t = 1
-                activateButton(b)
-            end
-
-        elseif b.state == "pressed" then
-            -- oneshot: stay pressed forever
-            -- timed: timer callback handles rising later
-            -- toggle: rising is scheduled separately
-            if b.mode == "oneshot" then
-                b.t = 1
-            end
-
-        elseif b.state == "rising" then
-            b.t = b.t - dt / RISE_TIME
-
-            if b.t <= 0 then
-                b.t = 0
-                b.state = "idle"
+            if overlapX > 0 and fromAbove and py2 >= surf.y then
+                pressedNow = true
             end
         end
+
+        b.pressed = pressedNow
+
+        ------------------------------------------------------
+        -- FIRE EVENT ONCE (BUT DO NOT LATCH YET)
+        ------------------------------------------------------
+        if b.pressed and not b.fired then
+            b.fired  = true
+            b.active = true
+            Events.emit("button_pressed", { id = b.id })
+
+            b.pressPhase = "soft"
+            b.phaseTimer = 0
+        end
+
+        ------------------------------------------------------
+        -- PRESS ANIMATION STATE MACHINE
+        ------------------------------------------------------
+
+        if b.pressPhase == "soft" then
+            b.phaseTimer = b.phaseTimer + dt
+            local k = math.min(b.phaseTimer / SOFT_PRESS_TIME, 1)
+            b.t = SOFT_PRESS_AMOUNT * k
+
+            if k >= 1 then
+                b.pressPhase = "commit"
+                b.phaseTimer = 0
+            end
+
+        elseif b.pressPhase == "commit" then
+            b.phaseTimer = b.phaseTimer + dt
+
+            if b.phaseTimer >= COMMIT_DELAY then
+                b.t = b.t + (1 - b.t) * dt * COMMIT_SPEED
+                if b.t >= 0.995 then
+                    b.t = 1
+                    b.latched = true     -- 🔒 latch ONLY here
+                    b.pressPhase = "latched"
+                end
+            end
+
+        elseif b.pressPhase == "latched" then
+            b.t = 1
+            b.active = true
+        end
+
+        b.oldPressed = b.pressed
     end
 end
 
@@ -235,89 +196,70 @@ end
 -- DRAW
 --------------------------------------------------------------
 
-function StoompButton.draw()
-    for _, b in ipairs(StoompButton.list) do
+function Button.draw()
+    for _, b in ipairs(Button.list) do
         local x, y = b.x, b.y
         local t = b.t
 
-        ----------------------------------------------------------
-        -- Compute cap vertical offset
-        ----------------------------------------------------------
-        local capTop       = y + (TILE - CAP_HEIGHT)
-        local pressedDepth = CAP_PRESSED
+        local baseTop = y + (TILE - BASE_H) + BASE_OFFSET - BASE_UP - 3
 
-        -- For "sinking" and "pressed", t = 0..1
-        local offset = 0
+        --------------------------------------------------
+        -- BUTTON COLUMN
+        --------------------------------------------------
+        local compress = PRESS_DEPTH * t
+        local visualH  = BUTTON_H - compress
+        if visualH < 4 then visualH = 4 end
 
-        if b.state == "resist" then
-            offset = 2  -- tiny squish
+        local btnX = x + (TILE - BUTTON_W) * 0.5
+        local btnY = baseTop - visualH
 
-        elseif b.state == "sinking" then
-            offset = pressedDepth * t
-
-        elseif b.state == "pressed" then
-            offset = pressedDepth
-
-        elseif b.state == "rising" then
-            offset = pressedDepth * t
-        end
-
-        ----------------------------------------------------------
-        -- Draw base (outline + fill)
-        ----------------------------------------------------------
-        love.graphics.setColor(b.outlineColor)
+        love.graphics.setColor(Theme.buttons.outline)
         love.graphics.rectangle(
             "fill",
-            x - OUTLINE,
-            y + (TILE - BASE_HEIGHT) - OUTLINE,
-            TILE + OUTLINE * 2,
-            BASE_HEIGHT + OUTLINE * 2,
+            btnX - OUTLINE,
+            btnY - OUTLINE,
+            BUTTON_W + OUTLINE * 2,
+            visualH + OUTLINE * 2,
             6, 6
         )
 
-        love.graphics.setColor(b.baseColor)
-        love.graphics.rectangle(
-            "fill",
-            x,
-            y + (TILE - BASE_HEIGHT),
-            TILE,
-            BASE_HEIGHT,
-            6,6
+        love.graphics.setColor(
+            b.latched and Theme.buttons.capPressed
+            or Theme.buttons.cap
         )
 
-        ----------------------------------------------------------
-        -- Draw cap
-        ----------------------------------------------------------
-        local capY = capTop + offset
+        love.graphics.rectangle(
+            "fill",
+            btnX,
+            btnY,
+            BUTTON_W,
+            visualH,
+            6, 6
+        )
 
-        if b.active then
-            love.graphics.setColor(b.capPressedColor)
-        else
-            love.graphics.setColor(b.capColor)
-        end
-
-        -- outline
-        love.graphics.setColor(b.outlineColor)
+        --------------------------------------------------
+        -- BASE
+        --------------------------------------------------
+        love.graphics.setColor(Theme.buttons.outline)
         love.graphics.rectangle(
             "fill",
             x - OUTLINE,
-            capY - OUTLINE,
+            baseTop - OUTLINE,
             TILE + OUTLINE * 2,
-            CAP_HEIGHT + OUTLINE * 2,
-            6,6
+            BASE_H + OUTLINE * 2,
+            4, 4
         )
 
-        -- cap fill
-        love.graphics.setColor(b.active and b.capPressedColor or b.capColor)
+        love.graphics.setColor(Theme.buttons.base)
         love.graphics.rectangle(
             "fill",
             x,
-            capY,
+            baseTop,
             TILE,
-            CAP_HEIGHT,
-            6,6
+            BASE_H,
+            4, 4
         )
     end
 end
 
-return StoompButton
+return Button

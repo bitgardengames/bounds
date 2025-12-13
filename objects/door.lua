@@ -6,6 +6,7 @@
 ------------------------------------------------------------
 
 local Theme = require("theme")
+local Events = require("systems.events")
 
 local Door = {
     x = 0, y = 0,
@@ -58,9 +59,19 @@ end
 ------------------------------------------------------------
 -- STATE
 ------------------------------------------------------------
-function Door.setOpen(b) Door.open = b end
-function Door.openDoor()  Door.setOpen(true) end
-function Door.closeDoor() Door.setOpen(false) end
+function Door.setOpen(b)
+	Door.open = b
+end
+
+function Door.openDoor()
+	Door.setOpen(true)
+	Events.emit("door_opened", {id = Door.id})
+end
+
+function Door.closeDoor()
+	Door.setOpen(false)
+	Events.emit("door_closed", {id = Door.id})
+end
 
 ------------------------------------------------------------
 -- UPDATE

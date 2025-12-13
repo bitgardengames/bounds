@@ -30,11 +30,11 @@ local chamber = {
             name = "Decor",
             kind = "decor",
             objects = {
-				--{ type = "panelseams", tx = 1, ty = 1, w = 38, h = 21 },
                 {type="sign", tx=4, ty=15, data={text="CH-02"}},
 
-                {type="conduit_curve_tr",  tx=7, ty=17},
-                {type="conduit_h_join",    tx=8, ty=17},
+				{type="fan_3", tx=17, ty=8},
+
+                {type="conduit_curve_tr",  tx=8, ty=17},
                 {type="conduit_h",         tx=9, ty=17},
                 {type="conduit_h_join",    tx=10, ty=17},
                 {type="conduit_h", tx=11, ty=17},
@@ -105,7 +105,7 @@ local chamber = {
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-            { tx = 6, ty = 17, id = "plate_1" },
+            { tx = 7, ty = 17, id = "plate_1" },
         },
 
         dropTubes = {

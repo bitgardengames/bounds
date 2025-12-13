@@ -50,6 +50,23 @@ local function startRefocus()
     Monitor.refocusActive = true
 end
 
+function Monitor.getNearestTo(x, y)
+    if not Monitor.active then return nil end
+
+    local cx = Monitor.x + Monitor.tileSize / 2
+    local cy = Monitor.y + Monitor.tileSize / 2
+
+    local dx = cx - x
+    local dy = cy - y
+
+    return {
+        x = cx,
+        y = cy,
+        dx = dx,
+        dy = dy,
+    }
+end
+
 ------------------------------------------------------------
 -- SPAWN
 ------------------------------------------------------------

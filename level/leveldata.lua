@@ -6,6 +6,7 @@ LevelData.chambers = {
     require("level.chambers.test_chamber_1"),
     require("level.chambers.test_chamber_2"),
     require("level.chambers.test_chamber_3"),
+    require("level.chambers.test_chamber_4"),
 }
 
 return LevelData

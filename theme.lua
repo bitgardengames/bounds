@@ -1,111 +1,188 @@
+--------------------------------------------------------------
+-- THEME — Bounds
+-- Centralized color + material language
+-- This file encodes *meaning*, not just RGB values.
+--------------------------------------------------------------
+
 local Theme = {}
 
 --------------------------------------------------------------
--- OUTLINE / GLOBALS
+-- PALETTE (raw materials)
+-- These should almost never be referenced directly outside
+-- this file. Everything below uses *semantic intent*.
 --------------------------------------------------------------
-Theme.outline = {0.04, 0.05, 0.07, 1}   -- deep navy outline
-Theme.active = {0.98, 0.62, 0.10, 1}
+Theme.palette = {
+    -- Structural neutrals
+    outline     = {0.04, 0.05, 0.07, 1},     -- deep navy / ink
+    bgDark      = {0.10, 0.12, 0.15, 1},     -- facility shadow
+    bgMid       = {0.14, 0.18, 0.22, 1},     -- primary wall tone
+    bgLight     = {0.25, 0.29, 0.33, 1},     -- platform tops / highlights
+
+    -- Metals
+    metalDark   = {0.23, 0.28, 0.34, 1},
+    metalMid    = {0.33, 0.39, 0.46, 1},
+    metalLight  = {0.60, 0.68, 0.80, 1},
+
+    -- Accent / logic color (THE orange)
+    accent      = {0.98, 0.62, 0.10, 1},
+
+    -- Disabled / inert signal
+    inactive    = {0.18, 0.18, 0.18, 1},
+}
+
+local P = Theme.palette
 
 --------------------------------------------------------------
--- LEVEL BACKGROUND + SOLIDS
+-- GLOBALS / STATES
 --------------------------------------------------------------
-Theme.level = {
-    -- Background wall color (main panels)
-    background = {0.14, 0.18, 0.22, 1},      -- dark slate blue
+Theme.outline = P.outline
 
-    -- Outer border / frame
-    outer      = {0.10, 0.12, 0.15, 1},      -- slightly darker frame
-
-    -- Solid platforms / floor (medium steel)
-    solid      = {0.10, 0.12, 0.15, 1},
-    platformTop= {0.25, 0.29, 0.33, 1},
-
-    -- Grid / subtle overlays
-    grid       = {0.18, 0.22, 0.28, 0.18}, -- 0.18
+Theme.state = {
+    active   = P.accent,
+    inactive = P.inactive,
+    locked   = P.bgDark,
 }
 
 --------------------------------------------------------------
--- DECORATIONS
+-- LEVEL / WORLD
+--------------------------------------------------------------
+Theme.level = {
+    -- Background panels
+    background   = P.bgMid,
+
+    -- Chamber outer frame
+    outer        = P.bgDark,
+
+    -- Solid tiles / collision world
+    solid        = P.bgDark,
+
+    -- Platform walkable surface
+    platformTop = P.bgLight,
+
+    -- Subtle grid / noise overlays
+    grid = {
+        P.bgLight[1],
+        P.bgLight[2],
+        P.bgLight[3],
+        0.18,
+    },
+}
+
+--------------------------------------------------------------
+-- DECORATIONS / ENVIRONMENT
 --------------------------------------------------------------
 Theme.decorations = {
-    dark     = {0.11, 0.14, 0.17, 1},
-    outline  = {0.07, 0.08, 0.12, 1},
+    -- Structural tones
+    dark        = P.bgDark,
+    background  = P.bgMid,
+    outline     = P.outline,
 
-    panel    = {0.60, 0.68, 0.80, 1},       -- soft cool highlight panel
-    background = {0.14, 0.18, 0.22, 1},
+    -- Construction materials
+    metal       = P.metalMid,
+    panel       = P.metalLight,
+    grill       = P.metalDark,
+    pipe        = P.metalMid,
+    conduit     = {0.42, 0.48, 0.56, 1},
+    bracket     = {0.20, 0.25, 0.30, 1},
 
-    metal     = {0.33, 0.39, 0.46, 1},      -- muted blue metal
-    grill     = {0.23, 0.28, 0.34, 1},
-    pipe      = {0.28, 0.32, 0.38, 1},
-    conduit   = {0.42, 0.48, 0.56, 1},
+    -- Moving decor
+    fanFill     = {0.78, 0.84, 0.90, 1},
 
-    bracket   = {0.20, 0.25, 0.30, 1},
+    -- Screens / signage
+    signFill    = P.bgDark,
+    signText    = Theme.state.active,
 
-    fanFill   = {0.78, 0.84, 0.90, 1},
+    -- Logic visuals
+    timerColor      = Theme.state.active,
+    conduitEnabled  = Theme.state.active,
+    conduitDisabled = Theme.state.inactive,
 
-    signFill = {0.11, 0.14, 0.17, 1},
-    signText = Theme.active,
-
-	platformTop = {0.25, 0.29, 0.33, 1},
-
-	timerColor = Theme.active,
-	conduitEnabled = Theme.active,
-	conduitDisabled = {0.18, 0.18, 0.18, 1},
+    -- Platform strip overlay (matches level)
+    platformTop = P.bgLight,
 }
 
 --------------------------------------------------------------
 -- PLAYER (Lumo)
+-- Lumo should be the brightest neutral object in the world,
+-- but never pure white (reserved for UI/glow effects).
 --------------------------------------------------------------
 Theme.player = {
-    --fill    = {0.95, 0.97, 1.00, 1},         -- soft cool white
-    fill    = {0.92, 0.94, 0.97, 1},         -- warm neutral white
+    fill    = {0.92, 0.94, 0.97, 1},
     outline = Theme.outline,
 }
 
 --------------------------------------------------------------
--- MONITOR
+-- MONITOR / CAMERA
 --------------------------------------------------------------
 Theme.monitor = {
-    lens    = {0.92, 0.94, 0.97, 1},
-    arm     = {0.23, 0.28, 0.34, 1},
-    led     = {1, 0.25, 0.25, 1},
+    lens    = Theme.player.fill,
+    arm     = P.metalDark,
+    body    = P.metalDark,
     mount   = {0.20, 0.20, 0.22, 1},
-    body    = {0.23, 0.28, 0.34, 1},
+    led     = {1, 0.25, 0.25, 1},
     outline = Theme.decorations.outline,
+}
+
+--------------------------------------------------------------
+-- INTERACTABLES (shared language)
+--------------------------------------------------------------
+Theme.interactables = {
+    outline = Theme.outline,
+    base    = P.bgMid,
+    accent  = Theme.state.active,
 }
 
 --------------------------------------------------------------
 -- CUBE
 --------------------------------------------------------------
 Theme.cube = {
-    fill    = {94/255, 106/255, 120/255, 1},         -- very light blue-grey
-    centerFill= {0.98, 0.62, 0.10, 1},         -- very light blue-grey
-    outline = Theme.outline,
+    fill        = {94/255, 106/255, 120/255, 1}, -- light steel blue
+    centerFill = Theme.state.active,
+    outline     = Theme.outline,
 }
 
 --------------------------------------------------------------
--- DOOR
+-- DOOR / EXIT
 --------------------------------------------------------------
 Theme.door = {
-    frame    = {0.33, 0.39, 0.46, 1},        -- steel frame
-    --doorFill = {0.98, 0.62, 0.10, 1},        -- warm amber interior (EXIT)
-    doorFill = {0.11, 0.14, 0.17, 1},        -- warm amber interior (EXIT)
-	unlocked = Theme.active,
-	locked = Theme.decorations.dark,
+    frame     = P.metalMid,
+    doorFill  = P.bgDark,          -- interior void
+    unlocked  = Theme.state.active,
+    locked    = Theme.state.locked,
 }
 
 --------------------------------------------------------------
--- DROPTUBE
+-- PRESSURE PLATE
+--------------------------------------------------------------
+Theme.pressurePlate = {
+    outline    = Theme.interactables.outline,
+    button     = Theme.interactables.accent,
+    buttonGlow = Theme.interactables.accent,
+    base       = Theme.interactables.base,
+}
+
+--------------------------------------------------------------
+-- STOMP BUTTON (one-shot)
+--------------------------------------------------------------
+Theme.buttons = {
+    outline     = Theme.interactables.outline,
+    cap         = Theme.interactables.accent,
+    capPressed  = Theme.interactables.accent,
+    base        = Theme.interactables.base,
+}
+
+--------------------------------------------------------------
+-- DROP TUBE
 --------------------------------------------------------------
 Theme.droptube = {
-    topcap   = {0.18, 0.20, 0.24, 1},
-    bottomcap= {0.24, 0.28, 0.33, 1},
-    glass    = {0.40, 0.65, 0.88, 0.28},
-    highlight= {1, 1, 1, 0.18},
+    topcap    = {0.18, 0.20, 0.24, 1},
+    bottomcap = {0.24, 0.28, 0.33, 1},
+    glass     = {0.40, 0.65, 0.88, 0.28},
+    highlight = {1, 1, 1, 0.18},
 }
 
 --------------------------------------------------------------
--- SAW
+-- SAW / HAZARDS
 --------------------------------------------------------------
 Theme.saw = {
     track          = Theme.outline,
@@ -116,22 +193,6 @@ Theme.saw = {
 }
 
 --------------------------------------------------------------
--- PRESSURE PLATE
+-- END THEME
 --------------------------------------------------------------
-Theme.pressurePlate = {
-    outline     = Theme.outline,
-    button      = Theme.active,
-    buttonGlow  = Theme.active,
-    base        = {0.14, 0.15, 0.18, 1},
-}
-
---------------------------------------------------------------
--- STOOMP BUTTONS
---------------------------------------------------------------
-Theme.buttons = {
-    cap         = Theme.active,
-    capPressed  = Theme.active,
-    base        = {0.14, 0.15, 0.18, 1},
-}
-
 return Theme

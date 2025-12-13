@@ -164,8 +164,6 @@ function MovingPlatform.spawn(x, y, opts)
     table.insert(MovingPlatform.list, platform)
 
     applyPosition(platform)
-
-    table.insert(MovingPlatform.list, platform)
 end
 
 --------------------------------------------------------------

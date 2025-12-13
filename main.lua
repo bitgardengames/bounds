@@ -26,12 +26,12 @@ local LaserReceiver = require("objects.laserreceiver")
 local Liquids = require("systems.liquids")
 local DropTube = require("objects.droptube")
 local Button = require("objects.button")
+local Events = require("systems.events")
 
 local p = Player.get()
-local TILE_SIZE = LevelData.tileSize or 48
+local TILE_SIZE
 local currentChamber = 1
 local chamberCount = #LevelData.chambers
-local gameComplete = false
 local isTransitioning = false
 local loadChamber
 
@@ -84,6 +84,8 @@ local function updateTransition(dt)
 end
 
 local function clearActors()
+	Events.clear()
+	Timer.clear()
     Decorations.clear()
     Saw.clear()
     Cube.clear()
@@ -244,7 +246,7 @@ local function spawnContextZones(chamber)
 end
 
 function loadChamber(index)
-    local chamber = LevelData.chambers[index]  -- Brute force here for testing, return to index when done, 1 or index
+    local chamber = LevelData.chambers[3 or index]  -- Brute force here for testing, return to index when done, 1 or index
     assert(chamber, "No chamber data for index " .. tostring(index))
 
     chamber.tileSize = LevelData.tileSize
@@ -273,16 +275,18 @@ end
 --------------------------------------------------------------
 
 function love.load()
+	DropTube.load()
     Blink.init()
     loadChamber(currentChamber)
 end
 
 function love.update(dt)
+	dt = math.min(dt, 1/30) -- never simulate more than ~33ms
 	Timer.update(dt)
     ----------------------------------------------------------
     -- Input system
     ----------------------------------------------------------
-    Input.update()
+    Input.update(dt)
 
     ----------------------------------------------------------
     -- Player update with Level collision queries
@@ -299,12 +303,11 @@ function love.update(dt)
 		end
 	end
 
-	ContextZones.update(pl)
-
 	if not pl.sleeping and not pl.sleepingTransition then
 		Blink.update(dt)
 	end
 
+	ContextZones.update(pl)
     Cube.update(dt, pl)
     Plate.update(dt, pl, Cube.list)
 	Button.update(dt, pl)
@@ -317,10 +320,6 @@ function love.update(dt)
     Particles.update(dt)
 	Liquids.update(dt)
     Decorations.update(dt)
-
-    ----------------------------------------------------------
-    -- Saw hazards update
-    ----------------------------------------------------------
     Saw.update(dt, pl, Level)
 
     ----------------------------------------------------------
@@ -328,10 +327,7 @@ function love.update(dt)
     ----------------------------------------------------------
     -- "isIdle" is still needed to drive small idle animations,
     -- but if the player is sleeping, Idle.update must be disabled.
-    local isIdle =
-        pl.onGround and
-        math.abs(pl.vx) < 5 and
-        math.abs(pl.vy) < 5
+    local isIdle = pl.onGround and math.abs(pl.vx) < 5 and math.abs(pl.vy) < 5
 
     -- only drive Idle when not sleeping
     Idle.update(dt, isIdle and not pl.sleeping)
@@ -345,13 +341,12 @@ function love.update(dt)
     -- Completion / triggers
     ----------------------------------------------------------
     Chamber.update(dt, pl, Door, Exit)
-    if Chamber.isComplete and not gameComplete then
+    if Chamber.isComplete then
         if currentChamber < chamberCount and not isTransitioning then
             isTransitioning = true
             startTransition(currentChamber + 1)
         elseif currentChamber >= chamberCount then
-            gameComplete = true
-            print("LEVEL COMPLETE!")
+            -- there will be no cake
         end
     end
 

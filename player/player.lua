@@ -10,10 +10,12 @@ local Blink = require("player.blink")
 local Idle = require("player.idle")
 local Input = require("systems.input")
 local Cube = require("objects.cube")
+local Button = require("objects.button")
 local MovingPlatform = require("objects.movingplatform")
 local Collision = require("player.collision")
 local Sleep = require("player.sleep")
 local Liquids = require("systems.liquids")
+local Events = require("systems.events")
 
 local Player = {}
 
@@ -127,6 +129,8 @@ local p = {
     morphVert   = 0,
     morphHorz   = 0,
     morphPre    = 0,
+
+	firstLanding = false,
 }
 
 --------------------------------------------------------------
@@ -155,6 +159,8 @@ function Player.init(Level)
 
     p.arriving = false
     p.arrivalTimer = 0
+
+	p.firstLanding = nil
 end
 
 local function clamp(v, mn, mx)
@@ -222,7 +228,7 @@ local function resolveMovingPlatformCollisions()
         local px1, py1 = p.x, p.y
         local px2, py2 = p.x + p.w, p.y + p.h
 
-        local sx1, sy1 = platform.x, platform.y - 3
+        local sx1, sy1 = platform.x, platform.y - 5
         local sx2, sy2 = platform.x + platform.w, platform.y + platform.h
 
         local overlapX = math.min(px2, sx2) - math.max(px1, sx1)
@@ -285,6 +291,37 @@ local function resolveMovingPlatformCollisions()
     end
 end
 
+local function resolveButtonCollisions()
+	local minOverlap = 2
+
+    for _, b in ipairs(Button.list) do
+        local surf = Button.getTopSurface(b)
+        if not surf then goto continue end
+
+        local px1, px2 = p.x, p.x + p.w
+        local py2 = p.y + p.h
+
+        local overlapX = math.min(px2, surf.x2) - math.max(px1, surf.x1)
+        if overlapX < minOverlap then goto continue end
+
+        local prevFoot = (p.prevY or p.y) + p.h
+        local fromAbove = prevFoot <= surf.y + 1 and p.vy >= 0
+
+		if fromAbove and py2 >= surf.y then
+			-- snap player onto button surface
+			p.y = surf.y - p.h
+			p.vy = math.min(p.vy, 0)
+			p.onGround = true
+
+			-- deformation feedback
+			p.contactBottom = math.max(p.contactBottom, 0.75)
+			p.springVertVel = p.springVertVel - 180
+        end
+
+        ::continue::
+    end
+end
+
 local function updateSleepBubbleQueue(dt)
     local queue = p.sleepBubbleQueue
     if not queue then return end
@@ -314,6 +351,8 @@ local function updateSleepBubbleQueue(dt)
 end
 
 function Player.beginDrop(x, y)
+	Input.setLocked(true)
+
     p.x = x
     p.y = y
 
@@ -445,10 +484,7 @@ function Player.update(dt, Level)
     ----------------------------------------------------------
     -- Input
     ----------------------------------------------------------
-    local move = 0
-    if Input.isDown("a", "left", "gp_left") then move = move - 1 end
-    if Input.isDown("d", "right", "gp_right") then move = move + 1 end
-
+	local move = Input.getMoveAxis()
     local jumpDown     = Input.isJumpDown()
     local jumpReleased = Input.wasJumpReleased()
 
@@ -678,9 +714,18 @@ function Player.update(dt, Level)
     Collision.moveVertical(p, Level, p.vy * dt)
     Collision.tryGroundSnap(p, Level)
     resolveMovingPlatformCollisions()
+	resolveButtonCollisions()
 
     local justLanded = (not wasOnGround) and p.onGround
     if justLanded then
+
+		Input.setLocked(false)
+
+		if not p.firstLanding then
+			p.firstLanding = true
+			Events.emit("first_landing")
+		end
+
         for i=1,3 do
             Particles.puff(
                 p.x + p.w/2 + (math.random()-0.5)*12,

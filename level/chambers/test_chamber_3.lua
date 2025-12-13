@@ -37,7 +37,7 @@ local chamber = {
                 {type="conduit_curve_tr",  tx=22, ty=20},
 				{type="conduit_h_join",         tx=23, ty=20},
 				{type="conduit_h",    tx=24, ty=20},
-                {type="timer_display", tx=24, ty=20, data={id="timer_1", dur = 5.5}},
+                {type="timer_display", tx=24, ty=20, data={id="timer_1", dur = 6.4}},
                 {type="conduit_h_join", tx=25, ty=20},
 				{type="conduit_curve_tl",  tx=26, ty=20},
 				

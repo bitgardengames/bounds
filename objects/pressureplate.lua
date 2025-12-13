@@ -3,6 +3,7 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
+local Events = require("systems.events")
 local Decorations = require("decorations.init")
 
 local Plate = { list = {} }
@@ -183,11 +184,16 @@ function Plate.update(dt, player, cubes)
             -- DETECT **PRESS EVENT** (just pressed this frame)
             ------------------------------------------------------
             if not p.oldPressed and p.pressed then
+				Events.emit("plate_pressed", {id = p.id})
                 -- If this plate has a designated timer, trigger it
                 if p.timer then
                     Decorations.startTimer(p.timer)
                 end
             end
+
+			if not p.pressed and p.oldPressed then
+				Events.emit("plate_released", {id = p.id})
+			end
 
             ------------------------------------------------------
             -- REMEMBER STATE FOR NEXT FRAME
@@ -235,7 +241,7 @@ function Plate.draw()
                 6,6
             )
 
-            love.graphics.setColor(Theme.pressurePlate.button) -- cute red button
+            love.graphics.setColor(Theme.pressurePlate.button)
             love.graphics.rectangle(
                 "fill",
                 btnX,

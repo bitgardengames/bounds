@@ -1,57 +1,64 @@
 --------------------------------------------------------------
 -- INPUT MODULE (Keyboard + Gamepad)
--- Supports: held state, pressed/released, jump buffering,
--- and unified movement input for Player.
+-- • Unified keyboard + gamepad input
+-- • Held / pressed / released
+-- • Axis-based movement (analog-ready)
+-- • Time-based jump buffering
+-- • Global input locking (cutscenes, drop tubes, sleep)
 --------------------------------------------------------------
 
 local Input = {}
 
 local unpack = table.unpack or unpack
 
-local jumpKeys = { space = true, w = true, up = true }
-local jumpButtons = { a = true, cross = true }
-local jumpInputs = { "space", "w", "up", "gp_btn_a", "gp_btn_cross" }
+--------------------------------------------------------------
+-- CONFIG
+--------------------------------------------------------------
 
-local function isJumpKey(key)
-    return jumpKeys[key] ~= nil
-end
+local DEADZONE = 0.22
+local JUMP_BUFFER_TIME = 0.12
 
-local function isJumpButton(button)
-    return jumpButtons[button] ~= nil
-end
+--------------------------------------------------------------
+-- STATE
+--------------------------------------------------------------
 
-local function anyActive(stateTable, keys)
-    for _, key in ipairs(keys) do
-        if stateTable[key] then return true end
-    end
-    return false
-end
-
--- key/button states
 Input.down     = {}   -- held
-Input.pressed  = {}   -- down this frame
+Input.pressed  = {}   -- pressed this frame
 Input.released = {}   -- released this frame
 
+Input.locked = false
+
 -- jump buffer
-Input.jumpQueued = false
+Input.jumpTimer = 0
 
--- gamepad state
+-- cached per-frame values
+Input.jumpDown = false
+Input.moveAxis = 0
+
+--------------------------------------------------------------
+-- INPUT MAPS
+--------------------------------------------------------------
+
+Input.actions = {
+    jump  = { "space", "w", "up", "gp_btn_a", "gp_btn_cross" },
+    left  = { "a", "left", "gp_left" },
+    right = { "d", "right", "gp_right" },
+}
+
+--------------------------------------------------------------
+-- GAMEPAD
+--------------------------------------------------------------
+
 local gamepad = nil
-local deadzone = 0.22
-
---------------------------------------------------------------
--- INTERNAL HELPERS
---------------------------------------------------------------
 
 local function ensureGamepad()
-    -- pick first connected gamepad
     if gamepad and gamepad:isConnected() then return end
     local pads = love.joystick.getJoysticks()
-    gamepad = pads[1] or nil
+    gamepad = pads[1]
 end
 
-local function stickAxis(value)
-    if math.abs(value) < deadzone then return 0 end
+local function axis(value)
+    if math.abs(value) < DEADZONE then return 0 end
     return value
 end
 
@@ -68,16 +75,20 @@ end
 --------------------------------------------------------------
 
 function Input.keypressed(key)
-    Input.down[key]    = true
+    Input.down[key] = true
     Input.pressed[key] = true
 end
 
 function Input.keyreleased(key)
-    Input.down[key]     = nil
+    Input.down[key] = nil
     Input.released[key] = true
 
-    if isJumpKey(key) then
-        Input.jumpQueued = true
+    -- jump buffering (on release feels best for Bounds)
+    for _, k in ipairs(Input.actions.jump) do
+        if k == key then
+            Input.jumpTimer = JUMP_BUFFER_TIME
+            break
+        end
     end
 end
 
@@ -90,10 +101,8 @@ function Input.gamepadpressed(joystick, button)
     if joystick ~= gamepad then return end
 
     local key = "gp_btn_" .. button
-
-    Input.down[key]    = true
+    Input.down[key] = true
     Input.pressed[key] = true
-
 end
 
 function Input.gamepadreleased(joystick, button)
@@ -101,91 +110,133 @@ function Input.gamepadreleased(joystick, button)
     if joystick ~= gamepad then return end
 
     local key = "gp_btn_" .. button
-
-    Input.down[key]     = nil
+    Input.down[key] = nil
     Input.released[key] = true
 
-    -- Jump buttons
-    if isJumpButton(button) then Input.jumpQueued = true end
-end
-
---------------------------------------------------------------
--- UPDATE (called each frame)
---------------------------------------------------------------
-
-function Input.update()
-    ensureGamepad()
-
-    if gamepad then
-        ------------------------------------------------------
-        -- ANALOG STICK
-        ------------------------------------------------------
-        local lx = stickAxis(gamepad:getAxis(1))
-        local leftDown = lx < 0 or gamepad:isGamepadDown("dpleft")
-        local rightDown = lx > 0 or gamepad:isGamepadDown("dpright")
-
-        setHeld("gp_left", leftDown)
-        setHeld("gp_right", rightDown)
-
-        ------------------------------------------------------
-        -- D-PAD (digital)
-        ------------------------------------------------------
-        setHeld("gp_up", gamepad:isGamepadDown("dpup"))
-        setHeld("gp_down", gamepad:isGamepadDown("dpdown"))
+    -- jump buffering
+    if button == "a" or button == "cross" then
+        Input.jumpTimer = JUMP_BUFFER_TIME
     end
 end
 
 --------------------------------------------------------------
--- LATE UPDATE (clear one-frame states after use)
+-- UPDATE (call once per frame)
+--------------------------------------------------------------
+
+function Input.update(dt)
+    ensureGamepad()
+
+    ----------------------------------------------------------
+    -- Gamepad axes / d-pad
+    ----------------------------------------------------------
+    local axisX = 0
+
+    if gamepad then
+        axisX = axis(gamepad:getAxis(1))
+
+        setHeld("gp_left",  axisX < 0 or gamepad:isGamepadDown("dpleft"))
+        setHeld("gp_right", axisX > 0 or gamepad:isGamepadDown("dpright"))
+        setHeld("gp_up",    gamepad:isGamepadDown("dpup"))
+        setHeld("gp_down",  gamepad:isGamepadDown("dpdown"))
+    end
+
+    ----------------------------------------------------------
+    -- Jump buffer countdown
+    ----------------------------------------------------------
+    Input.jumpTimer = math.max(0, Input.jumpTimer - dt)
+
+    ----------------------------------------------------------
+    -- Cache jumpDown
+    ----------------------------------------------------------
+    Input.jumpDown = false
+    for _, k in ipairs(Input.actions.jump) do
+        if Input.down[k] then
+            Input.jumpDown = true
+            break
+        end
+    end
+
+    ----------------------------------------------------------
+    -- Cache move axis (keyboard + analog)
+    ----------------------------------------------------------
+    local move = 0
+
+    if Input.down.a or Input.down.left or Input.down.gp_left then
+        move = move - 1
+    end
+    if Input.down.d or Input.down.right or Input.down.gp_right then
+        move = move + 1
+    end
+
+    move = move + axisX
+    Input.moveAxis = math.max(-1, math.min(1, move))
+end
+
+--------------------------------------------------------------
+-- POST UPDATE (clear one-frame states)
 --------------------------------------------------------------
 
 function Input.postUpdate()
-    for key in pairs(Input.pressed) do Input.pressed[key] = nil end
-    for key in pairs(Input.released) do Input.released[key] = nil end
+    for k in pairs(Input.pressed) do Input.pressed[k] = nil end
+    for k in pairs(Input.released) do Input.released[k] = nil end
+end
+
+--------------------------------------------------------------
+-- LOCKING
+--------------------------------------------------------------
+
+function Input.setLocked(b)
+    Input.locked = b
 end
 
 --------------------------------------------------------------
 -- QUERY HELPERS
 --------------------------------------------------------------
 
+local function anyActive(state, keys)
+    for _, k in ipairs(keys) do
+        if state[k] then return true end
+    end
+    return false
+end
+
 function Input.isDown(...)
+    if Input.locked then return false end
+
     for i = 1, select("#", ...) do
-        local key = select(i,...)
+        local key = select(i, ...)
         if Input.down[key] then return true end
     end
     return false
 end
 
 function Input.wasPressed(key)
-    return Input.pressed[key]
+    return not Input.locked and Input.pressed[key]
 end
 
 function Input.wasReleased(key)
-    return Input.released[key]
-end
-
-function Input.wasJumpPressed()
-    return anyActive(Input.pressed, jumpInputs)
-end
-
-function Input.wasJumpReleased()
-    return anyActive(Input.released, jumpInputs)
+    return not Input.locked and Input.released[key]
 end
 
 function Input.isJumpDown()
-    return Input.isDown(unpack(jumpInputs))
+    return not Input.locked and Input.jumpDown
 end
 
---------------------------------------------------------------
--- JUMP BUFFER CONSUMPTION
---------------------------------------------------------------
+function Input.wasJumpReleased()
+    return not Input.locked and anyActive(Input.released, Input.actions.jump)
+end
 
 function Input.consumeJump()
-    if Input.jumpQueued then
-        Input.jumpQueued = false
+    if not Input.locked and Input.jumpTimer > 0 then
+        Input.jumpTimer = 0
         return true
     end
     return false
+end
+
+function Input.getMoveAxis()
+    if Input.locked then return 0 end
+    return Input.moveAxis
 end
 
 return Input

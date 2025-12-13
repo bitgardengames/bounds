@@ -52,7 +52,6 @@ function Decorations.spawn(entry, tileSize)
         config = entry,
     }
 
-	inst.config = entry
 	inst.config.tileSize = tileSize
 
     if prefab.init then
@@ -171,7 +170,6 @@ loadPrefab("steam")
 loadPrefab("signs")
 loadPrefab("platformtrack")
 loadPrefab("backgroundnoise")
-loadPrefab("panelseams")
 loadPrefab("platformstrip")
 
 return Decorations

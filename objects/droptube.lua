@@ -4,6 +4,9 @@
 --------------------------------------------------------------
 
 local Theme = require("theme")
+local Player
+local Cube
+local p
 
 local DropTube = {
     list     = {},
@@ -78,7 +81,7 @@ end
 --------------------------------------------------------------
 -- HELPER: Outlined rounded rectangle
 --------------------------------------------------------------
-local function drawOutlinedRoundedRect(mode, x, y, w, h, rx, ry)
+local function drawOutlinedRoundedRect(color, x, y, w, h, rx, ry)
     -- OUTLINE
     love.graphics.setColor(OUTLINE_COLOR)
     love.graphics.rectangle("fill",
@@ -90,7 +93,7 @@ local function drawOutlinedRoundedRect(mode, x, y, w, h, rx, ry)
     )
 
     -- FILL
-    love.graphics.setColor(mode.color)
+    love.graphics.setColor(color)
     love.graphics.rectangle("fill",
         x,
         y,
@@ -103,12 +106,7 @@ end
 --------------------------------------------------------------
 -- CENTRALIZED RESPAWN HANDLING
 --------------------------------------------------------------
-function DropTube.update(dt)
-    -- When the player has finished their death timer,
-    -- this flag is set by Player.update()
-	local Player = require("player.player")
-	local p = Player.get()
-	
+local function handlePlayerRespawn()
     if p.pendingTubeRespawn then
         p.pendingTubeRespawn = false
 
@@ -125,9 +123,9 @@ function DropTube.update(dt)
             DropTube.dropPlayer(tube)
         end
     end
-	
-    -- CUBES RESPAWN
-    local Cube = require("objects.cube")
+end
+
+local function handleCubeRespawn()
     for _, c in ipairs(Cube.list) do
         if c.pendingTubeRespawn then
             c.pendingTubeRespawn = false
@@ -141,6 +139,15 @@ function DropTube.update(dt)
             if tube then DropTube.dropCube(tube, c) end
         end
     end
+end
+
+function DropTube.update(dt)
+	if not Player then return end
+	handlePlayerRespawn()
+
+    -- CUBES RESPAWN
+	if not Cube or #Cube.list == 0 then return end
+	handleCubeRespawn()
 end
 
 --------------------------------------------------------------
@@ -167,7 +174,7 @@ function DropTube.draw()
             -- TOP CAP (rounded rectangle)
             --------------------------------------------------
             drawOutlinedRoundedRect(
-                {color = COLOR_TOP_CAP},
+                COLOR_TOP_CAP,
                 x,
                 y + 2,
                 w,
@@ -231,7 +238,7 @@ function DropTube.draw()
             local bottomY = y + h - CAP_HEIGHT
 
             drawOutlinedRoundedRect(
-                {color = COLOR_BOTTOM_CAP},
+                COLOR_BOTTOM_CAP,
                 x,
                 bottomY,
                 w,
@@ -241,6 +248,15 @@ function DropTube.draw()
             )
         end
     end
+end
+
+--------------------------------------------------------------
+-- LOAD
+--------------------------------------------------------------
+function DropTube.load()
+	Player = require("player.player")
+	Cube = require("objects.cube")
+	p = Player.get()
 end
 
 return DropTube

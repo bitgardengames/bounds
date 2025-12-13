@@ -77,4 +77,8 @@ function Timer.update(dt)
     end
 end
 
+function Timer.clear()
+	Timer.tasks = {}
+end
+
 return Timer

@@ -13,14 +13,14 @@ local Idle = {
 }
 
 Idle.baseWeights = {
-    glance      = 0.20,
-    glance2     = 0.20,
-    peek        = 0.18,
-    lean        = 0.14,
-    wiggle      = 0.14,
-    rock        = 0.08,
-    scratch     = 0.03,
-    look_up     = 0.03,
+    glance       = 0.20,
+    peek         = 0.18,
+    lean         = 0.14,
+    wiggle       = 0.14,
+    rock         = 0.08,
+	monitor_look = 0.04,
+    scratch      = 0.03,
+    look_up      = 0.03,
 }
 
 local function clamp(v, mn, mx)
@@ -102,10 +102,7 @@ function Idle.update(dt, isIdle)
 				local dir = (math.random() < 0.5) and -1 or 1
 
 				if chosen == "glance" then
-					startEffect("glance", { duration = 0.9, dir = -1 })
-
-				elseif chosen == "glance2" then
-					startEffect("glance", { duration = 0.9, dir = 1 })
+					startEffect("glance", { duration = 0.9, dir = dir })
 
 				elseif chosen == "peek" then
 					startEffect("peek", { duration = 1.1, dir = dir })
@@ -121,6 +118,9 @@ function Idle.update(dt, isIdle)
 
 				elseif chosen == "scratch" then
 					startEffect("scratch", { duration = 1.1, dir = dir })
+
+				elseif chosen == "monitor_look" then
+					startEffect("monitor_look", { duration = 1.0 })
 
 				elseif chosen == "look_up" then
 					startEffect("look_up", { duration = 1.0, dir = dir })
@@ -167,6 +167,38 @@ function Idle.getEyeOffset()
     elseif effect.kind == "look_up" then
         local magnitude = math.sin(progress * math.pi)
         return magnitude * effect.dir * 0.30, -magnitude * 0.55
+	elseif effect.kind == "monitor_look" then
+		local Monitor = require("objects.monitor")
+		local Player = require("player.player")
+		local p = Player.get()
+
+		local info = Monitor.getNearestTo(
+			p.x + p.w/2,
+			p.y + p.h/2
+		)
+
+		if not info then return 0, 0 end
+
+		local progress = clamp(Idle.effectTimer / effect.duration, 0, 1)
+
+		-- Ease in, hold, ease out
+		local k
+		if progress < 0.25 then
+			k = progress / 0.25
+		elseif progress > 0.75 then
+			k = (1 - progress) / 0.25
+		else
+			k = 1
+		end
+
+		-- Normalize direction
+		local len = math.sqrt(info.dx*info.dx + info.dy*info.dy)
+		if len < 0.001 then return 0, 0 end
+
+		local nx = info.dx / len
+		local ny = info.dy / len
+
+		return nx * 0.6 * k, ny * 0.4 * k
     end
 
     return 0, 0
