@@ -60,7 +60,8 @@ local chamber = {
                 {x = 2,  y = 22,  w = 38, h = 1},
 
                 -- Floor 2: right segment (holds plate + door)
-                {x = 31, y = 18, w = 9, h = 1},
+                {x = 22, y = 17, w = 18, h = 1},
+				{x = 14, y = 17, w = 6, h = 1},
             },
         },
 
@@ -79,13 +80,13 @@ local chamber = {
         ------------------------------------------------------
         -- Door on raised right platform
         ------------------------------------------------------
-        door = { tx = 36, ty = 15},
+        door = { tx = 36, ty = 14},
 
         ------------------------------------------------------
         -- Cube on the starting ground floor
         ------------------------------------------------------
         cubes = {
-           { tx = 12, ty = 18 },
+           { tx = 16, ty = 16 },
         },
 
         monitors = {
@@ -96,8 +97,8 @@ local chamber = {
         -- Pressure plate on far-right raised platform
         ------------------------------------------------------
         plates = {
-            {tx = 31, ty = 16, id = "plate_1"},
-			{tx = 21, ty = 20, id = "plate_2", timer = "timer_1"},
+            {tx = 31, ty = 15, id = "plate_1"},
+			{tx = 27, ty = 20, id = "plate_2", timer = "timer_1"},
         },
 
         dropTubes = {
@@ -109,10 +110,10 @@ local chamber = {
         ------------------------------------------------------
         movingPlatforms = {
             {
-                tx = 28,
-                ty = 17,
+                tx = 19,
+                ty = 16,
                 dir = "vertical",
-                trackTiles = 5,
+                trackTiles = 6,
 				widthTiles = 2,
                 speed = 0.2,
 				active = false,

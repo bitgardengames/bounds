@@ -2,6 +2,12 @@
 -- PRESSURE PLATE — SIDE VIEW (supports cubes + player)
 --------------------------------------------------------------
 
+--[[
+	Could also...
+	
+	Raise/lower liquid levels
+-]]
+
 local Theme = require("theme")
 local Events = require("systems.events")
 local Decorations = require("decorations.init")

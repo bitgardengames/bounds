@@ -107,15 +107,17 @@ function LaserReceiver.update(dt, emitters)
     end
 
     -- For each emitter, check whether its beam hit a receiver face
-    for _, em in ipairs(emitters) do
-        if em.active then
-            for _, inst in ipairs(LaserReceiver.list) do
-                if LaserReceiver.hitTest(inst, em.hitX, em.hitY) then
-                    inst.active = true
-                end
-            end
-        end
-    end
+	for _, em in ipairs(emitters) do
+		if em.active and em.hitKind == "receiver" then
+			local id = em.hitReceiverId
+			for _, inst in ipairs(LaserReceiver.list) do
+				if inst.id == id then
+					inst.active = true
+					break
+				end
+			end
+		end
+	end
 
     -- Update global state map
     for _, inst in ipairs(LaserReceiver.list) do
@@ -124,7 +126,7 @@ function LaserReceiver.update(dt, emitters)
 end
 
 --------------------------------------------------------------
--- DRAW — housing + status diode
+-- DRAW — housing + sensor cavity
 --------------------------------------------------------------
 function LaserReceiver.draw()
     for _, inst in ipairs(LaserReceiver.list) do
@@ -140,33 +142,25 @@ function LaserReceiver.draw()
         love.graphics.rectangle("fill", x+6, y+6, w-12, h-12, 5, 5)
 
         ------------------------------------------------------
-        -- SENSOR CAVITY
+        -- SENSOR CAVITY (laser endpoint)
         ------------------------------------------------------
         local cavW = w - 26
         local cavH = h - 30
         local cavX = x + (w - cavW)/2
         local cavY = y + (h - cavH)/2
 
+        -- deeper, light-absorbing cavity
         love.graphics.setColor(S.dark)
         love.graphics.rectangle("fill", cavX, cavY, cavW, cavH, 4, 4)
 
-        ------------------------------------------------------
-        -- STATUS DIODE
-        ------------------------------------------------------
-        -- Position diode on the sensor face, centered
-        local dx, dy = cavX + cavW/2, cavY + cavH/2
-
-        if inst.active then
-            love.graphics.setColor(0.35, 1.0, 0.35, 1) -- green
-        else
-            love.graphics.setColor(1.0, 0.25, 0.25, 1) -- red
-        end
-
-        love.graphics.circle("fill", dx, dy, 6)
-
-        -- highlight
-        love.graphics.setColor(1, 1, 1, 0.5)
-        love.graphics.circle("fill", dx+1.5, dy-1.5, 1.4)
+        -- optional subtle inner ring for focus
+        love.graphics.setColor(0, 0, 0, 0.35)
+        love.graphics.circle(
+            "fill",
+            x + w * 0.5,
+            y + h * 0.5,
+            8
+        )
     end
 end
 

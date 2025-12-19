@@ -17,11 +17,12 @@ local Button = { list = {} }
 local TILE        = 48
 local OUTLINE     = 4
 
--- Animation tuning
-local SOFT_PRESS_AMOUNT = 0.18   -- initial give
-local SOFT_PRESS_TIME   = 0.08   -- quick resistance
-local COMMIT_DELAY      = 0.10   -- hesitation before give
-local COMMIT_SPEED      = 6.5    -- slow heavy sink
+-- Animation tuning (FEEL PASS)
+local SOFT_PRESS_AMOUNT = 0.22   -- visible initial budge
+local SOFT_PRESS_TIME   = 0.14   -- slower resistance phase
+
+local COMMIT_DELAY      = 0.16   -- hesitation before weight wins
+local COMMIT_SPEED      = 4.8    -- slower, heavier sink
 
 local PRESS_DEPTH = 12
 
@@ -48,7 +49,7 @@ local function resetState()
         pressed     = false,
         oldPressed  = false,
         latched     = false,
-        fired       = false,   -- 🔑 ensures one-shot behavior
+        fired       = false,   -- one-shot logic gate
 
         -- animation
         t           = 0,
@@ -97,7 +98,7 @@ function Button.isActive(id)
 end
 
 --------------------------------------------------------------
--- TOP SURFACE (used by player collision + press detection)
+-- TOP SURFACE (player collision + press detection)
 --------------------------------------------------------------
 
 function Button.getTopSurface(b)
@@ -146,7 +147,7 @@ function Button.update(dt, player)
         b.pressed = pressedNow
 
         ------------------------------------------------------
-        -- FIRE EVENT ONCE (BUT DO NOT LATCH YET)
+        -- FIRE EVENT ONCE (NO IMMEDIATE LATCH)
         ------------------------------------------------------
         if b.pressed and not b.fired then
             b.fired  = true
@@ -161,9 +162,14 @@ function Button.update(dt, player)
         -- PRESS ANIMATION STATE MACHINE
         ------------------------------------------------------
 
+        -- 1) Subtle resistance / budge
         if b.pressPhase == "soft" then
             b.phaseTimer = b.phaseTimer + dt
             local k = math.min(b.phaseTimer / SOFT_PRESS_TIME, 1)
+
+            -- ease-out for springy resistance
+            k = 1 - (1 - k) * (1 - k)
+
             b.t = SOFT_PRESS_AMOUNT * k
 
             if k >= 1 then
@@ -171,6 +177,7 @@ function Button.update(dt, player)
                 b.phaseTimer = 0
             end
 
+        -- 2) Hesitate → heavy sink
         elseif b.pressPhase == "commit" then
             b.phaseTimer = b.phaseTimer + dt
 
@@ -178,11 +185,12 @@ function Button.update(dt, player)
                 b.t = b.t + (1 - b.t) * dt * COMMIT_SPEED
                 if b.t >= 0.995 then
                     b.t = 1
-                    b.latched = true     -- 🔒 latch ONLY here
+                    b.latched = true
                     b.pressPhase = "latched"
                 end
             end
 
+        -- 3) Fully depressed
         elseif b.pressPhase == "latched" then
             b.t = 1
             b.active = true

@@ -719,7 +719,8 @@ function Player.update(dt, Level)
 	resolveButtonCollisions()
 
     local justLanded = (not wasOnGround) and p.onGround
-    if justLanded and not p.onButton then
+   -- if justLanded and not p.onButton then
+	if justLanded then
 
 		Input.setLocked(false)
 
@@ -728,16 +729,18 @@ function Player.update(dt, Level)
 			Events.emit("first_landing")
 		end
 
-        for i=1,3 do
-            Particles.puff(
-                p.x + p.w/2 + (math.random()-0.5)*12,
-                p.y + p.h + 1,
-                (math.random()-0.5)*40,
-                math.random()*20,
-                4, 0.30,
-                {1,1,1,1}
-            )
-        end
+		if not p.onButton then
+			for i=1,3 do
+				Particles.puff(
+					p.x + p.w/2 + (math.random()-0.5)*12,
+					p.y + p.h + 1,
+					(math.random()-0.5)*40,
+					math.random()*20,
+					4, 0.30,
+					{1,1,1,1}
+				)
+			end
+		end
     end
 
     ----------------------------------------------------------

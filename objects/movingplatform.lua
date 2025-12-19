@@ -5,6 +5,7 @@
 local Level = require("level.level")
 local Theme = require("theme")
 local Plate = require("objects.pressureplate")
+local LaserReceiver = require("objects.laserreceiver")
 
 local MovingPlatform = { list = {} }
 
@@ -210,10 +211,10 @@ function MovingPlatform.update(dt)
         local targetT
         if p.pressToLift then
             --local isPressed = Plate.isDown(p.target)
-            local isPressed = Plate.isActive(p.target)
+            local isSatisfied = Plate.isActive(p.target) or LaserReceiver.isActive(p.target)
 
             if p.loop then
-                if isPressed then
+                if isSatisfied then
                     if p.direction == 0 then
                         p.direction = p.resumeDirection or 1
                     end
@@ -225,7 +226,7 @@ function MovingPlatform.update(dt)
                     p.direction = 0
                 end
             else
-                targetT = isPressed and 0 or 1
+                targetT = isSatisfied and 0 or 1
 
                 if targetT > p.t then
                     p.direction = 1

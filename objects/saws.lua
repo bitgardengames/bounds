@@ -3,6 +3,8 @@
 -- Horizontal + Vertical mounts with perfect wall alignment
 --------------------------------------------------------------
 
+-- Draw these on load and then just roate the cached image
+
 local Theme = require("theme")
 local Saw = { list = {} }
 local Player = require("player.player")
@@ -12,6 +14,7 @@ local Plate = require("objects.pressureplate")
 -- CONFIG
 --------------------------------------------------------------
 
+local TILE = 48
 local BASE_RADIUS = 24
 local TEETH       = 9
 local INNER_RATIO = 0.80
@@ -98,7 +101,7 @@ function Saw.spawn(x, y, opts)
         angle    = opts.angle or 0,
         dir      = dir,
         mount    = mount,
-        trackLength = opts.length or TRACK_LENGTH,
+        trackLength = opts.length * TILE or 2 * TILE,
 
         active = opts.active ~= false,
         target = opts.target and tostring(opts.target) or nil,

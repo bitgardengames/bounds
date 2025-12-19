@@ -134,10 +134,6 @@ local chamber = {
         monitors = {
             {tx = 38, ty = 5, dir = -1},
         },
-
-		buttons = {
-			{ tx = 15, ty = 18, mode = "oneshot", id = "button_1" },
-		},
     },
 
 	indicatorLogic = function(Plate)

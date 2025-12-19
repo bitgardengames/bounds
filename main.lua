@@ -84,7 +84,6 @@ local function updateTransition(dt)
 end
 
 local function clearActors()
-	Events.clear()
 	Timer.clear()
     Decorations.clear()
     Saw.clear()
@@ -184,7 +183,7 @@ local function spawnObjects(chamber)
 
     LaserEmitter.clear()
     for _, emitter in ipairs(objects.laserEmitters or {}) do
-        LaserEmitter.spawn(emitter.tx, emitter.ty, emitter.dir)
+        LaserEmitter.spawn(emitter.tx, emitter.ty, emitter.dir, emitter.id, emitter.data)
     end
 
     LaserReceiver.clear()
@@ -408,8 +407,10 @@ function love.draw()
     Level.draw(camX, camY)
     Monitor.draw()
 	Button.draw()
-    LaserEmitter.draw()
+
+    LaserEmitter.drawBodies()
     LaserReceiver.draw()
+	LaserEmitter.drawBeams()
     Saw.draw()
     Door.draw()
     Plate.draw()
