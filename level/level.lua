@@ -35,8 +35,7 @@ Level.solidGrid   = nil     -- Combined tile grid (Frame + Solids)
 Level.frameBlobs  = {}
 Level.solidBlobs  = {}
 Level.gridCanvas  = nil
-Level.gridCanvas  = nil
-Level.decorCanvas = nil   -- <-- NEW
+Level.decorCanvas = nil
 
 local OUTLINE_OFFSETS = {
     {-OUTLINE_WIDTH, 0}, {OUTLINE_WIDTH, 0},
